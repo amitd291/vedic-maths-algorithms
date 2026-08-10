@@ -1,12 +1,13 @@
-# Dhvajanka Division
+# Vedic Maths Algorithms
 
-An interactive, step-by-step visualisation of the Vedic Mathematics
-Dhvajanka ("flag") division method, built with React + TypeScript + Vite.
+An interactive, step-by-step visualisation of Vedic Mathematics algorithms,
+built with React + TypeScript + Vite.
 
-This is v1: a single hardcoded worked example, **5428 ÷ 35**, walked through
-five screens (setup, three quotient-digit steps, remainder). v2 will add an
-input form and a computed algorithm for arbitrary 4-digit ÷ 2-digit
-divisions.
+Currently it supports:
+
+- **Dhvajanka ("flag") division** — enter any 4-digit dividend and 2-digit
+  divisor; the app computes the step-by-step walkthrough (setup, one step
+  per dividend digit, remainder) and lets you navigate through it.
 
 ## Method summary
 
@@ -20,12 +21,14 @@ quotient digit and carry.
 
 ```bash
 npm install
-npm run dev      # local dev server with HMR
-npm run build     # produces dist/index.html — a single, self-contained file
-npm run preview   # preview the production build
-npm test          # run the vitest suite
+npm run dev      # local dev server with HMR (http://localhost:5173)
+npm run build    # produces dist/index.html — a single, self-contained file
+npm run preview  # preview the production build
+npm test         # run the vitest suite
+npm run test:e2e # run the playwright e2e suite (auto-starts the dev server;
+                  # run `npm run build` first — one spec opens dist/index.html)
+npm run lint     # oxlint
 ```
-Local server url: http://localhost:5183
 
 `npm run build` emits **one** offline-capable `dist/index.html` with all CSS
 and JS inlined (via `vite-plugin-singlefile`) — no `assets/` directory, no
