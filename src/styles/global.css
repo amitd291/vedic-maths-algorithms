@@ -1,0 +1,558 @@
+:root {
+  --bg: #f5f4f2;
+  --bg2: #ffffff;
+  --bg3: #ebe9e6;
+
+  --text: #1c1b1a;
+  --text2: #55524d;
+  --text3: #8a8680;
+
+  --border: #dddad4;
+
+  --amber: #b5730a;
+  --amber-bg: rgba(181, 115, 10, 0.12);
+  --green: #227a3f;
+  --green-bg: rgba(34, 122, 63, 0.12);
+  --blue: #2158b0;
+  --blue-bg: rgba(33, 88, 176, 0.12);
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14151a;
+    --bg2: #1c1d24;
+    --bg3: #25262e;
+
+    --text: #f0efee;
+    --text2: #b7b4ae;
+    --text3: #82807c;
+
+    --border: #34353d;
+
+    --amber: #e0a94b;
+    --amber-bg: rgba(224, 169, 75, 0.16);
+    --green: #5fcb86;
+    --green-bg: rgba(95, 203, 134, 0.16);
+    --blue: #6fa4f2;
+    --blue-bg: rgba(111, 164, 242, 0.16);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ---------- Header ---------- */
+
+.app-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.app-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text2);
+  margin-bottom: 1rem;
+}
+
+/* ---------- Input form ---------- */
+
+.input-form {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 100px;
+}
+
+.input-field label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+}
+
+.input-field input {
+  font-size: 1rem;
+  font-family: inherit;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  width: 100%;
+}
+
+.input-field input:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.input-field input[aria-invalid='true'] {
+  border-color: var(--amber);
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: var(--amber);
+  max-width: 140px;
+}
+
+.input-divide-sign {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text3);
+  align-self: center;
+  margin-top: 1.1rem;
+}
+
+.solve-button {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--amber-bg);
+  color: var(--amber);
+  cursor: pointer;
+  align-self: center;
+  margin-top: 1.1rem;
+}
+
+.solve-button:hover {
+  background: var(--amber);
+  color: var(--bg2);
+}
+
+/* ---------- Error banner ---------- */
+
+.error-banner {
+  font-size: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  margin-bottom: 1.5rem;
+}
+
+/* ---------- Divisor card ---------- */
+
+.divisor-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.divisor-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 72px;
+}
+
+.divisor-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text3);
+}
+
+.divisor-digit {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.divisor-digit-flag {
+  color: var(--text);
+  transition: color 0.2s;
+}
+
+.divisor-digit-flag.active {
+  color: var(--blue);
+}
+
+.divisor-separator {
+  width: 1px;
+  height: 48px;
+  background: var(--border);
+}
+
+/* ---------- Digit board ---------- */
+
+.digit-board {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.digit-board-cols {
+  flex: 1;
+}
+
+.arrow-btn {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.arrow-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.arrow-btn:not(:disabled):hover {
+  background: var(--bg3);
+}
+
+.arrow-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.digit-row,
+.quotient-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.digit-box {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.digit-box.active {
+  background: var(--amber-bg);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.digit-box.done {
+  background: var(--green-bg);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.digit-divider {
+  border: none;
+  border-top: 0.5px solid var(--border);
+  margin: 1rem 0;
+}
+
+.quotient-slot {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text3);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.quotient-slot.show {
+  border-style: solid;
+  border-color: var(--green);
+  color: var(--green);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.quotient-slot.show-rem {
+  border-style: solid;
+  border-color: var(--blue);
+  color: var(--blue);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.carry-badge {
+  margin-top: 1rem;
+  text-align: center;
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: var(--blue-bg);
+  color: var(--blue);
+  margin-left: 50%;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+.carry-badge.show {
+  visibility: visible;
+}
+
+/* ---------- Step panel ---------- */
+
+.step-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  scroll-margin-top: 1rem;
+}
+
+/* All steps are rendered simultaneously, stacked in the same grid cell, so
+   the panel's height is always the tallest step and the nav row below it
+   never moves as the user steps through the walkthrough. Inactive steps are
+   visibility:hidden (not display:none) so they still contribute height. */
+.step-stack {
+  display: grid;
+}
+
+.step-stack > * {
+  grid-area: 1 / 1;
+}
+
+.step-stack > *[aria-hidden='true'] {
+  visibility: hidden;
+}
+
+.step-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.85rem;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.calc-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.co {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.cn {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ch {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-bg);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+}
+
+.warn-note,
+.success-note {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+
+.warn-note {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+}
+
+.success-note {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green);
+}
+
+/* ---------- Nav controls ---------- */
+
+.nav-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.step-counter {
+  font-size: 0.85rem;
+  color: var(--text2);
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.dot-row {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+}
+
+.dot.current {
+  background: var(--amber);
+}
+
+/* ---------- Method rules ---------- */
+
+.method-rules {
+  margin-bottom: 1.5rem;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.method-rules h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+.method-rules ol {
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.method-rules li {
+  font-size: 0.9rem;
+  color: var(--text2);
+}
+
+/* ---------- Footer ---------- */
+
+.app-footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text3);
+  padding-top: 1rem;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 400px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  .digit-board {
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+  }
+
+  .digit-box,
+  .quotient-slot,
+  .arrow-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
+
+  .arrow-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .quotient-slot.show,
+  .quotient-slot.show-rem {
+    font-size: 1.15rem;
+  }
+
+  .divisor-digit {
+    font-size: 1.6rem;
+  }
+}

@@ -58,8 +58,9 @@ Defects found in post-v2 code review and manual testing.
 
 ## Iteration 2.2 — e2e tests + GitHub Pages release ⬜ next
 
-- [ ] End-to-end tests against the dev server and the built `file://` bundle
 - [ ] Commit and push to GitHub
+- [ ] End-to-end tests against the dev server and the built `file://` bundle
+- [ ] CI pipeline (refer similar repo at ../task)
 - [x] Nav button redesign: icon-only, squarish arrow buttons inside digit board
 - [x] Follow-up: move the keyboard listener out of `NavControls` into `DigitBoard`,
       and relocate `NavControls` next to the digit board
