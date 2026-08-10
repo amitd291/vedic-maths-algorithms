@@ -40,7 +40,7 @@ export default function InputForm({ onSolve }: InputFormProps) {
   }
 
   return (
-    <form className="input-form" onSubmit={handleSubmit}>
+    <form className="input-form" onSubmit={handleSubmit} noValidate>
       <div className="input-field">
         <label htmlFor="dividend-input">Dividend</label>
         <input
