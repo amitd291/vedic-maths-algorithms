@@ -45,6 +45,12 @@ test.describe('edge case problems (dev server)', () => {
   test('the raw step shows the lookahead note and the adjusted step shows the reduction note', async ({
     page,
   }) => {
+    const steps = computeSteps(5428, 35);
+    const rawNote = steps[2].lines.find((l) => l.kind === 'note' && l.tone === 'warn')?.text;
+    const adjustedNote = steps[3].lines.find((l) => l.kind === 'note' && l.tone === 'warn')?.text;
+    expect(rawNote).toBeDefined();
+    expect(adjustedNote).toBeDefined();
+
     await page.goto('/');
     await page.getByLabel('Next step').click();
     await page.getByLabel('Next step').click();
@@ -52,11 +58,11 @@ test.describe('edge case problems (dev server)', () => {
     const activeWarnNote = page.locator('[aria-hidden="false"] .warn-note');
 
     await expect(page.locator('.step-counter')).toHaveText('3 / 6');
-    await expect(activeWarnNote).toContainText('Checking ahead');
+    await expect(activeWarnNote).toHaveText(rawNote!);
 
     await page.getByLabel('Next step').click();
 
     await expect(page.locator('.step-counter')).toHaveText('4 / 6');
-    await expect(activeWarnNote).toContainText('Reduce the quotient by');
+    await expect(activeWarnNote).toHaveText(adjustedNote!);
   });
 });
