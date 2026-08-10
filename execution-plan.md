@@ -145,7 +145,8 @@ Detailed tasks TBD — to be scoped once v2 lands.
   algorithm is added — likely needs an app-level title + method selector,
   with `e2e/dist-bundle.spec.ts`'s heading assertion updated in lockstep.
   Also consider renaming `package.json`'s `name` field
-  (`vedic-maths-dhvajanka`) to something generic.
+  (`vedic-maths-dhvajanka`) to something generic, also double check
+  the name used build and other commands (vedic-maths-dhvajanka@0.0.0 build
 
 ---
 
