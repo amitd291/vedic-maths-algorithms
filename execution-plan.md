@@ -59,17 +59,16 @@ Defects found in post-v2 code review and manual testing.
 ## Iteration 2.2 — e2e tests + GitHub Pages release ⬜ next
 
 - [ ] Commit and push to GitHub
-- [ ] End-to-end tests against the dev server and the built `file://` bundle
-- [ ] CI pipeline (refer similar repo at ../task)
+- [x] End-to-end tests against the dev server and the built `file://` bundle
+- [ ] CI pipeline (similar to app repo at ../task-management/task-management-app/)
 - [x] Nav button redesign: icon-only, squarish arrow buttons inside digit board
 - [x] Follow-up: move the keyboard listener out of `NavControls` into `DigitBoard`,
       and relocate `NavControls` next to the digit board
 
 <!-- Detail below; strip once the checklist above is fully ticked. -->
 
-**End-to-end tests** — still open: input-form and edge-case-problem specs
-(skeleton and dev-server/bundle nav specs already in place, see
-`e2e/*.spec.ts`).
+**End-to-end tests** — all specs in place: nav, dev-server/bundle, input-form,
+and edge-case-problem specs (see `e2e/*.spec.ts`).
 
 ---
 
