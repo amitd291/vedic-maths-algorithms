@@ -67,7 +67,37 @@ Defects found in post-v2 code review and manual testing.
 
 ---
 
-## Iteration 2.3
+## Iteration 2.3 — overshoot step UX ✅ complete
+
+- [x] `computeSteps`: for an overshoot digit, emit a `raw` step (quotient
+      slot + carry badge show the pre-adjustment values, tone amber) followed
+      by an `adjusted` step (today's green values) instead of one combined
+      step; add a `phase: 'raw' | 'adjusted'` field to `Step` (absent/default
+      for non-overshoot digits)
+- [x] Raw step's lookahead note spells out the arithmetic that produces the
+      negative next-ND in brackets, e.g. `ND₃ = carry(1)×10 + 8 − 5×6 = 18 −
+      30 = −12 (negative)`, instead of just stating the negative result
+- [x] Adjusted step keeps the existing "reduce the quotient by N, add
+      `working` back into the carry" note, now shown as a distinct step
+- [x] `DigitBoard`: new `show-raw` tone (amber, reusing `--amber` /
+      `--amber-bg`, matching `.digit-box.active`) for the quotient slot and
+      carry badge on `raw` steps; `adjusted`/default steps keep today's
+      colors (quotient slot green via `.quotient-slot.show`, carry badge
+      blue via `.carry-badge.show` / `--blue` / `--blue-bg`) — amber is only
+      the new interim tone, not a replacement for either
+- [x] Update `computeSteps.test.ts` for the new raw/adjusted step pair and
+      the bracketed lookahead formula text
+- [x] Update `e2e/edge-case-problems.spec.ts` (`quotient-digit
+      adjustment/backtrack` case gains one step; `.step-counter` and
+      `.warn-note` navigation counts shift) and any other affected e2e specs
+- [x] Browser pass: amber/green contrast on the new `show-raw` tone in both
+      light and dark mode
+
+<!-- Detail stripped; see git history for the original write-up. -->
+
+---
+
+## Iteration 2.4
 - [ ] Release on GitHub Pages
 
 <!-- Detail below; strip once the checklist above is fully ticked. -->

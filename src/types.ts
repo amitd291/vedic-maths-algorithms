@@ -12,4 +12,5 @@ export interface Step {
   carry: number | null
   lines: CalcLine[]
   flagFires: boolean // true when this step's ND actually subtracts flag × previous quotient digit
+  phase?: 'raw' | 'adjusted' // set on the two steps an overshoot digit is split into; absent otherwise
 }

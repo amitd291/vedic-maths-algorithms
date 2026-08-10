@@ -8,13 +8,13 @@ describe('App', () => {
     expect(screen.getByLabelText('Dividend')).toHaveValue(5428)
     expect(screen.getByLabelText('Divisor')).toHaveValue(35)
     expect(screen.getByText('Setup')).toBeInTheDocument()
-    expect(screen.getByText('1 / 5')).toBeInTheDocument()
+    expect(screen.getByText('1 / 6')).toBeInTheDocument()
   })
 
   it('advances to the next step on click', () => {
     render(<App />)
     fireEvent.click(screen.getByLabelText('Next step'))
-    expect(screen.getByText('2 / 5')).toBeInTheDocument()
+    expect(screen.getByText('2 / 6')).toBeInTheDocument()
     expect(screen.getByText('Step 1 — first digit')).toBeInTheDocument()
   })
 
@@ -22,7 +22,7 @@ describe('App', () => {
     render(<App />)
     expect(screen.getByLabelText('Previous step')).toBeDisabled()
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       fireEvent.click(screen.getByLabelText('Next step'))
     }
     expect(screen.getByLabelText('Next step')).toBeDisabled()
@@ -52,6 +52,6 @@ describe('App', () => {
 
     expect(screen.getByText('Dividend must be between 1 and 9999.')).toBeInTheDocument()
     // still showing the previous (default) problem, not a crash
-    expect(screen.getByText('1 / 5')).toBeInTheDocument()
+    expect(screen.getByText('1 / 6')).toBeInTheDocument()
   })
 })

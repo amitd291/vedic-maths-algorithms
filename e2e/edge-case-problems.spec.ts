@@ -42,12 +42,21 @@ test.describe('edge case problems (dev server)', () => {
     });
   }
 
-  test('the adjustment step shows its warning note', async ({ page }) => {
+  test('the raw step shows the lookahead note and the adjusted step shows the reduction note', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByLabel('Next step').click();
     await page.getByLabel('Next step').click();
 
-    await expect(page.locator('.step-counter')).toHaveText('3 / 5');
-    await expect(page.locator('.warn-note').last()).toContainText('Reduce the quotient by');
+    const activeWarnNote = page.locator('[aria-hidden="false"] .warn-note');
+
+    await expect(page.locator('.step-counter')).toHaveText('3 / 6');
+    await expect(activeWarnNote).toContainText('Checking ahead');
+
+    await page.getByLabel('Next step').click();
+
+    await expect(page.locator('.step-counter')).toHaveText('4 / 6');
+    await expect(activeWarnNote).toContainText('Reduce the quotient by');
   });
 });

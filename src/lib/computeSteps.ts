@@ -36,6 +36,7 @@ interface DigitResult {
   rawRemainder: number | null // pre-adjustment remainder, set only when an adjustment happened
   overshootCount: number // number of times the quotient digit was reduced by 1
   overshootNextNetDividend: number | null // the next digit's ND the raw quotient would have produced (negative), set only when an adjustment happened
+  overshootNextDigit: number | null // the next dividend digit used in that lookahead, set only when an adjustment happened
 }
 
 /**
@@ -97,6 +98,7 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
         rawRemainder: null,
         overshootCount: 0,
         overshootNextNetDividend: null,
+        overshootNextDigit: null,
       })
       break
     }
@@ -108,13 +110,17 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
     let carryOut = rawRemainder
     let overshootCount = 0
     let overshootNextNetDividend: number | null = null
+    let overshootNextDigit: number | null = null
 
     if (i + 1 < n) {
       const nextDigit = digits[i + 1]
       let nextGrossDividend = carryOut * 10 + nextDigit
       let nextNetDividend = nextGrossDividend - flag * quotientDigit
       while (nextNetDividend < 0 && quotientDigit > 0) {
-        if (overshootNextNetDividend === null) overshootNextNetDividend = nextNetDividend
+        if (overshootNextNetDividend === null) {
+          overshootNextNetDividend = nextNetDividend
+          overshootNextDigit = nextDigit
+        }
         quotientDigit -= 1
         carryOut += working
         overshootCount += 1
@@ -137,6 +143,7 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
       rawRemainder: overshootCount > 0 ? rawRemainder : null,
       overshootCount,
       overshootNextNetDividend,
+      overshootNextDigit,
     })
 
     carry = carryOut
@@ -171,22 +178,22 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
     const res = results[i]
     const done = Array.from({ length: i }, (_, k) => k)
     const active = [i]
-    const lines: CalcLine[] = []
+    const gdLines: CalcLine[] = []
 
     if (i === 0) {
-      lines.push({ kind: 'calc', label: 'Gross dividend', value: `GD = ${res.digit}` })
-      lines.push({
+      gdLines.push({ kind: 'calc', label: 'Gross dividend', value: `GD = ${res.digit}` })
+      gdLines.push({
         kind: 'calc',
         label: 'No flag adjustment on first digit',
         value: `ND = ${res.digit}`,
       })
     } else {
-      lines.push({
+      gdLines.push({
         kind: 'calc',
         label: 'Gross dividend',
         value: `GD = carry(${res.carryIn}) × 10 + ${res.digit} = ${res.grossDividend}`,
       })
-      lines.push({
+      gdLines.push({
         kind: 'calc',
         label: 'Flag subtraction',
         value: `ND = ${res.grossDividend} − ${flag}×${res.prevQuotientDigit} = ${res.netDividend}`,
@@ -194,31 +201,11 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
     }
 
     if (res.isLast) {
-      lines.push({ kind: 'result', label: 'Remainder', value: String(res.remainder) })
-    } else {
-      const divideValue =
-        res.overshootCount > 0
-          ? `${res.netDividend} ÷ ${working} = ${res.rawQuotientDigit} remainder ${res.rawRemainder} (raw)`
-          : `${res.netDividend} ÷ ${working} = ${res.quotientDigit} remainder ${res.carryOut}`
-      lines.push({ kind: 'calc', label: 'Divide by working divisor', value: divideValue })
-
-      if (res.overshootCount > 0) {
-        const quotientLabel = `Q${subscript(i + 1)}`
-        const checkAhead = `Checking ahead: keeping ${quotientLabel} = ${res.rawQuotientDigit} would make the next digit's ND = ${res.overshootNextNetDividend} (negative).`
-        const text =
-          res.overshootCount === 1
-            ? `${checkAhead} Reduce the quotient by 1 to ${quotientLabel} = ${res.quotientDigit}, and add the working divisor back into the carry: ${res.rawRemainder} + ${working} = ${res.carryOut}.`
-            : `${checkAhead} Reduce the quotient by ${res.overshootCount} to ${quotientLabel} = ${res.quotientDigit}, and add the working divisor back into the carry ${res.overshootCount} times: ${res.rawRemainder} + ${res.overshootCount}×${working} = ${res.carryOut}.`
-        lines.push({ kind: 'note', tone: 'warn', text })
-      }
-
-      lines.push({ kind: 'result', label: `Q${subscript(i + 1)}`, value: String(res.quotientDigit) })
-      quotientDigits[i] = res.quotientDigit
-    }
-
-    let finalQuotient = 0
-    if (res.isLast) {
-      finalQuotient =
+      const lines: CalcLine[] = [
+        ...gdLines,
+        { kind: 'result', label: 'Remainder', value: String(res.remainder) },
+      ]
+      const finalQuotient =
         quotientSlotCount > 0
           ? Number(quotientDigits.map((v) => (v === null ? '0' : String(v))).join(''))
           : 0
@@ -227,20 +214,96 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
         tone: 'success',
         text: `Verify: ${finalQuotient} × ${divisor} + ${res.remainder} = ${dividend} ✓`,
       })
+      steps.push({
+        title: `Step ${i + 1} — remainder`,
+        done,
+        active,
+        quotientDigits: [...quotientDigits],
+        r: res.remainder,
+        carry: null,
+        lines,
+        flagFires: i > 0,
+      })
+      continue
     }
 
-    const title = res.isLast ? `Step ${i + 1} — remainder` : `Step ${i + 1} — ${ORDINALS[i]} digit`
+    const title = `Step ${i + 1} — ${ORDINALS[i]} digit`
+    const quotientLabel = `Q${subscript(i + 1)}`
 
-    steps.push({
-      title,
-      done,
-      active,
-      quotientDigits: [...quotientDigits],
-      r: res.isLast ? res.remainder : null,
-      carry: res.isLast ? null : res.carryOut,
-      lines,
-      flagFires: i > 0,
-    })
+    if (res.overshootCount > 0) {
+      const ndLabel = `ND${subscript(i + 2)}`
+      const nextGrossDividend = res.rawRemainder! * 10 + res.overshootNextDigit!
+      const subtractTerm = flag * res.rawQuotientDigit!
+      const lookaheadText =
+        `Checking ahead: keeping ${quotientLabel} = ${res.rawQuotientDigit} would make the next ` +
+        `digit's ${ndLabel} = carry(${res.rawRemainder})×10 + ${res.overshootNextDigit} − ` +
+        `${flag}×${res.rawQuotientDigit} = ${nextGrossDividend} − ${subtractTerm} = ` +
+        `${res.overshootNextNetDividend} (negative).`
+
+      const rawQuotientDigits = [...quotientDigits]
+      rawQuotientDigits[i] = res.rawQuotientDigit
+      steps.push({
+        title: `${title} (raw)`,
+        done,
+        active,
+        quotientDigits: rawQuotientDigits,
+        r: null,
+        carry: res.rawRemainder,
+        lines: [
+          ...gdLines,
+          {
+            kind: 'calc',
+            label: 'Divide by working divisor',
+            value: `${res.netDividend} ÷ ${working} = ${res.rawQuotientDigit} remainder ${res.rawRemainder} (raw)`,
+          },
+          { kind: 'note', tone: 'warn', text: lookaheadText },
+          { kind: 'result', label: quotientLabel, value: String(res.rawQuotientDigit) },
+        ],
+        flagFires: i > 0,
+        phase: 'raw',
+      })
+
+      const reduceText =
+        res.overshootCount === 1
+          ? `Reduce the quotient by 1 to ${quotientLabel} = ${res.quotientDigit}, and add the working divisor back into the carry: ${res.rawRemainder} + ${working} = ${res.carryOut}.`
+          : `Reduce the quotient by ${res.overshootCount} to ${quotientLabel} = ${res.quotientDigit}, and add the working divisor back into the carry ${res.overshootCount} times: ${res.rawRemainder} + ${res.overshootCount}×${working} = ${res.carryOut}.`
+
+      quotientDigits[i] = res.quotientDigit
+      steps.push({
+        title: `${title} (adjusted)`,
+        done,
+        active,
+        quotientDigits: [...quotientDigits],
+        r: null,
+        carry: res.carryOut,
+        lines: [
+          { kind: 'note', tone: 'warn', text: reduceText },
+          { kind: 'result', label: quotientLabel, value: String(res.quotientDigit) },
+        ],
+        flagFires: i > 0,
+        phase: 'adjusted',
+      })
+    } else {
+      quotientDigits[i] = res.quotientDigit
+      steps.push({
+        title,
+        done,
+        active,
+        quotientDigits: [...quotientDigits],
+        r: null,
+        carry: res.carryOut,
+        lines: [
+          ...gdLines,
+          {
+            kind: 'calc',
+            label: 'Divide by working divisor',
+            value: `${res.netDividend} ÷ ${working} = ${res.quotientDigit} remainder ${res.carryOut}`,
+          },
+          { kind: 'result', label: quotientLabel, value: String(res.quotientDigit) },
+        ],
+        flagFires: i > 0,
+      })
+    }
   }
 
   const last = results[results.length - 1]

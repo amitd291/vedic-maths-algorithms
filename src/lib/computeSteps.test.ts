@@ -4,7 +4,7 @@ import { computeSteps } from './computeSteps'
 describe('computeSteps', () => {
   it('reproduces the 5428 ÷ 35 worked example exactly', () => {
     const steps = computeSteps(5428, 35)
-    expect(steps).toHaveLength(5)
+    expect(steps).toHaveLength(6)
 
     expect(steps[0]).toEqual({
       title: 'Setup',
@@ -43,12 +43,12 @@ describe('computeSteps', () => {
     })
 
     expect(steps[2]).toEqual({
-      title: 'Step 2 — second digit',
+      title: 'Step 2 — second digit (raw)',
       done: [0],
       active: [1],
-      quotientDigits: [1, 5, null],
+      quotientDigits: [1, 6, null],
       r: null,
-      carry: 4,
+      carry: 1,
       lines: [
         { kind: 'calc', label: 'Gross dividend', value: 'GD = carry(2) × 10 + 4 = 24' },
         { kind: 'calc', label: 'Flag subtraction', value: 'ND = 24 − 5×1 = 19' },
@@ -60,14 +60,34 @@ describe('computeSteps', () => {
         {
           kind: 'note',
           tone: 'warn',
-          text: "Checking ahead: keeping Q₂ = 6 would make the next digit's ND = -18 (negative). Reduce the quotient by 1 to Q₂ = 5, and add the working divisor back into the carry: 1 + 3 = 4.",
+          text: "Checking ahead: keeping Q₂ = 6 would make the next digit's ND₃ = carry(1)×10 + 2 − 5×6 = 12 − 30 = -18 (negative).",
+        },
+        { kind: 'result', label: 'Q₂', value: '6' },
+      ],
+      flagFires: true,
+      phase: 'raw',
+    })
+
+    expect(steps[3]).toEqual({
+      title: 'Step 2 — second digit (adjusted)',
+      done: [0],
+      active: [1],
+      quotientDigits: [1, 5, null],
+      r: null,
+      carry: 4,
+      lines: [
+        {
+          kind: 'note',
+          tone: 'warn',
+          text: 'Reduce the quotient by 1 to Q₂ = 5, and add the working divisor back into the carry: 1 + 3 = 4.',
         },
         { kind: 'result', label: 'Q₂', value: '5' },
       ],
       flagFires: true,
+      phase: 'adjusted',
     })
 
-    expect(steps[3]).toEqual({
+    expect(steps[4]).toEqual({
       title: 'Step 3 — third digit',
       done: [0, 1],
       active: [2],
@@ -83,7 +103,7 @@ describe('computeSteps', () => {
       flagFires: true,
     })
 
-    expect(steps[4]).toEqual({
+    expect(steps[5]).toEqual({
       title: 'Step 4 — remainder',
       done: [0, 1, 2],
       active: [3],
@@ -102,9 +122,17 @@ describe('computeSteps', () => {
 
   it('exercises the adjustment/backtrack path (5428 ÷ 35 step 2)', () => {
     const steps = computeSteps(5428, 35)
-    const adjusted = steps[2]
-    const warnNote = adjusted.lines.find((l) => l.kind === 'note' && l.tone === 'warn')
-    expect(warnNote).toBeDefined()
+    const raw = steps[2]
+    const adjusted = steps[3]
+    expect(raw.phase).toBe('raw')
+    expect(raw.quotientDigits).toEqual([1, 6, null])
+    expect(raw.carry).toBe(1)
+    const lookaheadNote = raw.lines.find((l) => l.kind === 'note' && l.tone === 'warn')
+    expect(lookaheadNote).toBeDefined()
+
+    expect(adjusted.phase).toBe('adjusted')
+    const reduceNote = adjusted.lines.find((l) => l.kind === 'note' && l.tone === 'warn')
+    expect(reduceNote).toBeDefined()
     expect(adjusted.quotientDigits).toEqual([1, 5, null])
     expect(adjusted.carry).toBe(4)
   })

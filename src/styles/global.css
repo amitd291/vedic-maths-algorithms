@@ -341,6 +341,14 @@ body {
   font-weight: 700;
 }
 
+.quotient-slot.show-raw {
+  border-style: solid;
+  border-color: var(--amber);
+  color: var(--amber);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
 .carry-badge {
   margin-top: 1rem;
   text-align: center;
@@ -358,6 +366,11 @@ body {
 
 .carry-badge.show {
   visibility: visible;
+}
+
+.carry-badge.show-raw {
+  background: var(--amber-bg);
+  color: var(--amber);
 }
 
 /* ---------- Step panel ---------- */
@@ -548,7 +561,8 @@ body {
   }
 
   .quotient-slot.show,
-  .quotient-slot.show-rem {
+  .quotient-slot.show-rem,
+  .quotient-slot.show-raw {
     font-size: 1.15rem;
   }
 

@@ -12,12 +12,12 @@ test.describe('walkthrough nav (dev server)', () => {
 
   test('next advances the step counter and disables at the last step', async ({ page }) => {
     await page.getByLabel('Next step').click();
-    await expect(page.locator('.step-counter')).toHaveText('2 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('2 / 6');
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       await page.getByLabel('Next step').click();
     }
-    await expect(page.locator('.step-counter')).toHaveText('5 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('6 / 6');
     await expect(page.getByLabel('Next step')).toBeDisabled();
     await expect(page.getByLabel('Previous step')).toBeEnabled();
   });
@@ -28,9 +28,9 @@ test.describe('walkthrough nav (dev server)', () => {
     await page.locator('body').focus();
 
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('.step-counter')).toHaveText('2 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('2 / 6');
 
     await page.keyboard.press('ArrowLeft');
-    await expect(page.locator('.step-counter')).toHaveText('1 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('1 / 6');
   });
 });

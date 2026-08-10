@@ -8,7 +8,7 @@ test.describe('input form (dev server)', () => {
   test('loads with the default 5428 ÷ 35 problem solved', async ({ page }) => {
     await expect(page.locator('#dividend-input')).toHaveValue('5428');
     await expect(page.locator('#divisor-input')).toHaveValue('35');
-    await expect(page.locator('.step-counter')).toHaveText('1 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('1 / 6');
   });
 
   test('rejects an empty dividend and keeps the previous problem on screen', async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe('input form (dev server)', () => {
 
     await expect(page.locator('#dividend-error')).toHaveText('Enter a dividend.');
     await expect(page.locator('#dividend-input')).toHaveAttribute('aria-invalid', 'true');
-    await expect(page.locator('.step-counter')).toHaveText('1 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('1 / 6');
   });
 
   test('rejects an empty divisor and keeps the previous problem on screen', async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe('input form (dev server)', () => {
     await page.getByRole('button', { name: 'Solve' }).click();
 
     await expect(page.locator('#divisor-error')).toHaveText('Enter a divisor.');
-    await expect(page.locator('.step-counter')).toHaveText('1 / 5');
+    await expect(page.locator('.step-counter')).toHaveText('1 / 6');
   });
 
   test('reports both field errors together when both inputs are invalid', async ({ page }) => {

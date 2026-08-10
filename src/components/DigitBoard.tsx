@@ -49,17 +49,23 @@ export default function DigitBoard({ digits, step, onBack, onNext, isFirst, isLa
         <hr className="digit-divider" />
 
         <div className="quotient-row">
-          {step.quotientDigits.map((value, i) => (
-            <div key={i} className={`quotient-slot${value !== null ? ' show' : ''}`}>
-              {value !== null ? value : quotientLabels[i]}
-            </div>
-          ))}
+          {step.quotientDigits.map((value, i) => {
+            const isRaw = step.phase === 'raw' && step.active.includes(i)
+            const tone = value === null ? '' : isRaw ? ' show-raw' : ' show'
+            return (
+              <div key={i} className={`quotient-slot${tone}`}>
+                {value !== null ? value : quotientLabels[i]}
+              </div>
+            )
+          })}
           <div className={`quotient-slot${step.r !== null ? ' show-rem' : ''}`}>
             {step.r !== null ? step.r : 'R'}
           </div>
         </div>
 
-        <div className={`carry-badge${step.carry !== null ? ' show' : ''}`}>
+        <div
+          className={`carry-badge${step.carry !== null ? ' show' : ''}${step.phase === 'raw' ? ' show-raw' : ''}`}
+        >
           carry → {step.carry ?? 0}
         </div>
       </div>
