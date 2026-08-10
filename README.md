@@ -1,5 +1,7 @@
 # Vedic Maths Algorithms
 
+[![Build and Test](https://github.com/amitd291/vedic-maths-algorithms/actions/workflows/build.yml/badge.svg)](https://github.com/amitd291/vedic-maths-algorithms/actions/workflows/build.yml)
+
 An interactive, step-by-step visualisation of Vedic Mathematics algorithms,
 built with React + TypeScript + Vite.
 
