@@ -144,7 +144,7 @@ export function computeSteps(dividend: number, divisor: number): Step[] {
   }
 
   const steps: Step[] = []
-  const quotientDigits: (number | null)[] = new Array(quotientSlotCount).fill(null)
+  const quotientDigits: (number | null)[] = Array.from({ length: quotientSlotCount }, () => null)
 
   // Setup step
   steps.push({
