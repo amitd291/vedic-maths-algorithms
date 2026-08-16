@@ -92,6 +92,9 @@ function BaseMethodPane() {
 
   return (
     <>
+      <div className="problem-badge-row">
+        <span className="problem-badge">{BASE_DIVIDEND} ÷ {BASE_DIVISOR}</span>
+      </div>
       <BaseDivisorCard base={base} difference={difference} />
       <BaseDigitBoard
         step={steps[cur]}
