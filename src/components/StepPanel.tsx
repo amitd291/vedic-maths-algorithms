@@ -1,8 +1,8 @@
-import type { Step } from '../types'
+import type { StepBase } from '../types'
 import { CalcLineView } from './CalcPrimitives'
 
 interface StepPanelProps {
-  steps: Step[]
+  steps: StepBase[]
   cur: number
 }
 

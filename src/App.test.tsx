@@ -54,4 +54,45 @@ describe('App', () => {
     // still showing the previous (default) problem, not a crash
     expect(screen.getByText('1 / 6')).toBeInTheDocument()
   })
+
+  describe('Base Method pane', () => {
+    function switchToBaseMethod() {
+      fireEvent.click(screen.getByLabelText('Open method menu'))
+      fireEvent.click(screen.getByRole('tab', { name: /Base Method/ }))
+    }
+
+    it('renders the 123 ÷ 9 walkthrough on switching methods', () => {
+      render(<App />)
+      switchToBaseMethod()
+
+      expect(screen.getByText('Setup')).toBeInTheDocument()
+      expect(screen.getByText('1 / 6')).toBeInTheDocument()
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('10')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('1')
+    })
+
+    it('steps through to the verified remainder', () => {
+      render(<App />)
+      switchToBaseMethod()
+
+      for (let i = 0; i < 5; i++) {
+        fireEvent.click(screen.getByLabelText('Next step'))
+      }
+
+      expect(screen.getByText('6 / 6')).toBeInTheDocument()
+      expect(screen.getByText('Step 5 — remainder')).toBeInTheDocument()
+      expect(screen.getByText('Verify: 13 × 9 + 6 = 123 ✓')).toBeInTheDocument()
+      expect(screen.getByLabelText('Next step')).toBeDisabled()
+    })
+
+    it('switching back to Dhvajanka restores its own walkthrough', () => {
+      render(<App />)
+      switchToBaseMethod()
+      fireEvent.click(screen.getByLabelText('Open method menu'))
+      fireEvent.click(screen.getByRole('tab', { name: /Dhvajanka/ }))
+
+      expect(screen.getByLabelText('Dividend')).toHaveValue(5428)
+      expect(screen.getByText('1 / 6')).toBeInTheDocument()
+    })
+  })
 })

@@ -392,6 +392,10 @@ body {
   color: var(--blue);
 }
 
+.divisor-digit-diff {
+  color: var(--blue);
+}
+
 .divisor-separator {
   width: 1px;
   height: 48px;
@@ -413,6 +417,121 @@ body {
 
 .digit-board-cols {
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* ---------- Base Method board (LHS/RHS column layout) ---------- */
+
+.board-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: max-content;
+  margin: 0 auto;
+}
+
+.board-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 52px;
+}
+
+.board-col.rhs-first {
+  padding-left: 0.75rem;
+  margin-left: 0.75rem;
+  border-left: 2px solid var(--text3);
+}
+
+.board-connector {
+  flex: none;
+  width: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+}
+
+.connector-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.connector-arrow.show {
+  opacity: 1;
+}
+
+.connector-arrow svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--amber);
+}
+
+.col-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text3);
+}
+
+.contributions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.contribution-chip {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border-radius: 6px;
+  padding: 0.1rem 0.5rem;
+}
+
+.contribution-chip.placeholder {
+  visibility: hidden;
+}
+
+.col-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--border);
+  visibility: hidden;
+}
+
+.col-divider.show {
+  visibility: visible;
+}
+
+.total-slot {
+  width: 52px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text3);
+  visibility: hidden;
+}
+
+.total-slot.show.lhs {
+  visibility: visible;
+  color: var(--green);
+}
+
+.total-slot.show.rhs {
+  visibility: visible;
+  color: var(--blue);
 }
 
 .arrow-btn {
@@ -730,8 +849,15 @@ body {
 
   .digit-box,
   .quotient-slot,
-  .arrow-btn {
+  .arrow-btn,
+  .board-col,
+  .total-slot {
     width: 44px;
+  }
+
+  .digit-box,
+  .quotient-slot,
+  .arrow-btn {
     height: 44px;
     font-size: 1.15rem;
   }
@@ -739,6 +865,11 @@ body {
   .arrow-btn svg {
     width: 18px;
     height: 18px;
+  }
+
+  .board-connector {
+    width: 26px;
+    padding-top: 52px;
   }
 
   .quotient-slot.show,

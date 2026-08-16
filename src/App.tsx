@@ -3,6 +3,9 @@ import Header from './components/Header'
 import MethodNav, { type Method } from './components/MethodNav'
 import DivisorCard from './components/DivisorCard'
 import DigitBoard from './components/DigitBoard'
+import BaseDivisorCard from './components/BaseDivisorCard'
+import BaseDigitBoard from './components/BaseDigitBoard'
+import BaseMethodRules from './components/BaseMethodRules'
 import StepPanel from './components/StepPanel'
 import NavControls from './components/NavControls'
 import MethodRules from './components/MethodRules'
@@ -10,6 +13,7 @@ import InputForm from './components/InputForm'
 import ErrorBanner from './components/ErrorBanner'
 import Footer from './components/Footer'
 import { computeSteps } from './lib/computeSteps'
+import { computeBaseSteps, nearestBase } from './lib/computeBaseSteps'
 import type { Step } from './types'
 
 interface Problem {
@@ -74,15 +78,32 @@ function DhvajankaPane() {
   )
 }
 
+const BASE_DIVIDEND = 123
+const BASE_DIVISOR = 9
+
 function BaseMethodPane() {
+  const steps = useMemo(() => computeBaseSteps(BASE_DIVIDEND, BASE_DIVISOR), [])
+  const base = nearestBase(BASE_DIVISOR)
+  const difference = base - BASE_DIVISOR
+  const [cur, setCur] = useState(0)
+
+  const total = steps.length
+  const clamp = (i: number) => Math.min(Math.max(i, 0), total - 1)
+
   return (
-    <div className="panel">
-      <div className="panel-title">Base Method / Paravartya</div>
-      <div className="placeholder-body">
-        <span className="placeholder-badge">Coming soon</span>
-        <p>The column/diagonal walkthrough board lands in a future iteration.</p>
-      </div>
-    </div>
+    <>
+      <BaseDivisorCard base={base} difference={difference} />
+      <BaseDigitBoard
+        step={steps[cur]}
+        onBack={() => setCur((c) => clamp(c - 1))}
+        onNext={() => setCur((c) => clamp(c + 1))}
+        isFirst={cur === 0}
+        isLast={cur === total - 1}
+      />
+      <NavControls cur={cur} total={total} onDot={(i) => setCur(clamp(i))} />
+      <StepPanel steps={steps} cur={cur} />
+      <BaseMethodRules />
+    </>
   )
 }
 

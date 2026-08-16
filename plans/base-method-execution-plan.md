@@ -20,18 +20,13 @@ React 19 + TypeScript, single-file build, Vitest.
 
 ---
 
-## Iteration B — v1 hardcoded example (123 ÷ 9) ⬜ next
+## Iteration B — v1 hardcoded example (123 ÷ 9) ✅
 
-Spec: build plan Iteration B. No dedicated mockup — the closest visual
-reference is `plans/mockups/iteration-c-generic-logic-v1.html`; B only
-needs its single-digit-difference subset (no fan-out connector, no
-carry cascade).
-
-- [ ] `computeSteps` for this method (column/cross-multiplication engine)
-- [ ] New board component (LHS/RHS split, diagonal contribution indicator,
+- [x] `computeSteps` for this method (column/cross-multiplication engine)
+- [x] New board component (LHS/RHS split, diagonal contribution indicator,
       running column sum)
-- [ ] New divisor-card equivalent (`base` / `difference`)
-- [ ] Reference section: Base Method rules
+- [x] New divisor-card equivalent (`base` / `difference`)
+- [x] Reference section: Base Method rules
 
 ---
 
@@ -62,6 +57,12 @@ fan-out connector, right-to-left carry, per-column baseline alignment).
 - [ ] Contribution chips render sign-aware (`+7` / `−31`), not a hardcoded `+`
 - [ ] Method rules gain the multi-digit-difference/carry-cascade bullet
       and the Paravartya normalization bullet
+- [ ] Test coverage pass: unit tests for the new engine paths (fan-out,
+      RHS carry cascade, two-pass overflow, Paravartya sign flip); component
+      tests for sidebar open/close via scrim click and arrow-key
+      (`ArrowLeft`/`ArrowRight`) board navigation (gap noted after iteration
+      B, deferred here); e2e coverage for the Base Method pane (iteration B
+      only has the Dhvajanka dist-bundle smoke test)
 
 ---
 
