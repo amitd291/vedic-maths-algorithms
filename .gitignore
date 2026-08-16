@@ -26,3 +26,7 @@ e2e/screenshots
 *.njsproj
 *.sln
 *.sw?
+
+# Misc
+plans/mockups
+plans/scripts

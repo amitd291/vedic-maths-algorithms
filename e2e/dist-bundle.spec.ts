@@ -11,6 +11,6 @@ const distIndex = path.join(
 
 test('offline dist/index.html loads over file://', async ({ page }) => {
   await page.goto(`file://${distIndex}`);
-  await expect(page.getByRole('heading', { name: 'Dhvajanka Division' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Vedic Maths — Division Methods' })).toBeVisible();
   await page.screenshot({ path: 'e2e/screenshots/dist-bundle.png', fullPage: true });
 });

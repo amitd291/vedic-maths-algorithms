@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Header from './components/Header'
+import MethodNav, { type Method } from './components/MethodNav'
 import DivisorCard from './components/DivisorCard'
 import DigitBoard from './components/DigitBoard'
 import StepPanel from './components/StepPanel'
@@ -26,7 +27,7 @@ function solve(dividend: number, divisor: number): { problem: Problem | null; er
   }
 }
 
-export default function App() {
+function DhvajankaPane() {
   const initial = useMemo(() => solve(5428, 35), [])
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
@@ -47,8 +48,7 @@ export default function App() {
   const digits = problem ? String(problem.dividend).split('').map(Number) : []
 
   return (
-    <div className="container">
-      <Header />
+    <>
       <InputForm onSolve={handleSolve} />
 
       {error && <ErrorBanner message={error} />}
@@ -70,7 +70,36 @@ export default function App() {
       )}
 
       <MethodRules />
-      <Footer />
+    </>
+  )
+}
+
+function BaseMethodPane() {
+  return (
+    <div className="panel">
+      <div className="panel-title">Base Method / Paravartya</div>
+      <div className="placeholder-body">
+        <span className="placeholder-badge">Coming soon</span>
+        <p>The column/diagonal walkthrough board lands in a future iteration.</p>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  const [method, setMethod] = useState<Method>('dhvajanka')
+
+  return (
+    <div className="app-shell">
+      <MethodNav method={method} onSelect={setMethod} />
+
+      <main className="content">
+        <div className="content-inner">
+          <Header />
+          {method === 'dhvajanka' ? <DhvajankaPane /> : <BaseMethodPane />}
+          <Footer />
+        </div>
+      </main>
     </div>
   )
 }

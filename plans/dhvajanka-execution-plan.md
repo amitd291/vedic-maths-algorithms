@@ -117,7 +117,7 @@ Defects found in post-v2 code review and manual testing.
 
 ---
 
-## Iteration 3 — extended inputs (v3) ⬜ deferred
+## Iteration X — extended inputs (vX) ⬜ deferred
 
 6-digit dividend, 3-digit divisor.
 
@@ -138,15 +138,8 @@ Detailed tasks TBD — to be scoped once v2 lands.
 - How the e2e testing skill gets authored is still undecided (no
   `run-skill-generator` skill exists on this machine; `skill-creator` is cached
   but not installed). Parked — the specs themselves can be written without it.
-- App chrome (`index.html` title, `Header.tsx` h1/subtitle, `Footer.tsx`) and
-  `execution-plan.md`'s own title are still hardcoded to "Dhvajanka Division",
-  from when this was the only method. README's intro was generalized already
-  (see git history); the rest needs the same treatment once a second
-  algorithm is added — likely needs an app-level title + method selector,
-  with `e2e/dist-bundle.spec.ts`'s heading assertion updated in lockstep.
-  Also consider renaming `package.json`'s `name` field
-  (`vedic-maths-dhvajanka`) to something generic, also double check
-  the name used build and other commands (vedic-maths-dhvajanka@0.0.0 build
+- App-wide chrome/title/rename work (needed now that a second method is
+  being added) is tracked in `base-method-execution-plan.md`, not here.
 
 ---
 
