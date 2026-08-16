@@ -84,7 +84,7 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
       const idx = i + 1 + k
       const signedDigit = sign * magnitudeDigits[k]
       incoming[idx] += signedDigit
-      contributionsByCol[idx].push(signedDigit)
+      contributionsByCol[idx][i] = signedDigit
     }
   }
 
@@ -95,7 +95,7 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   for (let k = rhsWidth - 1; k >= 0; k--) {
     const colIdx = lhsWidth + k
     const hadCarryIn = carry !== 0
-    const terms = [digits[colIdx], ...contributionsByCol[colIdx]]
+    const terms = [digits[colIdx], ...contributionsByCol[colIdx].filter((v) => v !== undefined)]
     if (hadCarryIn) terms.push(carry)
     const value = terms.reduce((a, b) => a + b, 0)
 
@@ -125,7 +125,9 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   if (carry !== 0) {
     throw new Error('carry into an already-finalized LHS digit is not yet supported (iteration D)')
   }
-  rhsLines.reverse()
+  // Keep rhsLines in the order columns were summed (rightmost first) — that's
+  // the order the carry actually flows, and reversing it to left-to-right
+  // reading order hides where each carry came from.
 
   const rhsTotal = rhsDigits.reduce((acc, d) => acc * 10 + d, 0)
   const preCorrectionQuotient = lhsTotals.reduce((acc, d) => acc * 10 + d, 0)
@@ -211,7 +213,10 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
     const sign = Math.sign(contribution)
     const magnitudeDigits = splitDigits(Math.abs(contribution), rhsWidth)
     for (let k = 0; k < rhsWidth; k++) {
-      cols[i + 1 + k].contributions.push(sign * magnitudeDigits[k])
+      // Indexed (not pushed) by source LHS digit i, so a column's chip row
+      // lines up with every other column touched by that same multiply step,
+      // even when this column doesn't receive a contribution from an earlier digit.
+      cols[i + 1 + k].contributions[i] = sign * magnitudeDigits[k]
     }
 
     const connectors = Array(n - 1).fill(false)

@@ -78,8 +78,8 @@ function DhvajankaPane() {
   )
 }
 
-const BASE_DIVIDEND = 123
-const BASE_DIVISOR = 9
+const BASE_DIVIDEND = 10030
+const BASE_DIVISOR = 827
 
 function BaseMethodPane() {
   const steps = useMemo(() => computeBaseMethodSteps(BASE_DIVIDEND, BASE_DIVISOR), [])

@@ -61,27 +61,27 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('tab', { name: /Base Method/ }))
     }
 
-    it('renders the 123 ÷ 9 walkthrough on switching methods', () => {
+    it('renders the 10030 ÷ 827 walkthrough on switching methods', () => {
       render(<App />)
       switchToBaseMethod()
 
       expect(screen.getByText('Setup')).toBeInTheDocument()
-      expect(screen.getByText('1 / 6')).toBeInTheDocument()
-      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('10')
-      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('1')
+      expect(screen.getByText('1 / 7')).toBeInTheDocument()
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('1000')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('173')
     })
 
     it('steps through to the verified remainder', () => {
       render(<App />)
       switchToBaseMethod()
 
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         fireEvent.click(screen.getByLabelText('Next step'))
       }
 
-      expect(screen.getByText('6 / 6')).toBeInTheDocument()
-      expect(screen.getByText('Step 5 — remainder')).toBeInTheDocument()
-      expect(screen.getByText('Verify: 13 × 9 + 6 = 123 ✓')).toBeInTheDocument()
+      expect(screen.getByText('7 / 7')).toBeInTheDocument()
+      expect(screen.getByText('Step 6 — compare and normalize')).toBeInTheDocument()
+      expect(screen.getByText('Verify: 12 × 827 + 106 = 10030 ✓')).toBeInTheDocument()
       expect(screen.getByLabelText('Next step')).toBeDisabled()
     })
 
@@ -100,10 +100,10 @@ describe('App', () => {
       switchToBaseMethod()
 
       fireEvent.keyDown(window, { key: 'ArrowRight' })
-      expect(screen.getByText('2 / 6')).toBeInTheDocument()
+      expect(screen.getByText('2 / 7')).toBeInTheDocument()
 
       fireEvent.keyDown(window, { key: 'ArrowLeft' })
-      expect(screen.getByText('1 / 6')).toBeInTheDocument()
+      expect(screen.getByText('1 / 7')).toBeInTheDocument()
     })
   })
 

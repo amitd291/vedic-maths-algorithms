@@ -26,7 +26,7 @@ export type BaseMethodColumnKind = 'lhs' | 'rhs'
 export interface BaseMethodColumn {
   kind: BaseMethodColumnKind
   digit: number // original dividend digit at this column
-  contributions: number[] // contributions received so far, revealed progressively
+  contributions: number[] // indexed by source LHS digit (row = Q1, Q2, …); holes where that digit's multiply never reached this column
   total: number | null // revealed once this column is finalized
   colState: '' | 'active' | 'done'
 }
