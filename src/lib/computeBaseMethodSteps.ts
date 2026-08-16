@@ -19,12 +19,13 @@ export function nearestBase(divisor: number): number {
   return upper - divisor <= divisor - lower ? upper : lower
 }
 
-interface ColumnResult {
-  kind: 'lhs' | 'rhs'
-  digit: number
-  incoming: number // sum of contributions received before this column is finalized
-  total: number // digit + incoming; the finalized quotient digit (lhs) or remainder (rhs, last column)
-  contribution: number | null // total × difference, placed into the next column; null on the last column
+/** Splits |magnitude| into exactly `width` decimal digits, zero-padded on the left. */
+function splitDigits(magnitude: number, width: number): number[] {
+  const str = String(magnitude).padStart(width, '0')
+  if (str.length > width) {
+    throw new Error('contribution too large for this base is not yet supported (iteration D)')
+  }
+  return str.split('').map(Number)
 }
 
 function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
@@ -35,10 +36,15 @@ function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
  * Computes the Base Method / Paravartya division walkthrough for
  * `dividend ÷ divisor`, using the nearest power of 10 as the base.
  *
- * Scope note (iteration B): only single-digit `difference` (|base − divisor|
- * ≤ 9) with no LHS column carry and no RHS overflow correction is supported —
- * those are iteration C/D work. Anything outside that throws rather than
- * producing an incorrect walkthrough.
+ * Supports a multi-digit (and possibly negative, i.e. Paravartya) `difference`:
+ * each LHS digit's contribution fans out across every RHS column, and the RHS
+ * columns are summed right to left with carry/borrow, followed by a
+ * single-subtraction overflow/negative-remainder correction when needed.
+ *
+ * Scope note (iteration C): a carry cascading back into an already-finalized
+ * LHS digit (redo-on-carry), and a corrected quotient that needs an extra
+ * leading digit, are iteration D work — both throw rather than producing an
+ * incorrect walkthrough.
  */
 export function computeBaseMethodSteps(dividend: number, divisor: number): BaseMethodStep[] {
   if (!Number.isInteger(dividend) || dividend <= 0) {
@@ -50,9 +56,6 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
 
   const base = nearestBase(divisor)
   const difference = base - divisor
-  if (Math.abs(difference) > 9) {
-    throw new Error('multi-digit difference is not yet supported (iteration C)')
-  }
 
   const rhsWidth = String(base).length - 1
   const digits = String(dividend).split('').map(Number)
@@ -62,48 +65,99 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   }
   const lhsWidth = n - rhsWidth
 
-  // First pass: compute the arithmetic for every column, left to right.
-  const incomingByCol: number[] = Array(n).fill(0)
-  const results: ColumnResult[] = []
+  const incoming: number[] = Array(n).fill(0)
+  const contributionsByCol: number[][] = Array.from({ length: n }, () => [])
+  const lhsTotals: number[] = []
 
-  for (let i = 0; i < n; i++) {
-    const isLast = i === n - 1
-    const kind = i < lhsWidth ? 'lhs' : 'rhs'
-    const incoming = incomingByCol[i]
-    const total = digits[i] + incoming
-
-    if (!isLast && (total >= 10 || total < 0)) {
-      throw new Error(`column ${i + 1} carry/overflow is not yet supported (iteration D)`)
+  // Pass 1a: finalize each LHS digit and fan its contribution across every RHS column.
+  for (let i = 0; i < lhsWidth; i++) {
+    const total = digits[i] + incoming[i]
+    if (Math.abs(total) > 9) {
+      throw new Error(`column ${i + 1} carry into an already-finalized column is not yet supported (iteration D)`)
     }
-    if (isLast && (total < 0 || total >= divisor)) {
-      throw new Error('remainder normalization is not yet supported (iteration C)')
-    }
+    lhsTotals.push(total)
 
-    let contribution: number | null = null
-    if (!isLast) {
-      contribution = total * difference
-      incomingByCol[i + 1] += contribution
+    const contribution = total * difference
+    const sign = Math.sign(contribution)
+    const magnitudeDigits = splitDigits(Math.abs(contribution), rhsWidth)
+    for (let k = 0; k < rhsWidth; k++) {
+      const idx = i + 1 + k
+      const signedDigit = sign * magnitudeDigits[k]
+      incoming[idx] += signedDigit
+      contributionsByCol[idx].push(signedDigit)
     }
-
-    results.push({ kind, digit: digits[i], incoming, total, contribution })
   }
 
-  const quotient = Number(
-    results
-      .slice(0, lhsWidth)
-      .map((r) => r.total)
-      .join(''),
-  )
-  const remainder = results[n - 1].total
+  // Pass 1b: sum the RHS columns right to left, carrying/borrowing into the column to the left.
+  const rhsDigits: number[] = Array(rhsWidth).fill(0)
+  const rhsLines: CalcLine[] = []
+  let carry = 0
+  for (let k = rhsWidth - 1; k >= 0; k--) {
+    const colIdx = lhsWidth + k
+    const hadCarryIn = carry !== 0
+    const terms = [digits[colIdx], ...contributionsByCol[colIdx]]
+    if (hadCarryIn) terms.push(carry)
+    const value = terms.reduce((a, b) => a + b, 0)
+
+    let digitOut: number
+    let carryOut: number
+    if (value >= 10) {
+      carryOut = Math.floor(value / 10)
+      digitOut = value - carryOut * 10
+    } else if (value <= -10) {
+      carryOut = Math.ceil(value / 10)
+      digitOut = value - carryOut * 10
+    } else {
+      carryOut = 0
+      digitOut = value
+    }
+    rhsDigits[k] = digitOut
+
+    const carrySuffix =
+      carryOut !== 0 ? ` → write ${digitOut}, ${carryOut > 0 ? 'carry' : 'borrow'} ${Math.abs(carryOut)} left` : ''
+    rhsLines.push({
+      kind: 'calc',
+      label: `Sum column ${colIdx + 1}${hadCarryIn ? ' (with carry)' : ''}`,
+      value: `${terms.join(' + ')} = ${value}${carrySuffix}`,
+    })
+    carry = carryOut
+  }
+  if (carry !== 0) {
+    throw new Error('carry into an already-finalized LHS digit is not yet supported (iteration D)')
+  }
+  rhsLines.reverse()
+
+  const rhsTotal = rhsDigits.reduce((acc, d) => acc * 10 + d, 0)
+  const preCorrectionQuotient = lhsTotals.reduce((acc, d) => acc * 10 + d, 0)
+
+  let quotient = preCorrectionQuotient
+  let remainder = rhsTotal
+  let correctionDelta: 1 | -1 | 0 = 0
+  if (remainder >= divisor) {
+    remainder -= divisor
+    quotient += 1
+    correctionDelta = 1
+  } else if (remainder < 0) {
+    remainder += divisor
+    quotient -= 1
+    correctionDelta = -1
+  }
+  if (correctionDelta !== 0) {
+    const newLastDigit = lhsTotals[lhsWidth - 1] + correctionDelta
+    if (newLastDigit < 0 || newLastDigit > 9) {
+      throw new Error('correction cascading into an earlier LHS digit is not yet supported (iteration D)')
+    }
+  }
+
   if (quotient * divisor + remainder !== dividend) {
     throw new Error(`computeBaseMethodSteps self-check failed: ${quotient} × ${divisor} + ${remainder} !== ${dividend}`)
   }
 
-  // Second pass: narrate the steps, mutating a running column-state array
+  // Pass 2: narrate the steps, mutating a running column-state array
   // (finalized totals + placed contributions) that each step snapshots.
-  const cols: BaseMethodColumn[] = results.map((r) => ({
-    kind: r.kind,
-    digit: r.digit,
+  const cols: BaseMethodColumn[] = digits.map((d, i) => ({
+    kind: i < lhsWidth ? 'lhs' : 'rhs',
+    digit: d,
     contributions: [],
     total: null,
     colState: '',
@@ -129,46 +183,49 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
     ],
   })
 
-  for (let i = 0; i < n; i++) {
-    const r = results[i]
-    const isLast = i === n - 1
+  // LHS digits: finalize, then multiply and fan the contribution to the right.
+  for (let i = 0; i < lhsWidth; i++) {
+    const total = lhsTotals[i]
     const quotientLabel = `Q${subscript(i + 1)}`
 
-    // Finalize (bring down / sum) column i.
-    cols[i].total = r.total
+    cols[i].total = total
     cols[i].colState = 'active'
     stepNum += 1
 
     const finalizeLines: CalcLine[] =
       i === 0
-        ? [{ kind: 'calc', label: 'Bring down', value: `first LHS digit, ${r.digit}, as it is` }]
-        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${r.digit} + ${r.incoming} = ${r.total}` }]
-    finalizeLines.push({ kind: 'result', label: isLast ? 'Remainder' : quotientLabel, value: String(r.total) })
-    if (isLast) {
-      finalizeLines.push({
-        kind: 'note',
-        tone: 'success',
-        text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓`,
-      })
-    }
+        ? [{ kind: 'calc', label: 'Bring down', value: `first LHS digit, ${digits[0]}, as it is` }]
+        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${digits[i]} + ${incoming[i]} = ${total}` }]
+    finalizeLines.push({ kind: 'result', label: quotientLabel, value: String(total) })
 
     steps.push({
-      title: isLast
-        ? `Step ${stepNum} — remainder`
-        : `Step ${stepNum} — ${ORDINALS[i]} ${r.kind === 'lhs' ? 'LHS' : 'RHS'} digit`,
+      title: `Step ${stepNum} — ${ORDINALS[i]} LHS digit`,
       cols: cloneCols(cols),
       connectors: noConnectors,
       lines: finalizeLines,
     })
 
     cols[i].colState = 'done'
-    if (isLast) continue
 
-    // Multiply column i by the difference and place the contribution.
-    cols[i + 1].contributions.push(r.contribution!)
+    const contribution = total * difference
+    const sign = Math.sign(contribution)
+    const magnitudeDigits = splitDigits(Math.abs(contribution), rhsWidth)
+    for (let k = 0; k < rhsWidth; k++) {
+      cols[i + 1 + k].contributions.push(sign * magnitudeDigits[k])
+    }
+
     const connectors = Array(n - 1).fill(false)
-    connectors[i] = true
+    for (let k = 0; k < rhsWidth; k++) connectors[i + k] = true
     stepNum += 1
+
+    const multiplyNote =
+      rhsWidth === 1
+        ? { kind: 'note' as const, tone: 'warn' as const, text: `Write ${contribution} diagonally under column ${i + 2}.` }
+        : {
+            kind: 'note' as const,
+            tone: 'warn' as const,
+            text: `Difference has ${rhsWidth} digits (${magnitudeDigits.map((d) => (sign < 0 ? -d : d)).join(' · ')}) — write them diagonally under the next ${rhsWidth} columns.`,
+          }
 
     steps.push({
       title: `Step ${stepNum} — multiply ${quotientLabel} by the difference`,
@@ -178,9 +235,83 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
         {
           kind: 'calc',
           label: 'Multiply',
-          value: `${quotientLabel} × difference = ${r.total} × ${difference} = ${r.contribution}`,
+          value: `${quotientLabel} × difference = ${total} × ${difference} = ${contribution}`,
         },
-        { kind: 'note', tone: 'warn', text: `Write ${r.contribution} diagonally under column ${i + 2}.` },
+        multiplyNote,
+      ],
+    })
+  }
+
+  // RHS columns: one combined right-to-left sum step.
+  for (let k = 0; k < rhsWidth; k++) {
+    const colIdx = lhsWidth + k
+    cols[colIdx].total = rhsDigits[k]
+    cols[colIdx].colState = 'active'
+  }
+  stepNum += 1
+
+  const correctionNeeded = correctionDelta !== 0
+  const sumLines = [...rhsLines]
+  if (!correctionNeeded) {
+    sumLines.push({ kind: 'result', label: 'Remainder', value: String(remainder) })
+    sumLines.push({ kind: 'note', tone: 'success', text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓` })
+  } else {
+    sumLines.push({ kind: 'result', label: 'RHS total', value: String(rhsTotal) })
+  }
+
+  steps.push({
+    title: correctionNeeded ? `Step ${stepNum} — sum the RHS columns, right to left` : `Step ${stepNum} — remainder`,
+    cols: cloneCols(cols),
+    connectors: noConnectors,
+    lines: sumLines,
+  })
+
+  for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
+
+  // Optional correction step: RHS total ≥ divisor, or negative (Paravartya).
+  if (correctionNeeded) {
+    stepNum += 1
+
+    // The correction never cascades past the last LHS digit (guarded above),
+    // so redrawing it is safe. The corrected remainder can still outgrow
+    // rhsWidth (a Paravartya remainder can need more digits than the RHS had
+    // columns) — in that case leave the columns as-is; the text lines above
+    // and the result line below carry the true corrected value.
+    cols[lhsWidth - 1].total = lhsTotals[lhsWidth - 1] + correctionDelta
+    const remainderStr = String(remainder)
+    if (remainder >= 0 && remainderStr.length <= rhsWidth) {
+      const remainderDigits = remainderStr.padStart(rhsWidth, '0').split('').map(Number)
+      for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].total = remainderDigits[k]
+    }
+
+    const compareLine: CalcLine =
+      correctionDelta === 1
+        ? { kind: 'calc', label: 'Compare', value: `RHS total ${rhsTotal} ≥ divisor ${divisor}` }
+        : { kind: 'calc', label: 'Compare', value: `RHS total ${rhsTotal} is negative` }
+    const lastLhsLabel = `Q${subscript(lhsWidth)}`
+    const oldLastDigit = lhsTotals[lhsWidth - 1]
+    const correctLine: CalcLine =
+      correctionDelta === 1
+        ? {
+            kind: 'calc',
+            label: 'Correct',
+            value: `${rhsTotal} − ${divisor} = ${remainder}, and ${lastLhsLabel} = ${oldLastDigit} + 1 = ${oldLastDigit + 1}`,
+          }
+        : {
+            kind: 'calc',
+            label: 'Correct',
+            value: `${rhsTotal} + ${divisor} = ${remainder}, and ${lastLhsLabel} = ${oldLastDigit} − 1 = ${oldLastDigit - 1}`,
+          }
+
+    steps.push({
+      title: `Step ${stepNum} — compare and normalize`,
+      cols: cloneCols(cols),
+      connectors: noConnectors,
+      lines: [
+        compareLine,
+        correctLine,
+        { kind: 'result', label: 'Quotient · Remainder', value: `${quotient} · ${remainder}` },
+        { kind: 'note', tone: 'success', text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓` },
       ],
     })
   }

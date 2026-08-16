@@ -94,5 +94,35 @@ describe('App', () => {
       expect(screen.getByLabelText('Dividend')).toHaveValue(5428)
       expect(screen.getByText('1 / 6')).toBeInTheDocument()
     })
+
+    it('steps forward and back with the ArrowRight/ArrowLeft keys', () => {
+      render(<App />)
+      switchToBaseMethod()
+
+      fireEvent.keyDown(window, { key: 'ArrowRight' })
+      expect(screen.getByText('2 / 6')).toBeInTheDocument()
+
+      fireEvent.keyDown(window, { key: 'ArrowLeft' })
+      expect(screen.getByText('1 / 6')).toBeInTheDocument()
+    })
+  })
+
+  describe('sidebar navigation', () => {
+    it('opens via the menu button and closes via a scrim click', () => {
+      const { container } = render(<App />)
+      const menuButton = screen.getByLabelText('Open method menu')
+      const scrim = container.querySelector('.sidebar-scrim')!
+
+      expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+      expect(scrim).not.toHaveClass('open')
+
+      fireEvent.click(menuButton)
+      expect(menuButton).toHaveAttribute('aria-expanded', 'true')
+      expect(scrim).toHaveClass('open')
+
+      fireEvent.click(scrim)
+      expect(menuButton).toHaveAttribute('aria-expanded', 'false')
+      expect(scrim).not.toHaveClass('open')
+    })
   })
 })

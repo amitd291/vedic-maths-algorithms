@@ -33,34 +33,28 @@ React 19 + TypeScript, single-file build, Vitest.
 
 ---
 
-## Iteration C — Generic logic & Paravartya sign variant (10030 ÷ 827 or 1693 ÷ 131) ⬜
+## Iteration C — Generic logic & Paravartya sign variant (10030 ÷ 827 or 1693 ÷ 131) ✅
 
 Spec: build plan Iteration C. Mockup:
 `plans/mockups/iteration-c-generic-logic-v1.html` (10030 ÷ 827 walkthrough —
 fan-out connector, right-to-left carry, per-column baseline alignment).
 
-- [ ] Generalize `computeSteps` for a multi-digit `difference` (product
-      fans out across several columns to the right)
-- [ ] Generalize the board's connector into a fan-out (one column → several
-      columns to the right)
-- [ ] Column running-totals stay on one visual baseline regardless of how
-      many contributions a column holds that step: since `computeSteps`
-      returns the full `Step[]` upfront, take `MAX_CONTRIBUTIONS` (the
-      most any column holds across the whole sequence) once, and render
-      every column with that many contribution slots — real chips plus
-      hidden same-sized placeholders for the rest. A `min-height` guess is
-      not sufficient (it's a floor, not a fixed size: a column with more
-      chips than the guess grows past it while a column with fewer chips
-      stays pinned, drifting the totals apart) — see mockup fix in
-      `plans/mockups/iteration-c-generic-logic-v1.html`
-- [ ] Right-to-left carry cascade across RHS columns
-- [ ] Two-pass RHS overflow correction (RHS total ≥ divisor)
-- [ ] Confirm engine/board handle the Paravartya sign flip and
+- [x] Generalize `computeBaseMethodSteps` for a multi-digit `difference`
+      (product fans out across several columns to the right)
+- [x] Generalize the board's connector into a fan-out (one column → several
+      columns to the right) — already generic from iteration B (per-gap
+      `connectors[]` booleans); no board change needed
+- [x] Column running-totals stay on one visual baseline regardless of how
+      many contributions a column holds that step (already implemented in
+      iteration B via `MAX_CONTRIBUTIONS`; carried forward unchanged)
+- [x] Right-to-left carry cascade across RHS columns
+- [x] Two-pass RHS overflow correction (RHS total ≥ divisor)
+- [x] Confirm engine/board handle the Paravartya sign flip and
       negative-remainder normalization
-- [ ] Contribution chips render sign-aware (`+7` / `−31`), not a hardcoded `+`
-- [ ] Method rules gain the multi-digit-difference/carry-cascade bullet
+- [x] Contribution chips render sign-aware (`+7` / `−31`), not a hardcoded `+`
+- [x] Method rules gain the multi-digit-difference/carry-cascade bullet
       and the Paravartya normalization bullet
-- [ ] Test coverage pass: unit tests for the new engine paths (fan-out,
+- [x] Test coverage pass: unit tests for the new engine paths (fan-out,
       RHS carry cascade, two-pass overflow, Paravartya sign flip); component
       tests for sidebar open/close via scrim click and arrow-key
       (`ArrowLeft`/`ArrowRight`) board navigation (gap noted after iteration
@@ -98,6 +92,19 @@ correction — this iteration covers only what those examples don't exercise.
       before wiring dynamic inputs
 - [ ] Unit tests for the LHS-carry-cascade and full-range remainder-correction
       paths
+- [ ] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
+      `Header`/`Footer`, picks the pane); extract `DhvajankaPane` and
+      `BaseMethodPane` out of `App.tsx` into their own components
+      (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
+      state/logic unchanged. Default pane on load stays Dhvajanka (no
+      behavior change, just relocated code)
+- [ ] `App.test.tsx` mocks the two page components and covers routing only
+      (default pane, menu-driven switch, per-pane state preserved across
+      switches); move the existing step-walkthrough/assertion coverage into
+      dedicated `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files
+      with extensive coverage there instead
+- [ ] Thin the e2e specs down to simple happy/unhappy-path smoke checks now
+      that the component tests carry the detailed coverage
 
 ---
 
@@ -115,6 +122,9 @@ Spec: build plan Iteration E.
 
 Spec: build plan Iteration F. Speculative — no committed timeline.
 
+- [ ] Implement divisor-scaling (multiply the divisor up to a nearby base
+      multiple, e.g. 35×3=105 or 35×2=70) as a real engine path, not just a
+      discussion point: 5428 ÷ 35, see build plan "Examples with steps"
 - [ ] Optimize base choice instead of an arbitrary tie-break (e.g. via
       multiplying/scaling techniques rather than only nearest-power-of-10)
 - [ ] Where multiple approaches are genuinely viable, prompt the user to

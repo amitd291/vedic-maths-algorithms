@@ -11,10 +11,20 @@ export default function BaseMethodRules() {
         </li>
         <li>Bring down each LHS digit left to right; it becomes (or contributes to) the quotient.</li>
         <li>
-          Multiply each column&rsquo;s total by the difference and write the product diagonally
-          under the next column to the right.
+          Multiply each LHS digit&rsquo;s total by the difference. When the difference has several
+          digits, write each digit diagonally under its own column, so one LHS digit can fan out
+          across several columns to the right at once.
         </li>
-        <li>Sum each column top-to-bottom to get the next LHS digit or a remainder component.</li>
+        <li>
+          Sum the RHS columns right to left, carrying overflow into the column to the left, to get
+          the remainder.
+        </li>
+        <li>
+          If the remainder is ≥ the divisor or negative, correct by ∓1 on the quotient and ±divisor
+          on the remainder. A negative (Paravartya, base &lt; divisor) difference can leave a
+          signed intermediate quotient digit; combine the signed digits by place value to get the
+          final quotient.
+        </li>
       </ol>
     </section>
   )

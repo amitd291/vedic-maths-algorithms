@@ -89,8 +89,9 @@ See `base-method-execution-plan.md` Iteration E for the full checklist.
 ## Iteration F — smarter base selection (future)
 
 Today, any valid nearest base is fine, chosen arbitrarily on a tie. Future:
-optimize the choice (e.g. via multiplying/scaling techniques instead of
-just nearest-power-of-10), and where more than one approach is genuinely
+optimize the choice, including scaling the divisor to a nearby multiple of a
+base (e.g. 5428 ÷ 35 via 35×3=105, see "Examples with steps" above) instead
+of just nearest-power-of-10, and where more than one approach is genuinely
 viable, prompt the user to pick. See `base-method-execution-plan.md`
 Iteration F.
 
@@ -236,7 +237,7 @@ Quotient = 12, Remainder = 106 — same answer as the standard method above,
 confirming the substituted digits are self-correcting. Kept only as
 reference; the substitution technique itself stays out of scope (see below).
 
-**5428 ÷ 35 (advanced variant: scale the divisor to a nearby multiple of a base, out of scope)**
+**5428 ÷ 35 (advanced variant: scale the divisor to a nearby multiple of a base — in scope for iteration F)**
 
 35 isn't close to any power of 10, so this trick divides by a convenient
 multiple of 35 instead (105 = 35×3, or 70 = 35×2), then rescales the
@@ -280,6 +281,9 @@ useful as a cross-check between methods but not itself a planned iteration.
 
 ## Out of scope (not planned)
 
-- Substitution method (ch.16 section (b): scaling the divisor to approximate
-  a base) — noted in the book as an alternative technique, not core to the
-  algorithm; revisit only if requested.
+- Substitution method proper (ch.16 section (b): re-deriving the difference
+  digits via a substituted scaled value, e.g. `173` → `2,−3,3` for 10030 ÷
+  827) — noted in the book as an alternative technique, not core to the
+  algorithm; revisit only if requested. Scaling the divisor to a nearby
+  multiple of a base (5428 ÷ 35 above) is a related but separate technique,
+  now in scope under iteration F.

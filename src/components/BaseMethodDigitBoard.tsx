@@ -51,7 +51,7 @@ export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, is
                     const value = col.contributions[j]
                     return (
                       <span key={j} className={`contribution-chip${value === undefined ? ' placeholder' : ''}`}>
-                        {value === undefined ? '0' : `+${value}`}
+                        {value === undefined ? '0' : value < 0 ? `−${-value}` : `+${value}`}
                       </span>
                     )
                   })}
