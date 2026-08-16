@@ -22,15 +22,18 @@ React 19 + TypeScript, single-file build, Vitest.
 
 ## Iteration B — v1 hardcoded example (123 ÷ 9) ✅
 
-- [x] `computeSteps` for this method (column/cross-multiplication engine)
+- [x] `computeBaseMethodSteps` for this method (column/cross-multiplication engine)
 - [x] New board component (LHS/RHS split, diagonal contribution indicator,
       running column sum)
 - [x] New divisor-card equivalent (`base` / `difference`)
 - [x] Reference section: Base Method rules
+- [x] Renamed `computeBaseSteps`/`BaseColumn(Kind)`/`BaseDigitBoard`/`BaseDivisorCard`
+      to their `BaseMethod`-prefixed forms to avoid confusion with `StepBase`
+      (base-interface) naming
 
 ---
 
-## Iteration C — Generic logic & Paravartya sign variant (10030 ÷ 827, 1693 ÷ 131) ⬜
+## Iteration C — Generic logic & Paravartya sign variant (10030 ÷ 827 or 1693 ÷ 131) ⬜
 
 Spec: build plan Iteration C. Mockup:
 `plans/mockups/iteration-c-generic-logic-v1.html` (10030 ÷ 827 walkthrough —

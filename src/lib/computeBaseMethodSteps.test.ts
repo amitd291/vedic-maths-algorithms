@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBaseSteps, nearestBase } from './computeBaseSteps'
+import { computeBaseMethodSteps, nearestBase } from './computeBaseMethodSteps'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -9,9 +9,9 @@ describe('nearestBase', () => {
   })
 })
 
-describe('computeBaseSteps', () => {
+describe('computeBaseMethodSteps', () => {
   it('reproduces the 123 ÷ 9 worked example', () => {
-    const steps = computeBaseSteps(123, 9)
+    const steps = computeBaseMethodSteps(123, 9)
 
     expect(steps[0].title).toBe('Setup')
     expect(steps[0].cols.map((c) => c.digit)).toEqual([1, 2, 3])
@@ -28,14 +28,14 @@ describe('computeBaseSteps', () => {
   })
 
   it('throws for a multi-digit difference (out of scope until iteration C)', () => {
-    expect(() => computeBaseSteps(10030, 827)).toThrow(/multi-digit difference/)
+    expect(() => computeBaseMethodSteps(10030, 827)).toThrow(/multi-digit difference/)
   })
 
   it('throws for an LHS column carry (out of scope until iteration D)', () => {
-    expect(() => computeBaseSteps(1234, 98)).toThrow(/carry\/overflow/)
+    expect(() => computeBaseMethodSteps(1234, 98)).toThrow(/carry\/overflow/)
   })
 
   it('throws for a self-check mismatch', () => {
-    expect(() => computeBaseSteps(1, 2)).toThrow()
+    expect(() => computeBaseMethodSteps(1, 2)).toThrow()
   })
 })

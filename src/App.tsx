@@ -3,8 +3,8 @@ import Header from './components/Header'
 import MethodNav, { type Method } from './components/MethodNav'
 import DivisorCard from './components/DivisorCard'
 import DigitBoard from './components/DigitBoard'
-import BaseDivisorCard from './components/BaseDivisorCard'
-import BaseDigitBoard from './components/BaseDigitBoard'
+import BaseMethodDivisorCard from './components/BaseMethodDivisorCard'
+import BaseMethodDigitBoard from './components/BaseMethodDigitBoard'
 import BaseMethodRules from './components/BaseMethodRules'
 import StepPanel from './components/StepPanel'
 import NavControls from './components/NavControls'
@@ -13,7 +13,7 @@ import InputForm from './components/InputForm'
 import ErrorBanner from './components/ErrorBanner'
 import Footer from './components/Footer'
 import { computeSteps } from './lib/computeSteps'
-import { computeBaseSteps, nearestBase } from './lib/computeBaseSteps'
+import { computeBaseMethodSteps, nearestBase } from './lib/computeBaseMethodSteps'
 import type { Step } from './types'
 
 interface Problem {
@@ -82,7 +82,7 @@ const BASE_DIVIDEND = 123
 const BASE_DIVISOR = 9
 
 function BaseMethodPane() {
-  const steps = useMemo(() => computeBaseSteps(BASE_DIVIDEND, BASE_DIVISOR), [])
+  const steps = useMemo(() => computeBaseMethodSteps(BASE_DIVIDEND, BASE_DIVISOR), [])
   const base = nearestBase(BASE_DIVISOR)
   const difference = base - BASE_DIVISOR
   const [cur, setCur] = useState(0)
@@ -95,8 +95,8 @@ function BaseMethodPane() {
       <div className="problem-badge-row">
         <span className="problem-badge">{BASE_DIVIDEND} ÷ {BASE_DIVISOR}</span>
       </div>
-      <BaseDivisorCard base={base} difference={difference} />
-      <BaseDigitBoard
+      <BaseMethodDivisorCard base={base} difference={difference} />
+      <BaseMethodDigitBoard
         step={steps[cur]}
         onBack={() => setCur((c) => clamp(c - 1))}
         onNext={() => setCur((c) => clamp(c + 1))}

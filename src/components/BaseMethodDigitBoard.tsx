@@ -1,7 +1,7 @@
 import { Fragment, useEffect } from 'react'
 import type { BaseMethodStep } from '../types'
 
-interface BaseDigitBoardProps {
+interface BaseMethodDigitBoardProps {
   step: BaseMethodStep
   onBack: () => void
   onNext: () => void
@@ -9,7 +9,7 @@ interface BaseDigitBoardProps {
   isLast: boolean
 }
 
-export default function BaseDigitBoard({ step, onBack, onNext, isFirst, isLast }: BaseDigitBoardProps) {
+export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, isLast }: BaseMethodDigitBoardProps) {
   const maxContributions = Math.max(1, ...step.cols.map((c) => c.contributions.length))
 
   useEffect(() => {

@@ -21,10 +21,10 @@ export interface Step extends StepBase {
   phase?: 'raw' | 'adjusted' // set on the two steps an overshoot digit is split into; absent otherwise
 }
 
-export type BaseColumnKind = 'lhs' | 'rhs'
+export type BaseMethodColumnKind = 'lhs' | 'rhs'
 
-export interface BaseColumn {
-  kind: BaseColumnKind
+export interface BaseMethodColumn {
+  kind: BaseMethodColumnKind
   digit: number // original dividend digit at this column
   contributions: number[] // contributions received so far, revealed progressively
   total: number | null // revealed once this column is finalized
@@ -32,6 +32,6 @@ export interface BaseColumn {
 }
 
 export interface BaseMethodStep extends StepBase {
-  cols: BaseColumn[]
+  cols: BaseMethodColumn[]
   connectors: boolean[] // length cols.length - 1; whether the arrow between col i and i+1 is lit this step
 }

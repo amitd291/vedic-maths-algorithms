@@ -1,9 +1,9 @@
-interface BaseDivisorCardProps {
+interface BaseMethodDivisorCardProps {
   base: number
   difference: number
 }
 
-export default function BaseDivisorCard({ base, difference }: BaseDivisorCardProps) {
+export default function BaseMethodDivisorCard({ base, difference }: BaseMethodDivisorCardProps) {
   return (
     <div className="divisor-card">
       <div className="divisor-col">

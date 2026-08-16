@@ -1,4 +1,4 @@
-import type { BaseColumn, BaseMethodStep, CalcLine } from '../types'
+import type { BaseMethodColumn, BaseMethodStep, CalcLine } from '../types'
 
 const SUBSCRIPT_DIGITS = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉']
 
@@ -27,7 +27,7 @@ interface ColumnResult {
   contribution: number | null // total × difference, placed into the next column; null on the last column
 }
 
-function cloneCols(cols: BaseColumn[]): BaseColumn[] {
+function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
   return cols.map((c) => ({ ...c, contributions: [...c.contributions] }))
 }
 
@@ -40,7 +40,7 @@ function cloneCols(cols: BaseColumn[]): BaseColumn[] {
  * those are iteration C/D work. Anything outside that throws rather than
  * producing an incorrect walkthrough.
  */
-export function computeBaseSteps(dividend: number, divisor: number): BaseMethodStep[] {
+export function computeBaseMethodSteps(dividend: number, divisor: number): BaseMethodStep[] {
   if (!Number.isInteger(dividend) || dividend <= 0) {
     throw new Error('dividend must be a positive integer')
   }
@@ -96,12 +96,12 @@ export function computeBaseSteps(dividend: number, divisor: number): BaseMethodS
   )
   const remainder = results[n - 1].total
   if (quotient * divisor + remainder !== dividend) {
-    throw new Error(`computeBaseSteps self-check failed: ${quotient} × ${divisor} + ${remainder} !== ${dividend}`)
+    throw new Error(`computeBaseMethodSteps self-check failed: ${quotient} × ${divisor} + ${remainder} !== ${dividend}`)
   }
 
   // Second pass: narrate the steps, mutating a running column-state array
   // (finalized totals + placed contributions) that each step snapshots.
-  const cols: BaseColumn[] = results.map((r) => ({
+  const cols: BaseMethodColumn[] = results.map((r) => ({
     kind: r.kind,
     digit: r.digit,
     contributions: [],
