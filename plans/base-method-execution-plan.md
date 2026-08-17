@@ -70,19 +70,66 @@ v2 doesn't need a second engine rework. Iteration C already proves
 multi-digit `difference`, RHS carry, and single-subtraction overflow
 correction — this iteration covers only what those examples don't exercise.
 
-- [ ] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
+- [x] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
       `Header`/`Footer`, picks the pane); extract `DhvajankaPane` and
       `BaseMethodPane` out of `App.tsx` into their own components
       (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
       state/logic unchanged. Default pane on load stays Dhvajanka (no
       behavior change, just relocated code)
 - [ ] Refactor: `App.test.tsx` mocks the two page components and covers routing only
-      (default pane, menu-driven switch, per-pane state preserved across
-      switches); move the existing step-walkthrough/assertion coverage into
-      dedicated `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files
-      with extensive coverage there instead
-- [ ] Refactor: Thin the e2e specs down to simple happy/unhappy-path smoke checks now
-      that the component tests carry the detailed coverage
+      (default pane, menu-driven switch, default pane re-render after
+      switching back — panes unmount on switch, so no in-progress-state
+      persistence to test: kept the existing conditional-render behavior
+      over a keep-both-mounted approach, since `DigitBoard`/
+      `BaseMethodDigitBoard` each attach a global `window` keydown listener
+      and a CSS-hidden inactive pane would leave its listener live,
+      fighting the active pane for ArrowLeft/ArrowRight); move the existing
+      step-walkthrough/assertion coverage into dedicated
+      `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files with
+      extensive coverage there instead — done
+- [x] Before thinning e2e, add the unit/component coverage that would
+      otherwise be lost — each of these currently exists only in an e2e
+      spec:
+  - [x] `InputForm.test.tsx` (didn't exist yet): the full validation
+        matrix from `e2e/input-form.spec.ts` — empty dividend/divisor,
+        non-integer dividend, out-of-range divisor, both-fields-invalid,
+        boundary values (dividend 1, divisor 99), error clearing on a
+        subsequent valid solve
+  - [x] `DhvajankaPage.test.tsx`: per-case coverage from
+        `e2e/edge-case-problems.spec.ts` (divisor > dividend, exact
+        division/zero remainder, leading-zero quotient digit,
+        quotient-digit adjustment/backtrack) — quotient-slot values and
+        the success/verify note per case; plus the raw-lookahead-note vs.
+        adjusted-reduction-note swap across steps 3→4 of 5428÷35
+  - [x] `BaseMethodPage.test.tsx`: the RHS carry-first column-sum
+        explainer ordering (rightmost column first) and the Q2-multiply
+        contribution-chip alignment checks (same-row landing across every
+        column reached, placeholder vs. real chip) from
+        `e2e/base-method.spec.ts`
+  - [x] Gap audit against every e2e scenario turned up two real gaps, now
+        closed: the boundary-value case (dividend 1, divisor 99) didn't
+        have a page-level assertion that no `.error-banner` appears
+        (added to `DhvajankaPage.test.tsx`); and arrow-key clamping at
+        the first/last step was never tested anywhere, in e2e or unit
+        (added to both `DhvajankaPage.test.tsx` and
+        `BaseMethodPage.test.tsx`). `dist-bundle.spec.ts` stays e2e-only
+        (real build artifact over `file://`, not unit-testable). The
+        cross-pane "switching back restores its own walkthrough" case is
+        covered by composition (mocked `App.test.tsx` routing +
+        `DhvajankaPage.test.tsx` default-render) rather than one
+        end-to-end integration test — accepted trade-off of mocking
+        `App.test.tsx`'s children
+- [x] Refactor: Thin the e2e specs down to simple happy/unhappy-path smoke checks
+      only after the above unit/component coverage is in place. Result:
+      23 → 6 e2e tests. `walkthrough.spec.ts` and `input-form.spec.ts`
+      slimmed to one happy + one unhappy path each; `edge-case-problems.spec.ts`
+      deleted (the default problem 5428÷35 already IS its most complex
+      case, "quotient-digit adjustment/backtrack", so it's exercised by
+      the other specs; the rest moved to `DhvajankaPage.test.tsx`);
+      `base-method.spec.ts` slimmed to the happy-path walkthrough plus
+      the one real e2e-only case, the cross-pane "switching back restores
+      its own walkthrough" integration check. `dist-bundle.spec.ts`
+      untouched (already a single smoke test)
 - [ ] Cascading carries across a multi-digit LHS — worked example:
       **10600 ÷ 87 = 121 r73** (base 100, difference 13), see build plan
       "Examples with steps"; verified with `plans/base-method-verifier.py`
@@ -112,6 +159,17 @@ correction — this iteration covers only what those examples don't exercise.
 
 Spec: build plan Iteration E.
 
+- [ ] Refactor (candidate, confirmed real): `DhvajankaPage.tsx` and
+      `BaseMethodPage.tsx` duplicate identical step-navigation state
+      (`cur`/`clamp`/`isFirst`/`isLast`/`onBack`/`onNext`/`NavControls`
+      wiring) — extract to a shared `useStepNav(total)` hook. Separately,
+      `DigitBoard.tsx` and `BaseMethodDigitBoard.tsx` each independently
+      register the same global `window` ArrowLeft/ArrowRight keydown
+      effect — extract to a shared `useArrowKeyNav(onBack, onNext)` hook.
+      Surfaced during iteration D's e2e-coverage audit: the boundary
+      arrow-key-clamping test had to be duplicated per page because the
+      underlying logic is duplicated per page; one hook + one hook test
+      each would remove that duplication at the source
 - [ ] The quotient remainder main section is cropped in mobile,
       font size may need to be dynamic (to verify)
 - [ ] Input form: dividend + divisor, full range per iteration D's engine
