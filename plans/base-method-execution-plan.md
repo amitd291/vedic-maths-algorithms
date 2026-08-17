@@ -70,6 +70,19 @@ v2 doesn't need a second engine rework. Iteration C already proves
 multi-digit `difference`, RHS carry, and single-subtraction overflow
 correction — this iteration covers only what those examples don't exercise.
 
+- [ ] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
+      `Header`/`Footer`, picks the pane); extract `DhvajankaPane` and
+      `BaseMethodPane` out of `App.tsx` into their own components
+      (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
+      state/logic unchanged. Default pane on load stays Dhvajanka (no
+      behavior change, just relocated code)
+- [ ] Refactor: `App.test.tsx` mocks the two page components and covers routing only
+      (default pane, menu-driven switch, per-pane state preserved across
+      switches); move the existing step-walkthrough/assertion coverage into
+      dedicated `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files
+      with extensive coverage there instead
+- [ ] Refactor: Thin the e2e specs down to simple happy/unhappy-path smoke checks now
+      that the component tests carry the detailed coverage
 - [ ] Cascading carries across a multi-digit LHS — worked example:
       **10600 ÷ 87 = 121 r73** (base 100, difference 13), see build plan
       "Examples with steps"; verified with `plans/base-method-verifier.py`
@@ -92,19 +105,6 @@ correction — this iteration covers only what those examples don't exercise.
       before wiring dynamic inputs
 - [ ] Unit tests for the LHS-carry-cascade and full-range remainder-correction
       paths
-- [ ] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
-      `Header`/`Footer`, picks the pane); extract `DhvajankaPane` and
-      `BaseMethodPane` out of `App.tsx` into their own components
-      (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
-      state/logic unchanged. Default pane on load stays Dhvajanka (no
-      behavior change, just relocated code)
-- [ ] `App.test.tsx` mocks the two page components and covers routing only
-      (default pane, menu-driven switch, per-pane state preserved across
-      switches); move the existing step-walkthrough/assertion coverage into
-      dedicated `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files
-      with extensive coverage there instead
-- [ ] Thin the e2e specs down to simple happy/unhappy-path smoke checks now
-      that the component tests carry the detailed coverage
 
 ---
 
@@ -112,6 +112,8 @@ correction — this iteration covers only what those examples don't exercise.
 
 Spec: build plan Iteration E.
 
+- [ ] The quotient remainder main section is cropped in mobile,
+      font size may need to be dynamic (to verify)
 - [ ] Input form: dividend + divisor, full range per iteration D's engine
 - [ ] `Q × D + R === N` self-check + error banner
 - [ ] Unit tests: both sign cases, normalization edge cases, full input range

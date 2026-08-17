@@ -97,26 +97,6 @@ Defects found in post-v2 code review and manual testing.
 
 ---
 
-## Iteration 2.4
-- [ ] Release on GitHub Pages
-
-<!-- Detail below; strip once the checklist above is fully ticked. -->
-
-**Release on GitHub Pages**
-- [ ] Push repo to GitHub (confirm remote/org, `git init` + first push if not
-      already a git repo — currently this directory has no `.git`)
-- [ ] Add `vite.config.ts` `base: '/<repo-name>/'` (Pages serves from a
-      subpath, not root) — but check this doesn't break the offline
-      single-file `dist/index.html` deliverable, which expects `base: '/'`
-      or relative paths
-- [ ] Add a GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs
-      `npm ci && npm run build` and deploys `dist/` via
-      `actions/deploy-pages`
-- [ ] Enable Pages in repo settings (source: GitHub Actions)
-- [ ] Verify the deployed URL loads and the walkthrough works end to end
-
----
-
 ## Iteration X — extended inputs (vX) ⬜ deferred
 
 6-digit dividend, 3-digit divisor.
