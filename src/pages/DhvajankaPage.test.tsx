@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import DhvajankaPage from './DhvajankaPage'
 import { computeSteps } from '../lib/computeSteps'
+import type { CalcLine } from '../types'
+
+function isNote(l: CalcLine): l is Extract<CalcLine, { kind: 'note' }> {
+  return l.kind === 'note'
+}
 
 describe('DhvajankaPage', () => {
   it('renders the default problem inputs and first step', () => {
@@ -130,7 +135,7 @@ describe('DhvajankaPage', () => {
         }
         expect(quotientSlots[last.quotientDigits.length]).toHaveTextContent(String(last.r))
 
-        const verifyText = last.lines.find((l) => l.kind === 'note' && l.tone === 'success')?.text
+        const verifyText = last.lines.filter(isNote).find((l) => l.tone === 'success')?.text
         expect(verifyText).toBeDefined()
         expect(container.querySelector('.success-note')).toHaveTextContent(verifyText!)
       })
@@ -138,8 +143,8 @@ describe('DhvajankaPage', () => {
 
     it('the raw step shows the lookahead note and the adjusted step shows the reduction note', () => {
       const steps = computeSteps(5428, 35)
-      const rawNote = steps[2].lines.find((l) => l.kind === 'note' && l.tone === 'warn')?.text
-      const adjustedNote = steps[3].lines.find((l) => l.kind === 'note' && l.tone === 'warn')?.text
+      const rawNote = steps[2].lines.filter(isNote).find((l) => l.tone === 'warn')?.text
+      const adjustedNote = steps[3].lines.filter(isNote).find((l) => l.tone === 'warn')?.text
       expect(rawNote).toBeDefined()
       expect(adjustedNote).toBeDefined()
 

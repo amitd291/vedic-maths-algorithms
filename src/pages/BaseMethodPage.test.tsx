@@ -2,6 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import BaseMethodPage from './BaseMethodPage'
 import { computeBaseMethodSteps } from '../lib/computeBaseMethodSteps'
+import type { CalcLine } from '../types'
+
+function hasLabel(l: CalcLine): l is Extract<CalcLine, { label: string }> {
+  return l.kind === 'calc' || l.kind === 'result'
+}
 
 const DIVIDEND = 10600
 const DIVISOR = 87
@@ -62,7 +67,9 @@ describe('BaseMethodPage', () => {
     }
     expect(screen.getByText(`${sumStepIndex + 1} / ${steps.length}`)).toBeInTheDocument()
 
-    const sumLines = steps[sumStepIndex].lines.filter((l) => l.kind === 'calc' && l.label.startsWith('Sum column'))
+    const sumLines = steps[sumStepIndex].lines
+      .filter(hasLabel)
+      .filter((l) => l.label.startsWith('Sum column'))
     const labels = container.querySelectorAll('[aria-hidden="false"] .calc-line .co')
 
     for (let i = 0; i < sumLines.length; i++) {
