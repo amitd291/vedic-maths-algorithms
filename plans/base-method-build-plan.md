@@ -287,3 +287,7 @@ useful as a cross-check between methods but not itself a planned iteration.
   algorithm; revisit only if requested. Scaling the divisor to a nearby
   multiple of a base (5428 ÷ 35 above) is a related but separate technique,
   now in scope under iteration F.
+- Quotient wider than the assumed LHS width (e.g. 9995÷9 → 1110 needs 4
+  columns but the board only allocated 3), there's no box to put it in.
+  That stays a thrown, out-of-scope case — but it's now a pure
+  display-width limitation, not a math one.

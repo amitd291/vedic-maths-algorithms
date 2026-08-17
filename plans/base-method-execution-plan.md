@@ -130,40 +130,42 @@ correction — this iteration covers only what those examples don't exercise.
       the one real e2e-only case, the cross-pane "switching back restores
       its own walkthrough" integration check. `dist-bundle.spec.ts`
       untouched (already a single smoke test)
-- [x] Cascading carries across a multi-digit LHS — worked example:
-      **10600 ÷ 87 = 121 r73** (base 100, difference 13), see build plan
-      "Examples with steps"; verified with `plans/scripts/base-method-verifier.py`.
-      Implemented as a fixed-point loop in `computeBaseMethodSteps` (redo the
-      whole left-to-right LHS pass with the updated carry-in guess until no
-      further carry changes), mirroring the verifier script
-- [x] Redo-on-carry, not just digit-carry: a carry into an already-finalized
-      LHS digit invalidates that digit's already-distributed multiply — the
-      digit alone can't just be bumped, its multiply (and everything it fed
-      forward) has to be redone, which can cascade further left. Resolved via
-      the fixed-point loop above; the redone digit's finalize step also
-      surfaces a "carry of N from column X's overflow" note so the
-      walkthrough doesn't silently overwrite an already-shown value
+- [ ] **Design finalized** (superseding the fixed-point-redo approach
+      committed earlier): no mid-pass redo at all. Each column's raw total
+      (`digit[i] + incoming[i]`) is used as-is as its own multiplicand, even
+      when ≥10 or negative — never reduced to a single digit until the very
+      end. Fanning a contribution out still uses exactly `rhsWidth` target
+      columns, but only the rightmost `rhsWidth − 1` are forced to a single
+      digit (`% 10`); the leftmost absorbs all remaining magnitude
+      (`contribution / 10^(rhsWidth-1)`, floored), so it can itself be
+      multi-digit. One closing step then: compares the assembled raw
+      remainder to the divisor in a *loop* (not a single `if`), adds that
+      correction onto the last raw LHS chunk, then carry-normalizes across
+      the LHS chunks right-to-left. Verified by hand against the source
+      PDF's own **30122 ÷ 87** example (343/281 → 346/20) plus 10600 ÷ 87,
+      865 ÷ 9, 9995 ÷ 9, 1693 ÷ 131, 14189 ÷ 102 — all match. This resolves
+      the LHS-carry-cascade item, the RHS-overflow-into-LHS guard (865 ÷ 9),
+      and remainder-correction-beyond-one-subtraction, all as one mechanism
+      — no separate handling needed for any of them. Mockup:
+      `plans/mockups/iteration-d-lhs-carry-cascade-v1.html` (865 ÷ 9).
+      Board/UX consequence: a column stays amber (`active`) through every
+      step it appears in, even mid-computation with a raw ≥10 value (e.g.
+      "Q₂ = 14"); only the closing step flips LHS (and RHS, once corrected)
+      to green (`done`) together, once. One case still throws, for a
+      display reason, not a math one: if the final LHS carry pass would
+      overflow past the first column, the quotient genuinely needs a wider
+      board than the assumed LHS width (e.g. 9995 ÷ 9 → 1110 needs 4
+      columns, board has 3) — no box to put the extra digit in
+- [ ] Implement the design above in `computeBaseMethodSteps`, replacing the
+      fixed-point loop; keep `BaseMethodPage`'s hardcoded example at
+      10600 ÷ 87; add a positive `865 ÷ 9` test (was a throw-guard test);
+      update the 9995 ÷ 9 test to assert the display-width-only guard;
+      verify all existing cases still pass
 - [x] Verify the baseline-alignment padding (iteration C) against an LHS
       column that holds a contribution, not just RHS columns — already
       exercised by the existing 10030 ÷ 827 example (Q₁'s 3-digit
       contribution fans across one LHS column and two RHS columns); added an
       explicit test asserting the LHS column's chip lands correctly
-- [ ] Remainder correction beyond one subtraction (partially redundant with
-      iteration C's single-subtraction case; here for the repeated-correction
-      case where the RHS overflow exceeds what one divisor subtraction fixes)
-      — no verified example found yet (used ./plans/scripts/base-method-verifier.py script);
-      every candidate tried also triggered the redo-on-carry case above or a
-      quotient-overflow-beyond-LHS-width edge case,
-      so treat as open until a clean case is found or the scope is reconsidered.
-      Left open per user decision (2026-08-18); pick up in another thread
-- [x] Prove against a hardcoded example exercising the LHS carry cascade,
-      before wiring dynamic inputs — swapped `BaseMethodPage`'s hardcoded
-      problem from 10030 ÷ 827 to 10600 ÷ 87
-- [x] Unit tests for the LHS-carry-cascade path (10600 ÷ 87: correct output,
-      and the redo note on Q₂'s finalize step) and the two remaining
-      out-of-scope guards (RHS-overflow-into-LHS via 865 ÷ 9;
-      quotient-overflow-beyond-LHS-width via 9995 ÷ 9). Full-range
-      remainder-correction tests deferred with the open item above
 
 ---
 
