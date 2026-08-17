@@ -57,7 +57,7 @@ export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, is
                   })}
                 </div>
                 <hr className={`col-divider${col.total !== null ? ' show' : ''}`} />
-                <div className={`total-slot${col.total !== null ? ` show ${col.kind}` : ''}`}>
+                <div className={`total-slot${col.total !== null ? ` show ${col.colState === 'done' ? 'done' : col.kind}` : ''}`}>
                   {col.total !== null ? col.total : ''}
                 </div>
               </div>

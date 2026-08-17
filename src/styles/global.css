@@ -539,14 +539,15 @@ body {
   visibility: hidden;
 }
 
-.total-slot.show.lhs {
-  visibility: visible;
-  color: var(--green);
-}
-
+.total-slot.show.lhs,
 .total-slot.show.rhs {
   visibility: visible;
-  color: var(--blue);
+  color: var(--amber);
+}
+
+.total-slot.show.done {
+  visibility: visible;
+  color: var(--green);
 }
 
 .arrow-btn {

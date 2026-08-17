@@ -7,7 +7,7 @@ test.describe('Base Method pane (dev server)', () => {
     await page.getByRole('tab', { name: /Base Method/ }).click();
   });
 
-  test('renders the 10600 ÷ 87 walkthrough and steps through to the verified remainder', async ({ page }) => {
+  test('renders the 865 ÷ 9 walkthrough and steps through to the verified remainder', async ({ page }) => {
     await expect(page.getByText('Setup')).toBeVisible();
     await expect(page.locator('.step-counter')).toHaveText('1 / 8');
 
@@ -15,7 +15,7 @@ test.describe('Base Method pane (dev server)', () => {
       await page.getByLabel('Next step').click();
     }
     await expect(page.locator('.step-counter')).toHaveText('8 / 8');
-    await expect(page.getByText('Verify: 121 × 87 + 73 = 10600 ✓')).toBeVisible();
+    await expect(page.getByText('Verify: 96 × 9 + 1 = 865 ✓')).toBeVisible();
     await expect(page.getByLabel('Next step')).toBeDisabled();
   });
 

@@ -63,7 +63,7 @@ fan-out connector, right-to-left carry, per-column baseline alignment).
 
 ---
 
-## Iteration D — LHS carry cascade + full-range coverage ⬜
+## Iteration D — LHS carry cascade + full-range coverage ✅
 
 Spec: build plan Iteration D. Brought forward ahead of dynamic inputs so
 v2 doesn't need a second engine rework. Iteration C already proves
@@ -130,7 +130,7 @@ correction — this iteration covers only what those examples don't exercise.
       the one real e2e-only case, the cross-pane "switching back restores
       its own walkthrough" integration check. `dist-bundle.spec.ts`
       untouched (already a single smoke test)
-- [ ] **Design finalized** (superseding the fixed-point-redo approach
+- [x] **Design finalized** (superseding the fixed-point-redo approach
       committed earlier): no mid-pass redo at all. Each column's raw total
       (`digit[i] + incoming[i]`) is used as-is as its own multiplicand, even
       when ≥10 or negative — never reduced to a single digit until the very
@@ -156,11 +156,20 @@ correction — this iteration covers only what those examples don't exercise.
       overflow past the first column, the quotient genuinely needs a wider
       board than the assumed LHS width (e.g. 9995 ÷ 9 → 1110 needs 4
       columns, board has 3) — no box to put the extra digit in
-- [ ] Implement the design above in `computeBaseMethodSteps`, replacing the
+- [x] Implement the design above in `computeBaseMethodSteps`, replacing the
       fixed-point loop; keep `BaseMethodPage`'s hardcoded example at
       10600 ÷ 87; add a positive `865 ÷ 9` test (was a throw-guard test);
       update the 9995 ÷ 9 test to assert the display-width-only guard;
-      verify all existing cases still pass
+      verify all existing cases still pass. Added a `30122 ÷ 87` test (the
+      source PDF's own example) per the design note above. Updated
+      `BaseMethodPage.test.tsx` and `e2e/base-method.spec.ts` for the new
+      step count/titles (10600 ÷ 87 now runs 10 steps instead of 8: the RHS
+      sum, compare-and-correct, and normalize are three distinct steps
+      rather than two). Verified visually with Playwright screenshots
+      against the running dev server: LHS columns stay amber with raw
+      (possibly ≥10) totals through every step until the closing
+      compare-and-correct/normalize steps flip everything to green
+      together, matching the mockup.
 - [x] Verify the baseline-alignment padding (iteration C) against an LHS
       column that holds a contribution, not just RHS columns — already
       exercised by the existing 10030 ÷ 827 example (Q₁'s 3-digit
@@ -173,6 +182,12 @@ correction — this iteration covers only what those examples don't exercise.
 
 Spec: build plan Iteration E.
 
+- [ ] Refactor: split `computeBaseMethodSteps.ts` (grown long) into:
+  - [ ] `baseMethodMath.ts` — pure calc (`nearestBase`, `normalizeDigit`,
+        `solveBaseMethod`), no step/narration concerns
+  - [ ] `baseMethodNarration.ts` — builds `BaseMethodStep[]` from the solve result
+  - [ ] Bonus: closing-step branches (trivial/fold/compare/normalize) → one `buildClosingSteps` helper
+  - [ ] `computeBaseMethodSteps.ts` — thin orchestrator + re-exports
 - [ ] Refactor (candidate, confirmed real): `DhvajankaPage.tsx` and
       `BaseMethodPage.tsx` duplicate identical step-navigation state
       (`cur`/`clamp`/`isFirst`/`isLast`/`onBack`/`onNext`/`NavControls`
@@ -191,6 +206,13 @@ Spec: build plan Iteration E.
 - [ ] Input form: dividend + divisor, full range per iteration D's engine
 - [ ] `Q × D + R === N` self-check + error banner
 - [ ] Unit tests: both sign cases, normalization edge cases, full input range
+- [ ] Once the input form drives the dividend/divisor, update
+      `e2e/base-method.spec.ts` to set a specific input (not the page's
+      default example) before asserting, so the e2e test stays a
+      predictable, hardcoded-expectation check independent of whatever the
+      default example happens to be at the time. Optionally do the same in
+      `BaseMethodPage.test.tsx` for a couple of cases, now that a specific
+      input is choosable rather than only the one hardcoded default.
 
 ---
 
