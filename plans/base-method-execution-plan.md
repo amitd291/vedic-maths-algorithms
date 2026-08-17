@@ -76,7 +76,7 @@ correction — this iteration covers only what those examples don't exercise.
       (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
       state/logic unchanged. Default pane on load stays Dhvajanka (no
       behavior change, just relocated code)
-- [ ] Refactor: `App.test.tsx` mocks the two page components and covers routing only
+- [x] Refactor: `App.test.tsx` mocks the two page components and covers routing only
       (default pane, menu-driven switch, default pane re-render after
       switching back — panes unmount on switch, so no in-progress-state
       persistence to test: kept the existing conditional-render behavior
@@ -130,28 +130,40 @@ correction — this iteration covers only what those examples don't exercise.
       the one real e2e-only case, the cross-pane "switching back restores
       its own walkthrough" integration check. `dist-bundle.spec.ts`
       untouched (already a single smoke test)
-- [ ] Cascading carries across a multi-digit LHS — worked example:
+- [x] Cascading carries across a multi-digit LHS — worked example:
       **10600 ÷ 87 = 121 r73** (base 100, difference 13), see build plan
-      "Examples with steps"; verified with `plans/base-method-verifier.py`
-- [ ] Redo-on-carry, not just digit-carry: a carry into an already-finalized
+      "Examples with steps"; verified with `plans/scripts/base-method-verifier.py`.
+      Implemented as a fixed-point loop in `computeBaseMethodSteps` (redo the
+      whole left-to-right LHS pass with the updated carry-in guess until no
+      further carry changes), mirroring the verifier script
+- [x] Redo-on-carry, not just digit-carry: a carry into an already-finalized
       LHS digit invalidates that digit's already-distributed multiply — the
       digit alone can't just be bumped, its multiply (and everything it fed
-      forward) has to be redone, which can cascade further left. This is
-      materially more than a display/carry mechanic; resolve the actual
-      algorithm design for it during implementation, not from this plan doc
-- [ ] Verify the baseline-alignment padding (iteration C) against an LHS
-      column that holds a contribution, not just RHS columns
+      forward) has to be redone, which can cascade further left. Resolved via
+      the fixed-point loop above; the redone digit's finalize step also
+      surfaces a "carry of N from column X's overflow" note so the
+      walkthrough doesn't silently overwrite an already-shown value
+- [x] Verify the baseline-alignment padding (iteration C) against an LHS
+      column that holds a contribution, not just RHS columns — already
+      exercised by the existing 10030 ÷ 827 example (Q₁'s 3-digit
+      contribution fans across one LHS column and two RHS columns); added an
+      explicit test asserting the LHS column's chip lands correctly
 - [ ] Remainder correction beyond one subtraction (partially redundant with
       iteration C's single-subtraction case; here for the repeated-correction
       case where the RHS overflow exceeds what one divisor subtraction fixes)
-      — no verified example found yet; every candidate tried also triggered
-      the redo-on-carry case above or a quotient-overflow-beyond-LHS-width
-      edge case, so treat as open until a clean case is found or the scope
-      is reconsidered
-- [ ] Prove against a hardcoded example exercising the LHS carry cascade,
-      before wiring dynamic inputs
-- [ ] Unit tests for the LHS-carry-cascade and full-range remainder-correction
-      paths
+      — no verified example found yet (used ./plans/scripts/base-method-verifier.py script);
+      every candidate tried also triggered the redo-on-carry case above or a
+      quotient-overflow-beyond-LHS-width edge case,
+      so treat as open until a clean case is found or the scope is reconsidered.
+      Left open per user decision (2026-08-18); pick up in another thread
+- [x] Prove against a hardcoded example exercising the LHS carry cascade,
+      before wiring dynamic inputs — swapped `BaseMethodPage`'s hardcoded
+      problem from 10030 ÷ 827 to 10600 ÷ 87
+- [x] Unit tests for the LHS-carry-cascade path (10600 ÷ 87: correct output,
+      and the redo note on Q₂'s finalize step) and the two remaining
+      out-of-scope guards (RHS-overflow-into-LHS via 865 ÷ 9;
+      quotient-overflow-beyond-LHS-width via 9995 ÷ 9). Full-range
+      remainder-correction tests deferred with the open item above
 
 ---
 
@@ -170,6 +182,8 @@ Spec: build plan Iteration E.
       arrow-key-clamping test had to be duplicated per page because the
       underlying logic is duplicated per page; one hook + one hook test
       each would remove that duplication at the source
+- [ ] The carry number is not visible as a chip, we should consider
+      showing it with a different color for more clarity visually (though it is in the explainer text).
 - [ ] The quotient remainder main section is cropped in mobile,
       font size may need to be dynamic (to verify)
 - [ ] Input form: dividend + divisor, full range per iteration D's engine

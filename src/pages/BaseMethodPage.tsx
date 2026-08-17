@@ -6,8 +6,8 @@ import StepPanel from '../components/StepPanel'
 import NavControls from '../components/NavControls'
 import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
 
-const BASE_DIVIDEND = 10030
-const BASE_DIVISOR = 827
+const BASE_DIVIDEND = 10600
+const BASE_DIVISOR = 87
 
 export default function BaseMethodPage() {
   const steps = useMemo(() => computeBaseMethodSteps(BASE_DIVIDEND, BASE_DIVISOR), [])

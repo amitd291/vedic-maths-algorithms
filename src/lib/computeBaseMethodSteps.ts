@@ -41,10 +41,18 @@ function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
  * columns are summed right to left with carry/borrow, followed by a
  * single-subtraction overflow/negative-remainder correction when needed.
  *
- * Scope note (iteration C): a carry cascading back into an already-finalized
- * LHS digit (redo-on-carry), and a corrected quotient that needs an extra
- * leading digit, are iteration D work — both throw rather than producing an
- * incorrect walkthrough.
+ * A later LHS column's own overflow can carry back into an earlier,
+ * already-finalized LHS digit (iteration D). That digit's distributed
+ * multiply was computed from the stale value, so it — and everything it
+ * fed forward — must be redone, which can itself cascade further left.
+ * This is resolved via a fixed-point loop: redo the whole left-to-right
+ * LHS pass with the new carry-in guess until no further carry changes,
+ * mirroring `plans/scripts/base-method-verifier.py`.
+ *
+ * Scope note (still open): an overflow that reaches all the way past the
+ * leftmost LHS digit (the quotient would need an extra leading digit), and
+ * a carry from the final RHS settle step landing back on an already-placed
+ * LHS digit, both throw rather than producing an incorrect walkthrough.
  */
 export function computeBaseMethodSteps(dividend: number, divisor: number): BaseMethodStep[] {
   if (!Number.isInteger(dividend) || dividend <= 0) {
@@ -65,27 +73,70 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   }
   const lhsWidth = n - rhsWidth
 
-  const incoming: number[] = Array(n).fill(0)
-  const contributionsByCol: number[][] = Array.from({ length: n }, () => [])
-  const lhsTotals: number[] = []
+  // Pass 1a: finalize each LHS digit and fan its contribution across every RHS
+  // column. A column's own overflow (>9) carries back into the previous LHS
+  // digit — if that digit was already finalized in this pass, its multiply
+  // (already fanned out) is now stale and the whole pass must be redone with
+  // the corrected carry-in. Loop to a fixed point rather than patching one
+  // column in place, since a redone digit can itself overflow and cascade
+  // further left.
+  let incoming: number[] = []
+  let contributionsByCol: number[][] = []
+  let lhsTotals: number[] = []
+  const carryIn: number[] = Array(lhsWidth).fill(0)
+  const maxPasses = lhsWidth + 2
+  let converged = false
 
-  // Pass 1a: finalize each LHS digit and fan its contribution across every RHS column.
-  for (let i = 0; i < lhsWidth; i++) {
-    const total = digits[i] + incoming[i]
-    if (Math.abs(total) > 9) {
-      throw new Error(`column ${i + 1} carry into an already-finalized column is not yet supported (iteration D)`)
-    }
-    lhsTotals.push(total)
+  for (let pass = 0; pass < maxPasses; pass++) {
+    incoming = Array(n).fill(0)
+    contributionsByCol = Array.from({ length: n }, () => [])
+    lhsTotals = []
+    let changed = false
 
-    const contribution = total * difference
-    const sign = Math.sign(contribution)
-    const magnitudeDigits = splitDigits(Math.abs(contribution), rhsWidth)
-    for (let k = 0; k < rhsWidth; k++) {
-      const idx = i + 1 + k
-      const signedDigit = sign * magnitudeDigits[k]
-      incoming[idx] += signedDigit
-      contributionsByCol[idx][i] = signedDigit
+    for (let i = 0; i < lhsWidth; i++) {
+      const total = digits[i] + carryIn[i] + incoming[i]
+      let digitOut: number
+      let carryOut: number
+      if (total >= 10) {
+        carryOut = Math.floor(total / 10)
+        digitOut = total - carryOut * 10
+      } else if (total <= -10) {
+        carryOut = Math.ceil(total / 10)
+        digitOut = total - carryOut * 10
+      } else {
+        carryOut = 0
+        digitOut = total
+      }
+      lhsTotals.push(digitOut)
+
+      if (carryOut !== 0) {
+        if (i === 0) {
+          throw new Error('quotient overflowing beyond the leftmost LHS digit is not yet supported (iteration D)')
+        }
+        if (carryIn[i - 1] !== carryOut) {
+          carryIn[i - 1] = carryOut
+          changed = true
+        }
+      }
+
+      const contribution = digitOut * difference
+      const sign = Math.sign(contribution)
+      const magnitudeDigits = splitDigits(Math.abs(contribution), rhsWidth)
+      for (let k = 0; k < rhsWidth; k++) {
+        const idx = i + 1 + k
+        const signedDigit = sign * magnitudeDigits[k]
+        incoming[idx] += signedDigit
+        contributionsByCol[idx][i] = signedDigit
+      }
     }
+
+    if (!changed) {
+      converged = true
+      break
+    }
+  }
+  if (!converged) {
+    throw new Error('LHS carry cascade did not converge (iteration D)')
   }
 
   // Pass 1b: sum the RHS columns right to left, carrying/borrowing into the column to the left.
@@ -194,11 +245,19 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
     cols[i].colState = 'active'
     stepNum += 1
 
+    const incomingTotal = incoming[i] + carryIn[i]
     const finalizeLines: CalcLine[] =
       i === 0
         ? [{ kind: 'calc', label: 'Bring down', value: `first LHS digit, ${digits[0]}, as it is` }]
-        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${digits[i]} + ${incoming[i]} = ${total}` }]
+        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${digits[i]} + ${incomingTotal} = ${total}` }]
     finalizeLines.push({ kind: 'result', label: quotientLabel, value: String(total) })
+    if (carryIn[i] !== 0) {
+      finalizeLines.push({
+        kind: 'note',
+        tone: 'warn',
+        text: `Includes a carry of ${carryIn[i]} from column ${i + 2}'s overflow — ${quotientLabel}'s multiply below uses this corrected value.`,
+      })
+    }
 
     steps.push({
       title: `Step ${stepNum} — ${ORDINALS[i]} LHS digit`,

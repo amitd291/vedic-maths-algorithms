@@ -80,12 +80,45 @@ describe('computeBaseMethodSteps', () => {
     })
   })
 
-  it('throws for an LHS carry cascading into an already-finalized digit (10600 ÷ 87, out of scope until iteration D)', () => {
-    expect(() => computeBaseMethodSteps(10600, 87)).toThrow(/iteration D/)
+  it('redoes an already-finalized LHS digit when a later column carries back into it (10600 ÷ 87)', () => {
+    const steps = computeBaseMethodSteps(10600, 87)
+    const last = steps[steps.length - 1]
+    expect(last.title).toBe(`Step ${steps.length - 1} — remainder`)
+    expect(last.cols.map((c) => c.total)).toEqual([1, 2, 1, 7, 3])
+    expect(last.lines.at(-1)).toEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 121 × 87 + 73 = 10600 ✓',
+    })
+
+    // Q₂'s finalize step surfaces the carry-back and the redone value (1 → 2),
+    // rather than silently overwriting it.
+    const q2Step = steps.find((s) => s.title.includes('second LHS digit'))!
+    expect(q2Step.lines).toContainEqual({ kind: 'result', label: 'Q₂', value: '2' })
+    expect(q2Step.lines).toContainEqual({
+      kind: 'note',
+      tone: 'warn',
+      text: "Includes a carry of 1 from column 3's overflow — Q₂'s multiply below uses this corrected value.",
+    })
   })
 
-  it('throws when a single-digit-difference LHS column overflows a single digit (865 ÷ 9, Q₂ would be 14)', () => {
+  it('lands a contribution chip on an LHS column, aligned with its RHS neighbors from the same multiply (10030 ÷ 827)', () => {
+    const steps = computeBaseMethodSteps(10030, 827)
+    const multiplyQ1Step = steps.find((s) => s.title.includes('multiply Q₁'))!
+    // LHS width is 2, so Q₁'s 3-digit contribution fans across column 2 (LHS)
+    // and columns 3–4 (RHS) — all on the same contribution row (index 0).
+    expect(multiplyQ1Step.cols[1].kind).toBe('lhs')
+    expect(multiplyQ1Step.cols[1].contributions[0]).toBe(1)
+    expect(multiplyQ1Step.cols[2].contributions[0]).toBe(7)
+    expect(multiplyQ1Step.cols[3].contributions[0]).toBe(3)
+  })
+
+  it('throws when the RHS overflow carries back into an already-placed LHS digit (865 ÷ 9)', () => {
     expect(() => computeBaseMethodSteps(865, 9)).toThrow(/iteration D/)
+  })
+
+  it('throws when the quotient would need an extra leading digit beyond the LHS width', () => {
+    expect(() => computeBaseMethodSteps(9995, 9)).toThrow(/iteration D/)
   })
 
   it('throws for a self-check mismatch', () => {
