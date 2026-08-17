@@ -5,11 +5,14 @@ on:
     branches: [ "main" ]
     paths-ignore:
       - '**.md'
-      - 'deploy-to-github-pages.yml'
+      - '.gitignore'
+      - '.github/workflows/deploy-to-github-pages.yml'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - '**.md'
+      - '.gitignore'
+      - '.github/workflows/deploy-to-github-pages.yml'
 
 jobs:
   build:

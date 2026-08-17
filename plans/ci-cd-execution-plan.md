@@ -16,4 +16,6 @@
 - [x] Enable Pages in repo settings (source: GitHub Actions)
 - [x] Trigger set to `workflow_dispatch` only (manual release cycle, avoids
       a deploy per commit to `main`)
-- [ ] Verify the deployed URL loads and the walkthrough works end to end
+- [x] Verify the deployed URL loads and the walkthrough works end to end
+      (https://amitd291.github.io/vedic-maths-algorithms/ — smoke-checked
+      with a one-off Playwright script, no console errors)
