@@ -9,19 +9,52 @@ import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSte
 const BASE_DIVIDEND = 865
 const BASE_DIVISOR = 9
 
+const DEV_EXAMPLES = [
+  { dividend: 865, divisor: 9, label: '865 ÷ 9 (normalize quotient)' },
+  { dividend: 10030, divisor: 827, label: '10030 ÷ 827 (normalize remainder)' },
+  { dividend: 10600, divisor: 87, label: '10600 ÷ 87 (quotient carry cascade)' },
+  { dividend: 1693, divisor: 131, label: '1693 ÷ 131 (Paravartya sign flip)' },
+  { dividend: 14189, divisor: 102, label: '14189 ÷ 102 (quotient-only normalize)' },
+  { dividend: 30122, divisor: 87, label: '30122 ÷ 87 (no closing steps)' },
+]
+
 export default function BaseMethodPage() {
-  const steps = useMemo(() => computeBaseMethodSteps(BASE_DIVIDEND, BASE_DIVISOR), [])
-  const base = nearestBase(BASE_DIVISOR)
-  const difference = base - BASE_DIVISOR
+  const [dividend, setDividend] = useState(BASE_DIVIDEND)
+  const [divisor, setDivisor] = useState(BASE_DIVISOR)
+  const steps = useMemo(() => computeBaseMethodSteps(dividend, divisor), [dividend, divisor])
+  const base = nearestBase(divisor)
+  const difference = base - divisor
   const [cur, setCur] = useState(0)
 
   const total = steps.length
   const clamp = (i: number) => Math.min(Math.max(i, 0), total - 1)
 
+  const onSelectExample = (value: string) => {
+    const [d, n] = value.split('/').map(Number)
+    setDividend(d)
+    setDivisor(n)
+    setCur(0)
+  }
+
   return (
     <>
+      {import.meta.env.MODE === 'development' && (
+        <div className="problem-badge-row">
+          <select
+            aria-label="Dev example picker"
+            value={`${dividend}/${divisor}`}
+            onChange={(e) => onSelectExample(e.target.value)}
+          >
+            {DEV_EXAMPLES.map((ex) => (
+              <option key={`${ex.dividend}/${ex.divisor}`} value={`${ex.dividend}/${ex.divisor}`}>
+                {ex.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="problem-badge-row">
-        <span className="problem-badge">{BASE_DIVIDEND} ÷ {BASE_DIVISOR}</span>
+        <span className="problem-badge">{dividend} ÷ {divisor}</span>
       </div>
       <BaseMethodDivisorCard base={base} difference={difference} />
       <BaseMethodDigitBoard

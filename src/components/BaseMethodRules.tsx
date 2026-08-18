@@ -16,14 +16,16 @@ export default function BaseMethodRules() {
           across several columns to the right at once.
         </li>
         <li>
-          Sum the RHS columns right to left, carrying overflow into the column to the left, to get
-          the remainder.
+          Sum each RHS column's raw total as-is, even if it's ≥10 or negative — no carrying
+          mid-pass. Only a closing step normalizes these into valid digits, right to left.
         </li>
         <li>
-          If the remainder is ≥ the divisor or negative, correct by ∓1 on the quotient and ±divisor
-          on the remainder. A negative (Paravartya, base &lt; divisor) difference can leave a
-          signed intermediate quotient digit; combine the signed digits by place value to get the
-          final quotient.
+          If the resulting remainder is ≥ the divisor or negative, correct by ∓1 on the quotient
+          and ±divisor on the remainder. A negative (Paravartya, base &lt; divisor) difference can
+          leave a signed intermediate quotient digit; combine the signed digits by place value to
+          get the final quotient. A Paravartya divisor can also exceed the base enough that the
+          corrected remainder needs one more digit than the RHS has columns for (e.g. 1693 ÷ 131) —
+          it's then shown as a single merged total rather than split across columns.
         </li>
       </ol>
     </section>

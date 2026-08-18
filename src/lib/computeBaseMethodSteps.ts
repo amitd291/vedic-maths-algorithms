@@ -39,6 +39,27 @@ function normalizeDigit(value: number): [digit: number, carry: number] {
 }
 
 /**
+ * Explains a normalize step the way manual borrow/carry subtraction reads:
+ * `label = 10 + (before) = digit; nextLabel = nextBefore − n = nextBefore + carry`.
+ * `nextLabel`/`nextBefore` are omitted at the leftmost column, where there's
+ * nothing further left to borrow from or carry into.
+ */
+function carryMessage(
+  label: string,
+  before: number,
+  digit: number,
+  carry: number,
+  next?: { label: string; before: number },
+): string {
+  const n = Math.abs(carry)
+  const applied = carry < 0 ? `${10 * n} + (${before}) = ${digit}` : `${before} − ${10 * n} = ${digit}`
+  if (!next) return `${label} = ${applied}`
+  const nextAfter = next.before + carry
+  const sign = carry < 0 ? '−' : '+'
+  return `${label} = ${applied}; ${next.label} = ${next.before} ${sign} ${n} = ${nextAfter}`
+}
+
+/**
  * Computes the Base Method / Paravartya division walkthrough for
  * `dividend ÷ divisor`, using the nearest power of 10 as the base.
  *
@@ -181,6 +202,26 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
 
   const finalRhsDigits = String(remainder).padStart(rhsWidth, '0').split('').map(Number)
   const remainderFits = finalRhsDigits.length === rhsWidth
+
+  /**
+   * Writes the final remainder into the RHS columns. When it fits, one digit
+   * per column, as usual. When it doesn't (a Paravartya divisor can exceed
+   * the base, so its remainder can need one more digit than the board's RHS
+   * width — e.g. 1693 ÷ 131's remainder 121 against a 2-column RHS), there's
+   * nowhere to split the extra leading digit, so the whole remainder is
+   * shown as one merged total in the rightmost RHS column instead — the
+   * same idiom already used for a raw, pre-normalized multi-digit column sum
+   * — and the other RHS columns are left blank rather than showing a stale
+   * pre-correction value.
+   */
+  function applyFinalRhsTotals(cols: BaseMethodColumn[]) {
+    if (remainderFits) {
+      for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].total = finalRhsDigits[k]
+      return
+    }
+    for (let k = 0; k < rhsWidth - 1; k++) cols[lhsWidth + k].total = null
+    cols[lhsWidth + rhsWidth - 1].total = remainder
+  }
 
   // Pass 2: narrate the steps, mutating a running column-state array
   // (finalized totals + placed contributions) that each step snapshots. A
@@ -335,7 +376,7 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
     // (e.g. Q's own raw column landed ≥10 with nothing to redistribute it
     // into a valid remainder check) — settle the RHS here directly.
     for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
-    if (remainderFits) for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].total = finalRhsDigits[k]
+    applyFinalRhsTotals(cols)
     sumLines.push({ kind: 'result', label: 'Remainder', value: String(remainder) })
   } else {
     sumLines.push({ kind: 'result', label: 'RHS total', value: String(rawRemainder) })
@@ -365,10 +406,11 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
       const before = rhsRaw[k] + rhsCarry
       const [d, c] = normalizeDigit(before)
       if (before !== d) {
+        const next = k > 0 ? { label: `column ${colIdx}`, before: rhsRaw[k - 1] } : undefined
         remainderNormalizeLines.push({
           kind: 'calc',
           label: 'Normalize',
-          value: c !== 0 ? `${label} = ${before} → write ${d}, carry ${c} left into column ${colIdx}` : `${label} = ${before} → write ${d}`,
+          value: carryMessage(label, before, d, c, next),
         })
       }
       cols[colIdx].total = d
@@ -392,7 +434,7 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   if (correctionApplies) {
     stepNum += 1
     for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
-    if (remainderFits) for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].total = finalRhsDigits[k]
+    applyFinalRhsTotals(cols)
 
     const lastLhsLabel = `Q${subscript(lhsWidth)}`
     const oldLastChunk = lhsRaw[lhsWidth - 1]
@@ -460,13 +502,11 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
       const before = lastLhsChunks[i] + carry
       const [d, c] = normalizeDigit(before)
       if (before !== d) {
+        const next = i > 0 ? { label: `Q${subscript(i)}`, before: lastLhsChunks[i - 1] } : undefined
         normalizeLines.push({
           kind: 'calc',
           label: 'Normalize',
-          value:
-            c !== 0
-              ? `${label} = ${before} → write ${d}, carry ${c} left${i > 0 ? ` into Q${subscript(i)}` : ''}`
-              : `${label} = ${before} → write ${d}`,
+          value: carryMessage(label, before, d, c, next),
         })
       }
       cols[i].total = d

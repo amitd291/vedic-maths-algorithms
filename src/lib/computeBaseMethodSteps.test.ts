@@ -70,7 +70,7 @@ describe('computeBaseMethodSteps', () => {
     expect(normalizeStep.lines).toContainEqual({
       kind: 'calc',
       label: 'Normalize',
-      value: 'column 4 = 13 → write 3, carry 1 left into column 3',
+      value: 'column 4 = 13 − 10 = 3; column 3 = 8 + 1 = 9',
     })
   })
 
@@ -89,6 +89,14 @@ describe('computeBaseMethodSteps', () => {
       tone: 'success',
       text: 'Verify: 12 × 131 + 121 = 1693 ✓',
     })
+
+    // The corrected remainder (121) needs 3 digits but the RHS board only
+    // has 2 columns (divisor 131 has one more digit than base 100's RHS
+    // width) — nowhere to split the extra leading digit, so it's shown as
+    // one merged, green total in the rightmost RHS column instead of a
+    // stale pre-correction value split across both.
+    expect(last.cols.map((c) => c.colState)).toEqual(['done', 'done', 'done', 'done'])
+    expect(last.cols.map((c) => c.total)).toEqual([1, 2, null, 121])
   })
 
   it('normalizes a signed intermediate LHS digit with no RHS correction needed (14189 ÷ 102)', () => {
@@ -99,6 +107,11 @@ describe('computeBaseMethodSteps', () => {
     // trivial "remainder" step.
     expect(last.title).toBe(`Step ${steps.length - 1} — normalize the quotient`)
     expect(last.cols.map((c) => c.total)).toEqual([1, 3, 9, 1, 1])
+    expect(last.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Normalize',
+      value: 'Q₃ = 10 + (-1) = 9; Q₂ = 4 − 1 = 3',
+    })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
@@ -123,6 +136,11 @@ describe('computeBaseMethodSteps', () => {
     const last = steps[steps.length - 1]
     expect(last.title).toBe(`Step ${steps.length - 1} — normalize the quotient`)
     expect(last.cols.map((c) => c.total)).toEqual([9, 6, 1])
+    expect(last.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Normalize',
+      value: 'Q₂ = 16 − 10 = 6; Q₁ = 8 + 1 = 9',
+    })
     expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '96 · 1' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',

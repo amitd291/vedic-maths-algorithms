@@ -127,22 +127,27 @@ single digit (10030 ÷ 827, and the same bug in 1693 ÷ 131).
       stay amber until the closing step); new
       `iteration-c-generic-logic-v2.html` for 10600 ÷ 87 (boundary case,
       no interim step)
-- [ ] Dev-only example-picker dropdown on `BaseMethodPage`, so verifying a
-      worked example no longer means hand-editing `BASE_DIVIDEND`/
-      `BASE_DIVISOR` in the source. Gate on
-      `import.meta.env.MODE === 'development'`, **not** `.DEV` — verified by
-      hand that Vitest's `import.meta.env.DEV` is `true` too (`MODE` is
-      `'test'`, only ever false when `MODE === 'production'`), so `.DEV`
-      would leak the dropdown into component tests; `.MODE` is `'test'`
-      under Vitest and `'production'` in the built/e2e bundle, so it's
-      naturally hidden in both without any test-side change. Replace the
-      `BASE_DIVIDEND`/`BASE_DIVISOR` consts with `useState`, recompute
-      `steps` via `useMemo` keyed on the selection. Backing list, each
-      labeled by the scenario it demonstrates (matches the engine test
-      suite): 865 ÷ 9 [normalize quotient], 10030 ÷ 827 [normalize
-      remainder], 10600 ÷ 87 [quotient carry cascade], 1693 ÷ 131
-      [Paravartya sign flip], 14189 ÷ 102 [quotient-only normalize],
-      30122 ÷ 87 [no closing steps]. Small `<select>`, no new dependency.
+- [x] Dev-only example-picker dropdown on `BaseMethodPage`, gated on
+      `import.meta.env.MODE === 'development'` (not `.DEV`, which is also
+      `true` under Vitest). Six examples, one per closing-step scenario.
+      Manually verified all six, plus `npm test`, e2e, and `npm run build`
+      (dropdown absent from the dist bundle)
+- [x] Reworded normalize-step explainer text to read as manual
+      borrow/carry subtraction (`Q₃ = 10 + (-1) = 9; Q₂ = 4 − 1 = 3`
+      instead of `Q₃ = -1 → write 9, carry -1 left into Q₂`) — same
+      `carryMessage` helper used by both the LHS quotient-normalize and
+      RHS remainder-normalize steps
+- [x] **Bug fix**: 1693 ÷ 131's closing `compare and correct` step marked
+      the RHS columns green with stale *pre-correction* digits (`-1`, `0`)
+      instead of the corrected remainder (121) — RHS is only 2 columns wide,
+      but a Paravartya divisor can exceed the base (131 > 100), so its
+      remainder can need one more digit than the board has room for. Fixed
+      via `applyFinalRhsTotals`: when the remainder doesn't fit, it's shown
+      as one merged, green total in the rightmost RHS column (the other RHS
+      column left blank) instead of splitting a digit that has nowhere to
+      go — same idiom already used for a raw pre-normalized multi-digit
+      column sum. Test added in `computeBaseMethodSteps.test.ts` (1693 ÷ 131,
+      asserts `cols` totals `[1, 2, null, 121]`, all `colState: 'done'`)
 
 ---
 
