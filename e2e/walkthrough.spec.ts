@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('walkthrough nav (dev server)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await page.getByLabel('Open method menu').click();
+    await page.getByRole('tab', { name: /Dhvajanka/ }).click();
   });
 
   test('steps forward through the default problem, disabling nav at each boundary', async ({ page }) => {

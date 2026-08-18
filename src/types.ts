@@ -31,7 +31,17 @@ export interface BaseMethodColumn {
   colState: '' | 'active' | 'done'
 }
 
+// A carry moving from `fromCol` into the column immediately to its left,
+// `toCol` (always fromCol - 1) — shown on the step just before the
+// corresponding normalize step turns those columns to their final digit.
+export interface BaseMethodCarry {
+  fromCol: number
+  toCol: number
+  amount: number
+}
+
 export interface BaseMethodStep extends StepBase {
   cols: BaseMethodColumn[]
   connectors: boolean[] // length cols.length - 1; whether the arrow between col i and i+1 is lit this step
+  carries?: BaseMethodCarry[] // carry chips shown on this step, if any
 }

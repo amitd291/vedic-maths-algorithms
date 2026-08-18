@@ -69,6 +69,13 @@ describe('computeBaseMethodSteps', () => {
       label: 'Normalize',
       value: 'column 4 = 13 − 10 = 3; column 3 = 8 + 1 = 9',
     })
+
+    // The carry chip: shown on the preceding "sum the RHS columns" step,
+    // while column 4 (index 3) is still raw — not on the normalize step
+    // itself, which settles clean with nothing left to flag.
+    const sumStep = steps.find((s) => s.title.includes('sum the RHS columns'))!
+    expect(sumStep.carries).toEqual([{ fromCol: 3, toCol: 2, amount: 1 }])
+    expect(normalizeStep.carries).toBeUndefined()
   })
 
   it('flips sign for a negative (Paravartya) difference and normalizes a negative remainder (1693 ÷ 131)', () => {
@@ -114,6 +121,15 @@ describe('computeBaseMethodSteps', () => {
       tone: 'success',
       text: 'Verify: 139 × 102 + 11 = 14189 ✓',
     })
+
+    // No compare-and-correct step exists here (no divisor-range correction
+    // was needed), so the carry chip lands on the preceding "sum the RHS
+    // columns" step instead — and it's a borrow (negative amount), the only
+    // tested case where the carry direction reverses.
+    expect(steps.some((s) => s.title.includes('compare and correct'))).toBe(false)
+    const sumStep = steps.find((s) => s.title.includes('sum the RHS columns'))!
+    expect(sumStep.carries).toEqual([{ fromCol: 2, toCol: 1, amount: -1 }])
+    expect(last.carries).toBeUndefined()
   })
 
   it('settles a positive raw remainder and quotient in one step when no carry cascade is needed (30122 ÷ 87)', () => {
@@ -181,6 +197,14 @@ describe('computeBaseMethodSteps', () => {
     // "normalize the remainder" step is inserted here; compare-and-correct
     // consumes the raw RHS total directly, same as before this change.
     expect(steps.some((s) => s.title.includes('normalize the remainder'))).toBe(false)
+
+    // The carry chip: shown on the preceding "compare and correct" step,
+    // while Q₃ (col index 2) is still raw (11) — Q₂ (col index 1, still
+    // showing its own raw total of 1) is the receiver. The normalize step
+    // itself (`last`) settles clean, with no carries left to flag.
+    const compareStep = steps.find((s) => s.title.includes('compare and correct'))!
+    expect(compareStep.carries).toEqual([{ fromCol: 2, toCol: 1, amount: 1 }])
+    expect(last.carries).toBeUndefined()
   })
 
   it('lands a contribution chip on an LHS column, aligned with its RHS neighbors from the same multiply (10030 ÷ 827)', () => {

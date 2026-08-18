@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('input form (dev server)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await page.getByLabel('Open method menu').click();
+    await page.getByRole('tab', { name: /Dhvajanka/ }).click();
   });
 
   test('solving a new valid problem replaces the walkthrough', async ({ page }) => {

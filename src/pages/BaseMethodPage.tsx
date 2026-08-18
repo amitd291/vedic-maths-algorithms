@@ -7,8 +7,8 @@ import NavControls from '../components/NavControls'
 import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
 import { useStepNav } from '../hooks/useStepNav'
 
-const BASE_DIVIDEND = 865
-const BASE_DIVISOR = 9
+const BASE_DIVIDEND = 10600
+const BASE_DIVISOR = 87
 
 const DEV_EXAMPLES = [
   { dividend: 123, divisor: 9, label: '123 ÷ 9 (no closing steps)' },

@@ -6,7 +6,7 @@ import DhvajankaPage from './pages/DhvajankaPage'
 import BaseMethodPage from './pages/BaseMethodPage'
 
 export default function App() {
-  const [method, setMethod] = useState<Method>('dhvajanka')
+  const [method, setMethod] = useState<Method>('base')
 
   return (
     <div className="app-shell">

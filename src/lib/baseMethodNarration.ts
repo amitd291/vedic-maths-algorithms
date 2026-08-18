@@ -1,4 +1,4 @@
-import type { BaseMethodColumn, BaseMethodStep, CalcLine } from '../types'
+import type { BaseMethodCarry, BaseMethodColumn, BaseMethodStep, CalcLine } from '../types'
 import { normalizeDigit, type BaseMethodSolution } from './baseMethodMath'
 
 const SUBSCRIPT_DIGITS = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉']
@@ -35,6 +35,22 @@ function carryMessage(
   const nextAfter = next.before + carry
   const sign = carry < 0 ? '−' : '+'
   return `${label} = ${applied}; ${next.label} = ${next.before} ${sign} ${n} = ${nextAfter}`
+}
+
+/**
+ * Right-to-left carry cascade over `chunks` (mirrors the normalize loops
+ * below), returning every nonzero carry as a {fromCol, toCol, amount} pair
+ * at the columns' real board index (`colOffset` + the chunk's position).
+ */
+function carryPairs(chunks: number[], colOffset: number): BaseMethodCarry[] {
+  const pairs: BaseMethodCarry[] = []
+  let carry = 0
+  for (let i = chunks.length - 1; i >= 0; i--) {
+    const [, c] = normalizeDigit(chunks[i] + carry)
+    if (c !== 0) pairs.push({ fromCol: colOffset + i, toCol: colOffset + i - 1, amount: c })
+    carry = c
+  }
+  return pairs
 }
 
 /** Mutable running step counter, threaded through the closing-step helpers. */
@@ -97,6 +113,13 @@ function buildClosingSteps(
   const steps: BaseMethodStep[] = []
   const needsClosingSteps = correctionApplies || lhsNormalizeChanged
 
+  // Carry chips: shown on the step right before the one that actually
+  // applies the corresponding normalize pass, while those columns are
+  // still in their interim/raw state (the normalize step itself ends up
+  // all-green, with nothing left to flag).
+  const lhsCarries = lhsNormalizeChanged ? carryPairs(lastLhsChunks, 0) : []
+  const rhsCarries = correctionApplies && rhsNormalizeChanged ? carryPairs(rhsRaw, lhsWidth) : []
+
   if (!needsClosingSteps) {
     // Trivial case: the raw RHS total was already in range, and every raw
     // LHS chunk was already a single 0–9 digit — finish everything here.
@@ -126,11 +149,17 @@ function buildClosingSteps(
     sumLines.push({ kind: 'result', label: 'RHS total', value: String(rawRemainder) })
   }
 
+  // This step is the immediate predecessor of whichever normalize step
+  // runs next: the RHS one, if it's about to fire; otherwise the LHS one,
+  // but only when no compare-and-correct step will land in between.
+  const sumStepCarries = rhsCarries.length ? rhsCarries : !correctionApplies ? lhsCarries : []
+
   steps.push({
     title: `Step ${counter.n} — sum the RHS columns`,
     cols: cloneCols(cols),
     connectors: noConnectors,
     lines: sumLines,
+    ...(sumStepCarries.length ? { carries: sumStepCarries } : {}),
   })
 
   // Normalize-the-remainder step: the RHS-side twin of the LHS
@@ -232,6 +261,7 @@ function buildClosingSteps(
       cols: cloneCols(cols),
       connectors: noConnectors,
       lines,
+      ...(lhsCarries.length ? { carries: lhsCarries } : {}),
     })
   }
 

@@ -156,13 +156,57 @@ Spec: build plan Iteration E.
 - [x] Refactor: extracted shared `useStepNav`/`useArrowKeyNav` hooks (with
       their own tests) out of `DhvajankaPage`/`BaseMethodPage` and
       `DigitBoard`/`BaseMethodDigitBoard`'s duplicated nav logic
-- [ ] The carry number is not visible as a chip, we should consider
-      showing it with a different color for more clarity visually (though it is in the explainer text).
+- [x] **Carry chip**: violet (new to the palette — amber is active/raw,
+      blue is result/quotient/remainder text, green is final), shown only
+      on the LHS normalize/RHS remainder-normalize step, on the two columns
+      actually involved in a carry (sender/receiver), not as a running
+      badge through every step. Placed at the step where the values are
+      still interim/raw (e.g. the `compare and correct` step, where the
+      raw ≥10 total already implies its own carry-out) — the step that
+      turns everything green stays clean with no chips. Chip text is a
+      plain signed delta (`− 10` / `+ 1`), no arrows (redundant with the
+      digit change itself); the existing top connector between the two
+      columns gets a small left-pointing violet arrow + amount instead,
+      since that's the one place an arrow actually shows direction.
+      Mockup: `plans/mockups/iteration-e-carry-chip-v1.html` (anchored on
+      10600 ÷ 87 — the "already-finalized-looking digit gets redone"
+      case: Q₂'s raw total is 1, a single digit easy to mistake for
+      final, until Q₃'s carry bumps it to 2).
+- [ ] **e2e coverage for the carry chip + other D/D.1 branches** currently
+      untested at the e2e level, via the dev dropdown:
+  - [ ] Positive carry: extend the 10600÷87 default-walkthrough test to
+        assert chip/connector at the interim step, gone at the next
+  - [ ] Borrow (negative carry): new test, 14189÷102, chip signs/arrow
+        reversed, no compare-and-correct step involved
+  - [ ] Paravartya sign flip + board-width remainder merge: new test,
+        1693÷131, negative difference + merged RHS remainder
+  - [ ] Self-contained RHS normalize: new test, 10030÷827, "normalize the
+        remainder" step reachable with corrected totals
 - [ ] The quotient remainder main section is cropped in mobile,
-      font size may need to be dynamic (to verify)
-- [ ] Input form: dividend + divisor, full range per iteration D's engine
-- [ ] `Q × D + R === N` self-check + error banner
-- [ ] Unit tests: both sign cases, normalization edge cases, full input range
+      font size may need to be dynamic (to verify). Confirmed still
+      unaddressed: `.ch` (`global.css:744-751`) is a fixed `15px`, no
+      `@media` rule touches it/`.co`/`.cn`/`.calc-line`
+- [ ] Input form: dividend + divisor, full range per iteration D's engine.
+      Not started — `BaseMethodPage.tsx` only has hardcoded defaults
+      (865/9) plus the dev-only 6-example dropdown; `InputForm`/`ErrorBanner`
+      exist but are wired only into `DhvajankaPage`
+- [ ] `Q × D + R === N` self-check + error banner. Not done — today's
+      "Verify: … ✓" narration line (`baseMethodNarration.ts:106,221,265`)
+      is string interpolation of already-correct values, no real
+      comparison, can never fail; needs an actual runtime check once the
+      input form exists
+- [ ] Unit tests: both sign cases and normalization edge cases are already
+      covered by D.1's hand-picked examples (865÷9, 10600÷87, 30122÷87,
+      14189÷102, 10030÷827, 1693÷131) — remaining scope is the full-range
+      sweep. Cheap: divisor 1..999 × ~20-50 dividends each (~20-50k calls,
+      O(digits) each) asserting `Q×D+R===dividend`/no-throw, math cost is
+      milliseconds, framework overhead dominates. Add it, but it
+      supplements rather than replaces the hand-picked edge cases — it
+      won't reliably hit the two throw-boundary conditions (too-small
+      dividend, board-too-narrow-for-quotient), the degenerate
+      self-check-throw divisor, or narrow flag combinations like 1693÷131's
+      remainder-overflow-past-board-width merge; those stay as explicit
+      pairs
 - [ ] Once the input form drives the dividend/divisor, update
       `e2e/base-method.spec.ts` to set a specific input (not the page's
       default example) before asserting, so the e2e test stays a

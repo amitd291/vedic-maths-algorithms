@@ -11,8 +11,8 @@ function hasLabel(l: CalcLine): l is Extract<CalcLine, { label: string }> {
 // Kept in sync with BaseMethodPage's own hardcoded example rather than
 // duplicated as a literal, so a future default-example change doesn't
 // require touching every assertion below.
-const DIVIDEND = 865
-const DIVISOR = 9
+const DIVIDEND = 10600
+const DIVISOR = 87
 const steps = computeBaseMethodSteps(DIVIDEND, DIVISOR)
 const base = nearestBase(DIVISOR)
 const difference = base - DIVISOR
@@ -103,6 +103,23 @@ describe('BaseMethodPage', () => {
 
     expect(screen.getByText(result.label).nextElementSibling).toHaveTextContent(result.value)
     expect(screen.getByText(note.text)).toBeInTheDocument()
+  })
+
+  it('shows the carry chip on the interim step, and nowhere else', () => {
+    const compareStepIndex = steps.findIndex((s) => s.title.includes('compare and correct'))
+    const { container } = render(<BaseMethodPage />)
+
+    for (let i = 0; i < compareStepIndex; i++) {
+      fireEvent.click(screen.getByLabelText('Next step'))
+    }
+    expect(screen.getByText(`${compareStepIndex + 1} / ${steps.length}`)).toBeInTheDocument()
+
+    const activeChips = container.querySelectorAll('.carry-chip.show')
+    expect(Array.from(activeChips).map((c) => c.textContent)).toEqual(['+ 1', '− 10'])
+    expect(container.querySelector('.carry-connector.show')).not.toBeNull()
+
+    fireEvent.click(screen.getByLabelText('Next step'))
+    expect(container.querySelectorAll('.carry-chip.show')).toHaveLength(0)
   })
 
   it("Q1's multiply lands its contribution chips on the same row across every column it reaches", () => {

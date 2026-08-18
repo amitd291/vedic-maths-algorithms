@@ -15,6 +15,8 @@
   --green-bg: rgba(34, 122, 63, 0.12);
   --blue: #2158b0;
   --blue-bg: rgba(33, 88, 176, 0.12);
+  --violet: #7635c9;
+  --violet-bg: rgba(118, 53, 201, 0.12);
 
   color-scheme: light dark;
 }
@@ -37,6 +39,8 @@
     --green-bg: rgba(95, 203, 134, 0.16);
     --blue: #6fa4f2;
     --blue-bg: rgba(111, 164, 242, 0.16);
+    --violet: #b28aec;
+    --violet-bg: rgba(178, 138, 236, 0.18);
   }
 }
 
@@ -467,6 +471,7 @@ body {
   flex-direction: column;
   align-items: center;
   padding-top: 60px;
+  gap: 4px;
 }
 
 .connector-arrow {
@@ -485,6 +490,30 @@ body {
   width: 18px;
   height: 18px;
   stroke: var(--amber);
+}
+
+/* carry connector: a left-pointing arrow between the two columns a carry
+   moves between, opposite direction/color of the fan-out arrow above */
+.carry-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--violet);
+}
+
+.carry-connector.show {
+  opacity: 1;
+}
+
+.carry-connector svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--violet);
 }
 
 .col-label {
@@ -548,6 +577,28 @@ body {
 .total-slot.show.done {
   visibility: visible;
   color: var(--green);
+}
+
+/* carry chip: sits under the total-slot, only visible on the two columns
+   sending/receiving a carry, while both are still in an interim/raw state */
+.carry-chip {
+  min-width: 52px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  color: var(--violet);
+  background: var(--violet-bg);
+  border: 1px solid var(--violet);
+  visibility: hidden;
+}
+
+.carry-chip.show {
+  visibility: visible;
 }
 
 .arrow-btn {

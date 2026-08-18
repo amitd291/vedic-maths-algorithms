@@ -10,34 +10,34 @@ vi.mock('./pages/BaseMethodPage', () => ({
 }))
 
 describe('App', () => {
-  it('renders the Dhvajanka pane by default', () => {
+  it('renders the Base Method pane by default', () => {
     render(<App />)
-    expect(screen.getByTestId('dhvajanka-page')).toBeInTheDocument()
-    expect(screen.queryByTestId('base-method-page')).not.toBeInTheDocument()
-  })
-
-  function switchToBaseMethod() {
-    fireEvent.click(screen.getByLabelText('Open method menu'))
-    fireEvent.click(screen.getByRole('tab', { name: /Base Method/ }))
-  }
-
-  it('switches to the Base Method pane via the menu', () => {
-    render(<App />)
-    switchToBaseMethod()
-
     expect(screen.getByTestId('base-method-page')).toBeInTheDocument()
     expect(screen.queryByTestId('dhvajanka-page')).not.toBeInTheDocument()
   })
 
-  it('switching back to Dhvajanka renders its default pane again', () => {
-    render(<App />)
-    switchToBaseMethod()
-
+  function switchToDhvajanka() {
     fireEvent.click(screen.getByLabelText('Open method menu'))
     fireEvent.click(screen.getByRole('tab', { name: /Dhvajanka/ }))
+  }
+
+  it('switches to the Dhvajanka pane via the menu', () => {
+    render(<App />)
+    switchToDhvajanka()
 
     expect(screen.getByTestId('dhvajanka-page')).toBeInTheDocument()
     expect(screen.queryByTestId('base-method-page')).not.toBeInTheDocument()
+  })
+
+  it('switching back to Base Method renders its default pane again', () => {
+    render(<App />)
+    switchToDhvajanka()
+
+    fireEvent.click(screen.getByLabelText('Open method menu'))
+    fireEvent.click(screen.getByRole('tab', { name: /Base Method/ }))
+
+    expect(screen.getByTestId('base-method-page')).toBeInTheDocument()
+    expect(screen.queryByTestId('dhvajanka-page')).not.toBeInTheDocument()
   })
 
   describe('sidebar navigation', () => {
