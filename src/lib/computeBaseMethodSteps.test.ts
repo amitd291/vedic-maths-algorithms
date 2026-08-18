@@ -47,7 +47,10 @@ describe('computeBaseMethodSteps', () => {
   it('carries right to left across RHS columns and applies the overflow correction (10030 ÷ 827)', () => {
     const steps = computeBaseMethodSteps(10030, 827)
     const last = steps[steps.length - 1]
-    expect(last.title).toMatch(/normalize the quotient/)
+    // The corrected last LHS chunk (Q₂ = 1 + 1 = 2) is already a single
+    // digit, so no separate LHS-normalize step is needed — compare-and-correct
+    // is the final step.
+    expect(last.title).toBe('Step 7 — compare and correct')
     expect(last.cols.map((c) => c.total)).toEqual([1, 2, 1, 0, 6])
     expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 · 106' })
     expect(last.lines.at(-1)).toEqual({
@@ -55,12 +58,31 @@ describe('computeBaseMethodSteps', () => {
       tone: 'success',
       text: 'Verify: 12 × 827 + 106 = 10030 ✓',
     })
+
+    // Self-contained case: raw RHS is [8, 13, 3] — carrying right to left
+    // within RHS alone (13 → write 3, carry 1 into column 3; 8 + 1 = 9,
+    // already a single digit) never spills past RHS's own leftmost column,
+    // so it's safe to show as its own step, the same carry mechanism as the
+    // LHS normalize step, before the divisor-range compare-and-correct runs.
+    const normalizeStep = steps.find((s) => s.title.includes('normalize the remainder'))!
+    expect(normalizeStep.title).toBe('Step 6 — normalize the remainder')
+    expect(normalizeStep.cols.map((c) => c.total)).toEqual([1, 1, 9, 3, 3])
+    expect(normalizeStep.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Normalize',
+      value: 'column 4 = 13 → write 3, carry 1 left into column 3',
+    })
   })
 
   it('flips sign for a negative (Paravartya) difference and normalizes a negative remainder (1693 ÷ 131)', () => {
     const steps = computeBaseMethodSteps(1693, 131)
     const last = steps[steps.length - 1]
-    expect(last.title).toMatch(/normalize the quotient/)
+    // Corrected last LHS chunk (Q₂ = 3 − 1 = 2) is already a single digit,
+    // so no separate LHS-normalize step is needed. The RHS side is a
+    // boundary case (raw [-1, 0] — carrying spills past RHS's own leftmost
+    // column), so no interim normalize-the-remainder step either —
+    // compare-and-correct is the final step.
+    expect(last.title).toBe('Step 6 — compare and correct')
     expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 · 121' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
@@ -135,6 +157,15 @@ describe('computeBaseMethodSteps', () => {
       tone: 'success',
       text: 'Verify: 121 × 87 + 73 = 10600 ✓',
     })
+
+    // Boundary case: raw RHS is [16, 0] — carrying 16 within RHS alone would
+    // spill past RHS's own leftmost column. That crossing can only be
+    // resolved by the divisor-range compare-and-correct (base and divisor
+    // differ, so a raw base-10 carry across the LHS/RHS boundary would
+    // silently give the wrong quotient/remainder) — so no interim
+    // "normalize the remainder" step is inserted here; compare-and-correct
+    // consumes the raw RHS total directly, same as before this change.
+    expect(steps.some((s) => s.title.includes('normalize the remainder'))).toBe(false)
   })
 
   it('lands a contribution chip on an LHS column, aligned with its RHS neighbors from the same multiply (10030 ÷ 827)', () => {

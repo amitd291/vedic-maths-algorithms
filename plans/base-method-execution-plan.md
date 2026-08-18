@@ -36,145 +36,113 @@ React 19 + TypeScript, single-file build, Vitest.
 ## Iteration C — Generic logic & Paravartya sign variant (10030 ÷ 827 or 1693 ÷ 131) ✅
 
 Spec: build plan Iteration C. Mockup:
-`plans/mockups/iteration-c-generic-logic-v1.html` (10030 ÷ 827 walkthrough —
-fan-out connector, right-to-left carry, per-column baseline alignment).
+`plans/mockups/iteration-c-generic-logic-v1.html`.
 
 - [x] Generalize `computeBaseMethodSteps` for a multi-digit `difference`
       (product fans out across several columns to the right)
-- [x] Generalize the board's connector into a fan-out (one column → several
-      columns to the right) — already generic from iteration B (per-gap
-      `connectors[]` booleans); no board change needed
-- [x] Column running-totals stay on one visual baseline regardless of how
-      many contributions a column holds that step (already implemented in
-      iteration B via `MAX_CONTRIBUTIONS`; carried forward unchanged)
-- [x] Right-to-left carry cascade across RHS columns
-- [x] Two-pass RHS overflow correction (RHS total ≥ divisor)
-- [x] Confirm engine/board handle the Paravartya sign flip and
-      negative-remainder normalization
-- [x] Contribution chips render sign-aware (`+7` / `−31`), not a hardcoded `+`
-- [x] Method rules gain the multi-digit-difference/carry-cascade bullet
-      and the Paravartya normalization bullet
-- [x] Test coverage pass: unit tests for the new engine paths (fan-out,
-      RHS carry cascade, two-pass overflow, Paravartya sign flip); component
-      tests for sidebar open/close via scrim click and arrow-key
-      (`ArrowLeft`/`ArrowRight`) board navigation (gap noted after iteration
-      B, deferred here); e2e coverage for the Base Method pane (iteration B
-      only has the Dhvajanka dist-bundle smoke test)
+- [x] Fan-out connector, right-to-left RHS carry cascade, two-pass RHS
+      overflow correction, per-column baseline alignment
+- [x] Paravartya sign flip and negative-remainder normalization; sign-aware
+      contribution chips (`+7` / `−31`)
+- [x] Method rules gain the multi-digit-difference/carry-cascade and
+      Paravartya normalization bullets
+- [x] Test coverage: engine (fan-out, RHS carry cascade, two-pass overflow,
+      Paravartya sign flip); component (sidebar scrim/arrow-key nav); e2e
+      for the Base Method pane
 
 ---
 
 ## Iteration D — LHS carry cascade + full-range coverage ✅
 
 Spec: build plan Iteration D. Brought forward ahead of dynamic inputs so
-v2 doesn't need a second engine rework. Iteration C already proves
-multi-digit `difference`, RHS carry, and single-subtraction overflow
-correction — this iteration covers only what those examples don't exercise.
+v2 doesn't need a second engine rework.
 
-- [x] Refactor: `App.tsx` becomes a shell (routing only — `method` state,
-      `Header`/`Footer`, picks the pane); extract `DhvajankaPane` and
-      `BaseMethodPane` out of `App.tsx` into their own components
-      (`DhvajankaPage.tsx`, `BaseMethodPage.tsx`), each owning its own
-      state/logic unchanged. Default pane on load stays Dhvajanka (no
-      behavior change, just relocated code)
-- [x] Refactor: `App.test.tsx` mocks the two page components and covers routing only
-      (default pane, menu-driven switch, default pane re-render after
-      switching back — panes unmount on switch, so no in-progress-state
-      persistence to test: kept the existing conditional-render behavior
-      over a keep-both-mounted approach, since `DigitBoard`/
-      `BaseMethodDigitBoard` each attach a global `window` keydown listener
-      and a CSS-hidden inactive pane would leave its listener live,
-      fighting the active pane for ArrowLeft/ArrowRight); move the existing
-      step-walkthrough/assertion coverage into dedicated
-      `DhvajankaPage.test.tsx` / `BaseMethodPage.test.tsx` files with
-      extensive coverage there instead — done
-- [x] Before thinning e2e, add the unit/component coverage that would
-      otherwise be lost — each of these currently exists only in an e2e
-      spec:
-  - [x] `InputForm.test.tsx` (didn't exist yet): the full validation
-        matrix from `e2e/input-form.spec.ts` — empty dividend/divisor,
-        non-integer dividend, out-of-range divisor, both-fields-invalid,
-        boundary values (dividend 1, divisor 99), error clearing on a
-        subsequent valid solve
-  - [x] `DhvajankaPage.test.tsx`: per-case coverage from
-        `e2e/edge-case-problems.spec.ts` (divisor > dividend, exact
-        division/zero remainder, leading-zero quotient digit,
-        quotient-digit adjustment/backtrack) — quotient-slot values and
-        the success/verify note per case; plus the raw-lookahead-note vs.
-        adjusted-reduction-note swap across steps 3→4 of 5428÷35
-  - [x] `BaseMethodPage.test.tsx`: the RHS carry-first column-sum
-        explainer ordering (rightmost column first) and the Q2-multiply
-        contribution-chip alignment checks (same-row landing across every
-        column reached, placeholder vs. real chip) from
-        `e2e/base-method.spec.ts`
-  - [x] Gap audit against every e2e scenario turned up two real gaps, now
-        closed: the boundary-value case (dividend 1, divisor 99) didn't
-        have a page-level assertion that no `.error-banner` appears
-        (added to `DhvajankaPage.test.tsx`); and arrow-key clamping at
-        the first/last step was never tested anywhere, in e2e or unit
-        (added to both `DhvajankaPage.test.tsx` and
-        `BaseMethodPage.test.tsx`). `dist-bundle.spec.ts` stays e2e-only
-        (real build artifact over `file://`, not unit-testable). The
-        cross-pane "switching back restores its own walkthrough" case is
-        covered by composition (mocked `App.test.tsx` routing +
-        `DhvajankaPage.test.tsx` default-render) rather than one
-        end-to-end integration test — accepted trade-off of mocking
-        `App.test.tsx`'s children
-- [x] Refactor: Thin the e2e specs down to simple happy/unhappy-path smoke checks
-      only after the above unit/component coverage is in place. Result:
-      23 → 6 e2e tests. `walkthrough.spec.ts` and `input-form.spec.ts`
-      slimmed to one happy + one unhappy path each; `edge-case-problems.spec.ts`
-      deleted (the default problem 5428÷35 already IS its most complex
-      case, "quotient-digit adjustment/backtrack", so it's exercised by
-      the other specs; the rest moved to `DhvajankaPage.test.tsx`);
-      `base-method.spec.ts` slimmed to the happy-path walkthrough plus
-      the one real e2e-only case, the cross-pane "switching back restores
-      its own walkthrough" integration check. `dist-bundle.spec.ts`
-      untouched (already a single smoke test)
-- [x] **Design finalized** (superseding the fixed-point-redo approach
-      committed earlier): no mid-pass redo at all. Each column's raw total
-      (`digit[i] + incoming[i]`) is used as-is as its own multiplicand, even
-      when ≥10 or negative — never reduced to a single digit until the very
-      end. Fanning a contribution out still uses exactly `rhsWidth` target
-      columns, but only the rightmost `rhsWidth − 1` are forced to a single
-      digit (`% 10`); the leftmost absorbs all remaining magnitude
-      (`contribution / 10^(rhsWidth-1)`, floored), so it can itself be
-      multi-digit. One closing step then: compares the assembled raw
-      remainder to the divisor in a *loop* (not a single `if`), adds that
-      correction onto the last raw LHS chunk, then carry-normalizes across
-      the LHS chunks right-to-left. Verified by hand against the source
-      PDF's own **30122 ÷ 87** example (343/281 → 346/20) plus 10600 ÷ 87,
-      865 ÷ 9, 9995 ÷ 9, 1693 ÷ 131, 14189 ÷ 102 — all match. This resolves
-      the LHS-carry-cascade item, the RHS-overflow-into-LHS guard (865 ÷ 9),
-      and remainder-correction-beyond-one-subtraction, all as one mechanism
-      — no separate handling needed for any of them. Mockup:
-      `plans/mockups/iteration-d-lhs-carry-cascade-v1.html` (865 ÷ 9).
-      Board/UX consequence: a column stays amber (`active`) through every
-      step it appears in, even mid-computation with a raw ≥10 value (e.g.
-      "Q₂ = 14"); only the closing step flips LHS (and RHS, once corrected)
-      to green (`done`) together, once. One case still throws, for a
-      display reason, not a math one: if the final LHS carry pass would
-      overflow past the first column, the quotient genuinely needs a wider
-      board than the assumed LHS width (e.g. 9995 ÷ 9 → 1110 needs 4
-      columns, board has 3) — no box to put the extra digit in
-- [x] Implement the design above in `computeBaseMethodSteps`, replacing the
-      fixed-point loop; keep `BaseMethodPage`'s hardcoded example at
-      10600 ÷ 87; add a positive `865 ÷ 9` test (was a throw-guard test);
-      update the 9995 ÷ 9 test to assert the display-width-only guard;
-      verify all existing cases still pass. Added a `30122 ÷ 87` test (the
-      source PDF's own example) per the design note above. Updated
-      `BaseMethodPage.test.tsx` and `e2e/base-method.spec.ts` for the new
-      step count/titles (10600 ÷ 87 now runs 10 steps instead of 8: the RHS
-      sum, compare-and-correct, and normalize are three distinct steps
-      rather than two). Verified visually with Playwright screenshots
-      against the running dev server: LHS columns stay amber with raw
-      (possibly ≥10) totals through every step until the closing
-      compare-and-correct/normalize steps flip everything to green
-      together, matching the mockup.
-- [x] Verify the baseline-alignment padding (iteration C) against an LHS
-      column that holds a contribution, not just RHS columns — already
-      exercised by the existing 10030 ÷ 827 example (Q₁'s 3-digit
-      contribution fans across one LHS column and two RHS columns); added an
-      explicit test asserting the LHS column's chip lands correctly
+- [x] Refactor: `App.tsx` → shell only (routing); extracted `DhvajankaPage.tsx`
+      / `BaseMethodPage.tsx`, each owning its own state/logic. `App.test.tsx`
+      mocks both pages and covers routing only; step-walkthrough coverage
+      moved into the two page test files
+- [x] Added unit/component coverage that previously existed only in e2e
+      (`InputForm.test.tsx` validation matrix, `DhvajankaPage.test.tsx`
+      per-case edge coverage, `BaseMethodPage.test.tsx` RHS-carry/contribution-
+      chip coverage, arrow-key clamping), then thinned e2e specs to
+      happy/unhappy smoke checks (23 → 6 e2e tests); `dist-bundle.spec.ts`
+      untouched
+- [x] **Design**: no mid-pass redo. Each column's raw total (`digit[i] +
+      incoming[i]`) is used as-is, even when ≥10 or negative, until a single
+      closing step compares the assembled raw remainder to the divisor in a
+      loop, corrects the last raw LHS chunk, then carry-normalizes across LHS
+      chunks right-to-left. Verified by hand against the source PDF's
+      30122 ÷ 87 example plus 10600 ÷ 87, 865 ÷ 9, 9995 ÷ 9, 1693 ÷ 131,
+      14189 ÷ 102. Resolves LHS carry cascade, RHS-overflow-into-LHS, and
+      multi-subtraction remainder correction as one mechanism. Mockup:
+      `plans/mockups/iteration-d-lhs-carry-cascade-v1.html`. UX: an LHS
+      column stays amber through every step, even with a raw ≥10 value;
+      only the closing step flips LHS/RHS to green together. Still throws
+      if the final LHS carry pass overflows past the first column (board
+      too narrow for the quotient, e.g. 9995 ÷ 9 → 1110 needs 4 columns) —
+      a display-width guard, not a math error
+- [x] Implemented in `computeBaseMethodSteps`; `BaseMethodPage` hardcoded
+      example now 10600 ÷ 87 (10 steps); added 865 ÷ 9 and 30122 ÷ 87 tests,
+      updated 9995 ÷ 9 to assert the display-width guard; verified visually
+      via Playwright screenshots against the mockup
+- [x] Verified baseline-alignment padding against an LHS column holding a
+      contribution (10030 ÷ 827, Q₁'s 3-digit contribution)
+
+---
+
+## Iteration D.1 — closing-step bug fix + generic RHS normalize ✅
+
+Bug found post-D: `lhsNormalizeChanged` compared against `lhsRaw`
+(pre-correction) instead of `lastLhsChunks` (post-correction), so an RHS
+correction folding into the last LHS chunk falsely triggered a redundant
+"normalize the quotient" step even when that chunk was already a valid
+single digit (10030 ÷ 827, and the same bug in 1693 ÷ 131).
+
+- [x] Fixed `lhsNormalizeChanged` to compare `finalLhsDigits` against
+      `lastLhsChunks` — same shape as `correctionApplies`. Verified against
+      10030 ÷ 827, 1693 ÷ 131 (redundant step now gone) and 865 ÷ 9,
+      14189 ÷ 102, 10600 ÷ 87 (genuine carry cases, unchanged)
+- [x] New generic **normalize the remainder** step (RHS twin of the LHS
+      normalize step, same `normalizeDigit` right-to-left mechanism),
+      inserted between `sum the RHS columns` and `compare and correct` —
+      shown only when the RHS carry is *self-contained* (doesn't spill past
+      RHS's own leftmost column, e.g. 10030 ÷ 827: `[8,13,3]` → `[9,3,3]`).
+      When it would spill (e.g. 10600 ÷ 87: `[16,0]`), the step is skipped —
+      that crossing isn't an ordinary base-10 carry (base and divisor
+      differ by `difference`), so it's left to the existing
+      divisor-comparison loop, unchanged
+- [x] Title `normalize the remainder`; line label `Normalize`,
+      column-referenced (`column 4 = 13 → write 3, carry 1 left into
+      column 3`), skip-if-unchanged — mirrors the LHS normalize step
+- [x] Tests updated first in `computeBaseMethodSteps.test.ts`: 10030 ÷ 827
+      (new step + renumbered final step), 10600 ÷ 87 and 1693 ÷ 131
+      (assert no such step for the boundary/no-op cases)
+- [x] Implemented in `computeBaseMethodSteps.ts`. Also reverted a stray
+      uncommitted `BaseMethodPage.tsx` example change (10030 ÷ 827, left
+      over from earlier screenshot-taking, out of sync with its test file)
+      back to the committed 865 ÷ 9. Full suite (53 tests) + `tsc --noEmit`
+      pass
+- [x] Mockups: updated `iteration-c-generic-logic-v1.html` (10030 ÷ 827,
+      self-contained case — also fixed its pre-D color-state modeling to
+      stay amber until the closing step); new
+      `iteration-c-generic-logic-v2.html` for 10600 ÷ 87 (boundary case,
+      no interim step)
+- [ ] Dev-only example-picker dropdown on `BaseMethodPage`, so verifying a
+      worked example no longer means hand-editing `BASE_DIVIDEND`/
+      `BASE_DIVISOR` in the source. Gate on
+      `import.meta.env.MODE === 'development'`, **not** `.DEV` — verified by
+      hand that Vitest's `import.meta.env.DEV` is `true` too (`MODE` is
+      `'test'`, only ever false when `MODE === 'production'`), so `.DEV`
+      would leak the dropdown into component tests; `.MODE` is `'test'`
+      under Vitest and `'production'` in the built/e2e bundle, so it's
+      naturally hidden in both without any test-side change. Replace the
+      `BASE_DIVIDEND`/`BASE_DIVISOR` consts with `useState`, recompute
+      `steps` via `useMemo` keyed on the selection. Backing list, each
+      labeled by the scenario it demonstrates (matches the engine test
+      suite): 865 ÷ 9 [normalize quotient], 10030 ÷ 827 [normalize
+      remainder], 10600 ÷ 87 [quotient carry cascade], 1693 ÷ 131
+      [Paravartya sign flip], 14189 ÷ 102 [quotient-only normalize],
+      30122 ÷ 87 [no closing steps]. Small `<select>`, no new dependency.
 
 ---
 
@@ -186,7 +154,10 @@ Spec: build plan Iteration E.
   - [ ] `baseMethodMath.ts` — pure calc (`nearestBase`, `normalizeDigit`,
         `solveBaseMethod`), no step/narration concerns
   - [ ] `baseMethodNarration.ts` — builds `BaseMethodStep[]` from the solve result
-  - [ ] Bonus: closing-step branches (trivial/fold/compare/normalize) → one `buildClosingSteps` helper
+  - [ ] Bonus: closing-step branches → one `buildClosingSteps` helper. Grew
+        to five branches as of iteration D.1 (trivial / fold-no-correction /
+        normalize-the-remainder / compare-and-correct / normalize-the-quotient),
+        up from four — makes this split more warranted, not less
   - [ ] `computeBaseMethodSteps.ts` — thin orchestrator + re-exports
 - [ ] Refactor (candidate, confirmed real): `DhvajankaPage.tsx` and
       `BaseMethodPage.tsx` duplicate identical step-navigation state

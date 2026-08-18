@@ -140,6 +140,24 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   }
   const correctionApplies = correctionCount !== 0
 
+  // Self-contained RHS carry-normalize: carrying right-to-left strictly
+  // within RHS's own columns, never crossing into LHS. If this doesn't
+  // fully resolve (carry-out past RHS's own leftmost column), a raw
+  // base-10 carry into LHS would silently compute the wrong
+  // quotient/remainder — base and divisor differ by `difference`, so only
+  // the divisor-range compare-and-correct below may move value across that
+  // boundary. That boundary case is left alone here (`rhsSelfContained`
+  // false) and resolved entirely by the existing compare-and-correct step.
+  const rhsNormalizeDigits: number[] = Array(rhsWidth).fill(0)
+  let rhsCarryOut = 0
+  for (let k = rhsWidth - 1; k >= 0; k--) {
+    const [d, c] = normalizeDigit(rhsRaw[k] + rhsCarryOut)
+    rhsNormalizeDigits[k] = d
+    rhsCarryOut = c
+  }
+  const rhsSelfContained = rhsCarryOut === 0
+  const rhsNormalizeChanged = rhsSelfContained && rhsNormalizeDigits.some((d, k) => d !== rhsRaw[k])
+
   const lastLhsChunks = [...lhsRaw]
   lastLhsChunks[lhsWidth - 1] += correctionCount
 
@@ -154,7 +172,7 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
   if (lhsCarry !== 0) {
     throw new Error('quotient needs a wider board than the assumed LHS width (iteration D display limit)')
   }
-  const lhsNormalizeChanged = finalLhsDigits.some((d, i) => d !== lhsRaw[i])
+  const lhsNormalizeChanged = finalLhsDigits.some((d, i) => d !== lastLhsChunks[i])
 
   const quotient = finalLhsDigits.reduce((acc, v) => acc * 10 + v, 0)
   if (quotient * divisor + remainder !== dividend) {
@@ -329,6 +347,46 @@ export function computeBaseMethodSteps(dividend: number, divisor: number): BaseM
     connectors: noConnectors,
     lines: sumLines,
   })
+
+  // Normalize-the-remainder step: the RHS-side twin of the LHS
+  // normalize-the-quotient step below, same carry mechanism, shown only
+  // when the RHS carry is self-contained (see rhsSelfContained above) and
+  // there's a following compare-and-correct step to show it before —
+  // without one, the RHS finalizes straight to its correctly-formatted
+  // digits with nothing to demonstrate.
+  if (correctionApplies && rhsNormalizeChanged) {
+    stepNum += 1
+
+    const remainderNormalizeLines: CalcLine[] = []
+    let rhsCarry = 0
+    for (let k = rhsWidth - 1; k >= 0; k--) {
+      const colIdx = lhsWidth + k
+      const label = `column ${colIdx + 1}`
+      const before = rhsRaw[k] + rhsCarry
+      const [d, c] = normalizeDigit(before)
+      if (before !== d) {
+        remainderNormalizeLines.push({
+          kind: 'calc',
+          label: 'Normalize',
+          value: c !== 0 ? `${label} = ${before} → write ${d}, carry ${c} left into column ${colIdx}` : `${label} = ${before} → write ${d}`,
+        })
+      }
+      cols[colIdx].total = d
+      rhsCarry = c
+    }
+    remainderNormalizeLines.push({
+      kind: 'note',
+      tone: 'warn',
+      text: `RHS total is now ${rawRemainder}, after being re-expressed as valid digits.`,
+    })
+
+    steps.push({
+      title: `Step ${stepNum} — normalize the remainder`,
+      cols: cloneCols(cols),
+      connectors: noConnectors,
+      lines: remainderNormalizeLines,
+    })
+  }
 
   // Compare-and-correct step (only when the raw remainder was out of range).
   if (correctionApplies) {
