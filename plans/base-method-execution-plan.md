@@ -90,13 +90,7 @@ v2 doesn't need a second engine rework.
 
 ---
 
-## Iteration D.1 — closing-step bug fix + generic RHS normalize ✅
-
-Bug found post-D: `lhsNormalizeChanged` compared against `lhsRaw`
-(pre-correction) instead of `lastLhsChunks` (post-correction), so an RHS
-correction folding into the last LHS chunk falsely triggered a redundant
-"normalize the quotient" step even when that chunk was already a valid
-single digit (10030 ÷ 827, and the same bug in 1693 ÷ 131).
+## Iteration D.1 — Bug fixes and minor enhancements ✅
 
 - [x] Fixed `lhsNormalizeChanged` to compare `finalLhsDigits` against
       `lastLhsChunks` — same shape as `correctionApplies`. Verified against
@@ -155,26 +149,13 @@ single digit (10030 ÷ 827, and the same bug in 1693 ÷ 131).
 
 Spec: build plan Iteration E.
 
-- [ ] Refactor: split `computeBaseMethodSteps.ts` (grown long) into:
-  - [ ] `baseMethodMath.ts` — pure calc (`nearestBase`, `normalizeDigit`,
-        `solveBaseMethod`), no step/narration concerns
-  - [ ] `baseMethodNarration.ts` — builds `BaseMethodStep[]` from the solve result
-  - [ ] Bonus: closing-step branches → one `buildClosingSteps` helper. Grew
-        to five branches as of iteration D.1 (trivial / fold-no-correction /
-        normalize-the-remainder / compare-and-correct / normalize-the-quotient),
-        up from four — makes this split more warranted, not less
-  - [ ] `computeBaseMethodSteps.ts` — thin orchestrator + re-exports
-- [ ] Refactor (candidate, confirmed real): `DhvajankaPage.tsx` and
-      `BaseMethodPage.tsx` duplicate identical step-navigation state
-      (`cur`/`clamp`/`isFirst`/`isLast`/`onBack`/`onNext`/`NavControls`
-      wiring) — extract to a shared `useStepNav(total)` hook. Separately,
-      `DigitBoard.tsx` and `BaseMethodDigitBoard.tsx` each independently
-      register the same global `window` ArrowLeft/ArrowRight keydown
-      effect — extract to a shared `useArrowKeyNav(onBack, onNext)` hook.
-      Surfaced during iteration D's e2e-coverage audit: the boundary
-      arrow-key-clamping test had to be duplicated per page because the
-      underlying logic is duplicated per page; one hook + one hook test
-      each would remove that duplication at the source
+- [x] Refactor: split `computeBaseMethodSteps.ts` into `baseMethodMath.ts`
+      (pure calc), `baseMethodNarration.ts` (step narration, incl. a
+      `buildClosingSteps` helper), and a thin orchestrator; new
+      `baseMethodMath.test.ts` for the pure layer
+- [x] Refactor: extracted shared `useStepNav`/`useArrowKeyNav` hooks (with
+      their own tests) out of `DhvajankaPage`/`BaseMethodPage` and
+      `DigitBoard`/`BaseMethodDigitBoard`'s duplicated nav logic
 - [ ] The carry number is not visible as a chip, we should consider
       showing it with a different color for more clarity visually (though it is in the explainer text).
 - [ ] The quotient remainder main section is cropped in mobile,

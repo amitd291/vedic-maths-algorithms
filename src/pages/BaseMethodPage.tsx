@@ -5,17 +5,19 @@ import BaseMethodRules from '../components/BaseMethodRules'
 import StepPanel from '../components/StepPanel'
 import NavControls from '../components/NavControls'
 import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
+import { useStepNav } from '../hooks/useStepNav'
 
 const BASE_DIVIDEND = 865
 const BASE_DIVISOR = 9
 
 const DEV_EXAMPLES = [
+  { dividend: 123, divisor: 9, label: '123 ÷ 9 (no closing steps)' },
   { dividend: 865, divisor: 9, label: '865 ÷ 9 (normalize quotient)' },
   { dividend: 10030, divisor: 827, label: '10030 ÷ 827 (normalize remainder)' },
   { dividend: 10600, divisor: 87, label: '10600 ÷ 87 (quotient carry cascade)' },
+  { dividend: 30122, divisor: 87, label: '30122 ÷ 87 (quotient carry cascade 2)' },
   { dividend: 1693, divisor: 131, label: '1693 ÷ 131 (Paravartya sign flip)' },
   { dividend: 14189, divisor: 102, label: '14189 ÷ 102 (quotient-only normalize)' },
-  { dividend: 30122, divisor: 87, label: '30122 ÷ 87 (no closing steps)' },
 ]
 
 export default function BaseMethodPage() {
@@ -24,10 +26,8 @@ export default function BaseMethodPage() {
   const steps = useMemo(() => computeBaseMethodSteps(dividend, divisor), [dividend, divisor])
   const base = nearestBase(divisor)
   const difference = base - divisor
-  const [cur, setCur] = useState(0)
-
   const total = steps.length
-  const clamp = (i: number) => Math.min(Math.max(i, 0), total - 1)
+  const { cur, setCur, isFirst, isLast, onBack, onNext, onDot } = useStepNav(total)
 
   const onSelectExample = (value: string) => {
     const [d, n] = value.split('/').map(Number)
@@ -57,14 +57,8 @@ export default function BaseMethodPage() {
         <span className="problem-badge">{dividend} ÷ {divisor}</span>
       </div>
       <BaseMethodDivisorCard base={base} difference={difference} />
-      <BaseMethodDigitBoard
-        step={steps[cur]}
-        onBack={() => setCur((c) => clamp(c - 1))}
-        onNext={() => setCur((c) => clamp(c + 1))}
-        isFirst={cur === 0}
-        isLast={cur === total - 1}
-      />
-      <NavControls cur={cur} total={total} onDot={(i) => setCur(clamp(i))} />
+      <BaseMethodDigitBoard step={steps[cur]} onBack={onBack} onNext={onNext} isFirst={isFirst} isLast={isLast} />
+      <NavControls cur={cur} total={total} onDot={onDot} />
       <StepPanel steps={steps} cur={cur} />
       <BaseMethodRules />
     </>

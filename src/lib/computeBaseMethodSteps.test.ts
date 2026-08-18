@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { computeBaseMethodSteps, nearestBase } from './computeBaseMethodSteps'
+import { computeBaseMethodSteps } from './computeBaseMethodSteps'
 
-describe('nearestBase', () => {
-  it('picks the nearest power of 10', () => {
-    expect(nearestBase(9)).toBe(10)
-    expect(nearestBase(95)).toBe(100)
-    expect(nearestBase(12)).toBe(10)
-  })
-})
+// nearestBase and the solveBaseMethod validation throws (dividend/divisor
+// shape, too-small dividend, quotient-width overflow) are pure-math concerns
+// covered directly in baseMethodMath.test.ts — no need to re-derive them
+// through the full narration pipeline here.
 
 describe('computeBaseMethodSteps', () => {
   it('reproduces the 123 ÷ 9 worked example', () => {
@@ -195,15 +192,5 @@ describe('computeBaseMethodSteps', () => {
     expect(multiplyQ1Step.cols[1].contributions[0]).toBe(1)
     expect(multiplyQ1Step.cols[2].contributions[0]).toBe(7)
     expect(multiplyQ1Step.cols[3].contributions[0]).toBe(3)
-  })
-
-  it('throws when the quotient would need an extra leading digit beyond the LHS width (9995 ÷ 9)', () => {
-    // The true quotient (1110) needs 4 columns; the board only has 3 — a
-    // display-width limit, not a math failure.
-    expect(() => computeBaseMethodSteps(9995, 9)).toThrow(/wider board/)
-  })
-
-  it('throws for a self-check mismatch', () => {
-    expect(() => computeBaseMethodSteps(1, 2)).toThrow()
   })
 })

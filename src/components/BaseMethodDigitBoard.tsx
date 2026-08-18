@@ -1,5 +1,6 @@
-import { Fragment, useEffect } from 'react'
+import { Fragment } from 'react'
 import type { BaseMethodStep } from '../types'
+import { useArrowKeyNav } from '../hooks/useArrowKeyNav'
 
 interface BaseMethodDigitBoardProps {
   step: BaseMethodStep
@@ -12,14 +13,7 @@ interface BaseMethodDigitBoardProps {
 export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, isLast }: BaseMethodDigitBoardProps) {
   const maxContributions = Math.max(1, ...step.cols.map((c) => c.contributions.length))
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'ArrowLeft') onBack()
-      if (e.key === 'ArrowRight') onNext()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack, onNext])
+  useArrowKeyNav(onBack, onNext)
 
   return (
     <div className="digit-board">

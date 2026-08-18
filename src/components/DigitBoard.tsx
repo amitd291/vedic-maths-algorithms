@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import type { Step } from '../types'
+import { useArrowKeyNav } from '../hooks/useArrowKeyNav'
 
 interface DigitBoardProps {
   digits: number[]
@@ -13,14 +13,7 @@ interface DigitBoardProps {
 export default function DigitBoard({ digits, step, onBack, onNext, isFirst, isLast }: DigitBoardProps) {
   const quotientLabels = step.quotientDigits.map((_, i) => `Q${i + 1}`)
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'ArrowLeft') onBack()
-      if (e.key === 'ArrowRight') onNext()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onBack, onNext])
+  useArrowKeyNav(onBack, onNext)
 
   return (
     <div className="digit-board">
