@@ -174,16 +174,10 @@ Spec: build plan Iteration E.
       final, until Q₃'s carry bumps it to 2).
 - [x] Page title matches the method name; base-method listed first in the
       hamburger menu.
-- [ ] **e2e coverage for the carry chip + other D/D.1 branches** currently
-      untested at the e2e level, via the dev dropdown:
-  - [ ] Positive carry: extend the 10600÷87 default-walkthrough test to
-        assert chip/connector at the interim step, gone at the next
-  - [ ] Borrow (negative carry): new test, 14189÷102, chip signs/arrow
-        reversed, no compare-and-correct step involved
-  - [ ] Paravartya sign flip + board-width remainder merge: new test,
-        1693÷131, negative difference + merged RHS remainder
-  - [ ] Self-contained RHS normalize: new test, 10030÷827, "normalize the
-        remainder" step reachable with corrected totals
+- [x] e2e coverage for the carry chip + other D/D.1 branches, via the dev
+      dropdown: positive carry (10600÷87), borrow (14189÷102), Paravartya
+      sign flip + remainder merge (1693÷131), self-contained RHS normalize
+      (10030÷827).
 - [ ] The quotient remainder main section is cropped in mobile,
       font size may need to be dynamic (to verify). Confirmed still
       unaddressed: `.ch` (`global.css:744-751`) is a fixed `15px`, no
@@ -216,6 +210,9 @@ Spec: build plan Iteration E.
       default example happens to be at the time. Optionally do the same in
       `BaseMethodPage.test.tsx` for a couple of cases, now that a specific
       input is choosable rather than only the one hardcoded default.
+- [ ] Expose the dev-only example picker to end users: a checkbox/link
+      toggle reveals the (redesigned) example dropdown on click, no longer
+      dev-gated. Mockup first before implementation.
 
 ---
 

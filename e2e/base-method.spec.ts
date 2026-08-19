@@ -11,10 +11,16 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(page.getByText('Setup')).toBeVisible();
     await expect(page.locator('.step-counter')).toHaveText('1 / 10');
 
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i < 9; i++) {
       await page.getByLabel('Next step').click();
     }
+    await expect(page.locator('.step-counter')).toHaveText('9 / 10');
+    await expect(page.locator('.carry-chip.show')).toHaveText(['+ 1', '− 10']);
+    await expect(page.locator('.carry-connector.show')).toBeVisible();
+
+    await page.getByLabel('Next step').click();
     await expect(page.locator('.step-counter')).toHaveText('10 / 10');
+    await expect(page.locator('.carry-chip.show')).toHaveCount(0);
     await expect(page.getByText('Verify: 121 × 87 + 73 = 10600 ✓')).toBeVisible();
     await expect(page.getByLabel('Next step')).toBeDisabled();
   });
@@ -25,5 +31,58 @@ test.describe('Base Method pane (dev server)', () => {
 
     await expect(page.getByLabel('Dividend')).toHaveValue('5428');
     await expect(page.locator('.step-counter')).toHaveText('1 / 6');
+  });
+
+  test('shows a borrow (negative carry) with reversed chip signs and arrow, no compare-and-correct step (14189 ÷ 102)', async ({ page }) => {
+    await page.getByLabel('Dev example picker').selectOption({ label: '14189 ÷ 102 (quotient-only normalize)' });
+    await expect(page.locator('.step-counter')).toHaveText('1 / 9');
+
+    for (let i = 1; i < 8; i++) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.locator('.step-counter')).toHaveText('8 / 9');
+    await expect(page.getByText('sum the RHS columns')).toBeVisible();
+    await expect(page.getByText('compare and correct')).toHaveCount(0);
+    await expect(page.locator('.carry-chip.show')).toHaveText(['− 1', '+ 10']);
+    const arrowLine = page.locator('.carry-connector.show line');
+    await expect(arrowLine).toHaveAttribute('x1', '6');
+
+    await page.getByLabel('Next step').click();
+    await expect(page.locator('.step-counter')).toHaveText('9 / 9');
+    await expect(page.locator('.carry-chip.show')).toHaveCount(0);
+  });
+
+  test('flips sign for a negative (Paravartya) difference and merges an over-width remainder (1693 ÷ 131)', async ({ page }) => {
+    await page.getByLabel('Dev example picker').selectOption({ label: '1693 ÷ 131 (Paravartya sign flip)' });
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('-31');
+    await expect(page.locator('.step-counter')).toHaveText('1 / 7');
+
+    for (let i = 1; i < 7; i++) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.locator('.step-counter')).toHaveText('7 / 7');
+    await expect(page.getByText('compare and correct')).toBeVisible();
+    await expect(page.getByText('Verify: 12 × 131 + 121 = 1693 ✓')).toBeVisible();
+
+    const totals = page.locator('.total-slot.show.done');
+    await expect(totals).toHaveCount(3);
+    await expect(totals.last()).toHaveText('121');
+  });
+
+  test('reaches "normalize the remainder" with self-contained RHS carry correction (10030 ÷ 827)', async ({ page }) => {
+    await page.getByLabel('Dev example picker').selectOption({ label: '10030 ÷ 827 (normalize remainder)' });
+    await expect(page.locator('.step-counter')).toHaveText('1 / 8');
+
+    for (let i = 1; i < 6; i++) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.locator('.step-counter')).toHaveText('6 / 8');
+    await expect(page.getByText('sum the RHS columns')).toBeVisible();
+    await expect(page.locator('.carry-chip.show')).toHaveText(['+ 1', '− 10']);
+
+    await page.getByLabel('Next step').click();
+    await expect(page.locator('.step-counter')).toHaveText('7 / 8');
+    await expect(page.getByText('normalize the remainder')).toBeVisible();
+    await expect(page.locator('.carry-chip.show')).toHaveCount(0);
   });
 });
