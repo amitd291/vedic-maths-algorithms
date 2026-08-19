@@ -178,10 +178,8 @@ Spec: build plan Iteration E.
       dropdown: positive carry (10600÷87), borrow (14189÷102), Paravartya
       sign flip + remainder merge (1693÷131), self-contained RHS normalize
       (10030÷827).
-- [ ] The quotient remainder main section is cropped in mobile,
-      font size may need to be dynamic (to verify). Confirmed still
-      unaddressed: `.ch` (`global.css:744-751`) is a fixed `15px`, no
-      `@media` rule touches it/`.co`/`.cn`/`.calc-line`
+- [x] Fixed: `.ch`/`.co`/`.cn` font size now drops to `13px` under the
+      existing 400px mobile breakpoint in `global.css`.
 - [ ] Input form: dividend + divisor, full range per iteration D's engine.
       Not started — `BaseMethodPage.tsx` only has hardcoded defaults
       (865/9) plus the dev-only 6-example dropdown; `InputForm`/`ErrorBanner`

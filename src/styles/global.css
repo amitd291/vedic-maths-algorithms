@@ -948,4 +948,14 @@ body {
   .divisor-digit {
     font-size: 1.6rem;
   }
+
+  .co,
+  .cn,
+  .ch {
+    font-size: 13px;
+  }
+
+  .calc-line {
+    gap: 0.35rem;
+  }
 }
