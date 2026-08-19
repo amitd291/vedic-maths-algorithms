@@ -85,19 +85,27 @@ describe('BaseMethodPage', () => {
     }
   })
 
-  it('surfaces a raw (≥10) LHS total, used as-is with no mid-pass redo', () => {
-    const rawStepIndex = steps.findIndex((s) =>
+  it('surfaces a raw (≥10) LHS total, used as-is with no mid-pass redo (865 ÷ 9)', () => {
+    // Set up its own example rather than riding the page default — this
+    // scenario (a raw ≥10 LHS total) isn't guaranteed to exist for whatever
+    // dividend/divisor the default happens to be.
+    const rawSteps = computeBaseMethodSteps(865, 9)
+    const rawStepIndex = rawSteps.findIndex((s) =>
       s.lines.some((l) => l.kind === 'note' && l.text.includes('not a single digit')),
     )
+
     render(<BaseMethodPage />)
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '865' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+    fireEvent.submit(document.querySelector('form')!)
 
     for (let i = 0; i < rawStepIndex; i++) {
       fireEvent.click(screen.getByLabelText('Next step'))
     }
-    expect(screen.getByText(`${rawStepIndex + 1} / ${steps.length}`)).toBeInTheDocument()
+    expect(screen.getByText(`${rawStepIndex + 1} / ${rawSteps.length}`)).toBeInTheDocument()
 
-    const result = steps[rawStepIndex].lines.find((l) => l.kind === 'result')! as Extract<CalcLine, { kind: 'result' }>
-    const note = steps[rawStepIndex].lines.find(
+    const result = rawSteps[rawStepIndex].lines.find((l) => l.kind === 'result')! as Extract<CalcLine, { kind: 'result' }>
+    const note = rawSteps[rawStepIndex].lines.find(
       (l) => l.kind === 'note' && l.text.includes('not a single digit'),
     )! as Extract<CalcLine, { kind: 'note' }>
 
@@ -105,14 +113,21 @@ describe('BaseMethodPage', () => {
     expect(screen.getByText(note.text)).toBeInTheDocument()
   })
 
-  it('shows the carry chip on the interim step, and nowhere else', () => {
-    const compareStepIndex = steps.findIndex((s) => s.title.includes('compare and correct'))
-    const { container } = render(<BaseMethodPage />)
+  it('shows the carry chip on the interim step, and nowhere else (865 ÷ 9)', () => {
+    // Same reasoning as above — the carry chip isn't guaranteed to appear
+    // anywhere in whatever example the page default happens to be.
+    const carrySteps = computeBaseMethodSteps(865, 9)
+    const carryStepIndex = carrySteps.findIndex((s) => (s.carries?.length ?? 0) > 0)
 
-    for (let i = 0; i < compareStepIndex; i++) {
+    const { container } = render(<BaseMethodPage />)
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '865' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    for (let i = 0; i < carryStepIndex; i++) {
       fireEvent.click(screen.getByLabelText('Next step'))
     }
-    expect(screen.getByText(`${compareStepIndex + 1} / ${steps.length}`)).toBeInTheDocument()
+    expect(screen.getByText(`${carryStepIndex + 1} / ${carrySteps.length}`)).toBeInTheDocument()
 
     const activeChips = container.querySelectorAll('.carry-chip.show')
     expect(Array.from(activeChips).map((c) => c.textContent)).toEqual(['+ 1', '− 10'])

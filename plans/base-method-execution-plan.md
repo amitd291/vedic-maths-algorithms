@@ -195,6 +195,9 @@ Spec: build plan Iteration E.
       no longer relying on the page's default example or the dev-only
       picker. `BaseMethodPage.test.tsx` already got equivalent coverage
       (form-driven solve, error-banner-on-throw) in the input-form task.
+- [x] Decoupled `BaseMethodPage.test.tsx`'s two default-dependent tests
+      (raw ≥10 LHS total, carry chip) to set up their own 865÷9 example via
+      the input form, instead of assuming the page default exercises them.
 - [ ] Expose the dev-only example picker to end users: a checkbox/link
       toggle reveals the (redesigned) example dropdown on click, no longer
       dev-gated. Mockup first before implementation.
