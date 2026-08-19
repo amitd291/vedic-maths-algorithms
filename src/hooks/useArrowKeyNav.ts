@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 export function useArrowKeyNav(onBack: () => void, onNext: () => void) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target
+      if (target instanceof Element && target.closest('input, textarea, select')) return
       if (e.key === 'ArrowLeft') onBack()
       if (e.key === 'ArrowRight') onNext()
     }

@@ -147,4 +147,26 @@ describe('BaseMethodPage', () => {
     }
     expect(chipIdx).toBe(expectedChips.length)
   })
+
+  it('solves a new problem entered via the input form', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '865' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    const newSteps = computeBaseMethodSteps(865, 9)
+    expect(screen.getByText(`1 / ${newSteps.length}`)).toBeInTheDocument()
+  })
+
+  it('shows an error banner instead of crashing when the dividend is too small for its base', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '87' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('dividend is too small for this base')
+    expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+  })
 })

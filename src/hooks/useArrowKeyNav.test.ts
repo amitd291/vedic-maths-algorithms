@@ -17,6 +17,22 @@ describe('useArrowKeyNav', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
+  it('ignores ArrowLeft/ArrowRight fired while focus is inside a form field', () => {
+    const onBack = vi.fn()
+    const onNext = vi.fn()
+    renderHook(() => useArrowKeyNav(onBack, onNext))
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+
+    fireEvent.keyDown(input, { key: 'ArrowRight' })
+    fireEvent.keyDown(input, { key: 'ArrowLeft' })
+    expect(onNext).not.toHaveBeenCalled()
+    expect(onBack).not.toHaveBeenCalled()
+
+    document.body.removeChild(input)
+  })
+
   it('ignores other keys', () => {
     const onBack = vi.fn()
     const onNext = vi.fn()

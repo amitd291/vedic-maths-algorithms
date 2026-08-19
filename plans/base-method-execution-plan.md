@@ -180,15 +180,10 @@ Spec: build plan Iteration E.
       (10030÷827).
 - [x] Fixed: `.ch`/`.co`/`.cn` font size now drops to `13px` under the
       existing 400px mobile breakpoint in `global.css`.
-- [ ] Input form: dividend + divisor, full range per iteration D's engine.
-      Not started — `BaseMethodPage.tsx` only has hardcoded defaults
-      (865/9) plus the dev-only 6-example dropdown; `InputForm`/`ErrorBanner`
-      exist but are wired only into `DhvajankaPage`
-- [ ] `Q × D + R === N` self-check + error banner. Not done — today's
-      "Verify: … ✓" narration line (`baseMethodNarration.ts:106,221,265`)
-      is string interpolation of already-correct values, no real
-      comparison, can never fail; needs an actual runtime check once the
-      input form exists
+- [x] Input form (dividend 1-99999, divisor 1-999) wired into
+      `BaseMethodPage`, plus `ErrorBanner` for engine throws
+- [x] `Q × D + R === N` self-check + error banner (closed by the above —
+      the self-check throw already existed, just had no banner to surface through)
 - [ ] Unit tests: both sign cases and normalization edge cases are already
       covered by D.1's hand-picked examples (865÷9, 10600÷87, 30122÷87,
       14189÷102, 10030÷827, 1693÷131) — remaining scope is the full-range
