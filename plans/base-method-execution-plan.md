@@ -190,13 +190,11 @@ Spec: build plan Iteration E.
       hand-picked examples (865÷9, 10600÷87, 30122÷87, 14189÷102, 10030÷827,
       1693÷131), which stay as explicit pairs for the narrow flag
       combinations the sweep can't reliably hit
-- [ ] Once the input form drives the dividend/divisor, update
-      `e2e/base-method.spec.ts` to set a specific input (not the page's
-      default example) before asserting, so the e2e test stays a
-      predictable, hardcoded-expectation check independent of whatever the
-      default example happens to be at the time. Optionally do the same in
-      `BaseMethodPage.test.tsx` for a couple of cases, now that a specific
-      input is choosable rather than only the one hardcoded default.
+- [x] `e2e/base-method.spec.ts` now drives every case through the real
+      `BaseMethodInputForm` (a `solve(page, dividend, divisor)` helper),
+      no longer relying on the page's default example or the dev-only
+      picker. `BaseMethodPage.test.tsx` already got equivalent coverage
+      (form-driven solve, error-banner-on-throw) in the input-form task.
 - [ ] Expose the dev-only example picker to end users: a checkbox/link
       toggle reveals the (redesigned) example dropdown on click, no longer
       dev-gated. Mockup first before implementation.

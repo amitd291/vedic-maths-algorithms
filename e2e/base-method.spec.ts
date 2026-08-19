@@ -1,4 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function solve(page: Page, dividend: number, divisor: number) {
+  await page.locator('#base-dividend-input').fill(String(dividend));
+  await page.locator('#base-divisor-input').fill(String(divisor));
+  await page.getByRole('button', { name: 'Solve' }).click();
+}
 
 test.describe('Base Method pane (dev server)', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,6 +14,7 @@ test.describe('Base Method pane (dev server)', () => {
   });
 
   test('renders the 10600 ÷ 87 walkthrough and steps through to the verified remainder', async ({ page }) => {
+    await solve(page, 10600, 87);
     await expect(page.getByText('Setup')).toBeVisible();
     await expect(page.locator('.step-counter')).toHaveText('1 / 10');
 
@@ -34,7 +41,7 @@ test.describe('Base Method pane (dev server)', () => {
   });
 
   test('shows a borrow (negative carry) with reversed chip signs and arrow, no compare-and-correct step (14189 ÷ 102)', async ({ page }) => {
-    await page.getByLabel('Dev example picker').selectOption({ label: '14189 ÷ 102 (quotient-only normalize)' });
+    await solve(page, 14189, 102);
     await expect(page.locator('.step-counter')).toHaveText('1 / 9');
 
     for (let i = 1; i < 8; i++) {
@@ -53,7 +60,7 @@ test.describe('Base Method pane (dev server)', () => {
   });
 
   test('flips sign for a negative (Paravartya) difference and merges an over-width remainder (1693 ÷ 131)', async ({ page }) => {
-    await page.getByLabel('Dev example picker').selectOption({ label: '1693 ÷ 131 (Paravartya sign flip)' });
+    await solve(page, 1693, 131);
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-31');
     await expect(page.locator('.step-counter')).toHaveText('1 / 7');
 
@@ -70,7 +77,7 @@ test.describe('Base Method pane (dev server)', () => {
   });
 
   test('reaches "normalize the remainder" with self-contained RHS carry correction (10030 ÷ 827)', async ({ page }) => {
-    await page.getByLabel('Dev example picker').selectOption({ label: '10030 ÷ 827 (normalize remainder)' });
+    await solve(page, 10030, 827);
     await expect(page.locator('.step-counter')).toHaveText('1 / 8');
 
     for (let i = 1; i < 6; i++) {
@@ -87,6 +94,7 @@ test.describe('Base Method pane (dev server)', () => {
   });
 
   test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {
+    await solve(page, 10600, 87);
     for (let i = 1; i < 10; i++) {
       await page.getByLabel('Next step').click();
     }
