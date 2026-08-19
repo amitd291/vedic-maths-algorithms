@@ -198,9 +198,6 @@ Spec: build plan Iteration E.
 - [x] Decoupled `BaseMethodPage.test.tsx`'s two default-dependent tests
       (raw ≥10 LHS total, carry chip) to set up their own 865÷9 example via
       the input form, instead of assuming the page default exercises them.
-- [ ] Expose the dev-only example picker to end users: a checkbox/link
-      toggle reveals the (redesigned) example dropdown on click, no longer
-      dev-gated. Mockup first before implementation.
 
 ---
 
@@ -208,6 +205,12 @@ Spec: build plan Iteration E.
 
 Spec: build plan Iteration F. Speculative — no committed timeline.
 
+- [x] Exposed the example picker to end users (no longer dev-gated); default
+      is now the simplest example (123÷9), list ordered by complexity.
+      Mockup: `plans/mockups/iteration-f-example-picker-v1.html`
+- [x] Fixed a pre-existing `Step`/`BaseMethodStep` type bug in
+      `BaseMethodPage.tsx`; added `npm run typecheck` (`tsc -b`) since bare
+      `tsc --noEmit` was a silent no-op
 - [ ] Implement divisor-scaling (multiply the divisor up to a nearby base
       multiple, e.g. 35×3=105 or 35×2=70) as a real engine path, not just a
       discussion point: 5428 ÷ 35, see build plan "Examples with steps"

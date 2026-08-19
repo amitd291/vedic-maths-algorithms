@@ -11,8 +11,8 @@ function hasLabel(l: CalcLine): l is Extract<CalcLine, { label: string }> {
 // Kept in sync with BaseMethodPage's own hardcoded example rather than
 // duplicated as a literal, so a future default-example change doesn't
 // require touching every assertion below.
-const DIVIDEND = 10600
-const DIVISOR = 87
+const DIVIDEND = 123
+const DIVISOR = 9
 const steps = computeBaseMethodSteps(DIVIDEND, DIVISOR)
 const base = nearestBase(DIVISOR)
 const difference = base - DIVISOR
@@ -66,16 +66,24 @@ describe('BaseMethodPage', () => {
     expect(screen.getByText(`${steps.length} / ${steps.length}`)).toBeInTheDocument()
   })
 
-  it('sums the RHS columns left-to-right in the explainer text (raw, pre-correction)', () => {
-    const sumStepIndex = steps.findIndex((s) => s.title.includes('sum the RHS columns'))
+  it('sums the RHS columns left-to-right in the explainer text (raw, pre-correction) (10600 ÷ 87)', () => {
+    // Set up its own example rather than riding the page default — this
+    // step isn't guaranteed to exist for whatever dividend/divisor the
+    // default happens to be (e.g. it doesn't for the simplest default case).
+    const rhsSteps = computeBaseMethodSteps(10600, 87)
+    const sumStepIndex = rhsSteps.findIndex((s) => s.title.includes('sum the RHS columns'))
+
     const { container } = render(<BaseMethodPage />)
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '10600' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '87' } })
+    fireEvent.submit(document.querySelector('form')!)
 
     for (let i = 0; i < sumStepIndex; i++) {
       fireEvent.click(screen.getByLabelText('Next step'))
     }
-    expect(screen.getByText(`${sumStepIndex + 1} / ${steps.length}`)).toBeInTheDocument()
+    expect(screen.getByText(`${sumStepIndex + 1} / ${rhsSteps.length}`)).toBeInTheDocument()
 
-    const sumLines = steps[sumStepIndex].lines
+    const sumLines = rhsSteps[sumStepIndex].lines
       .filter(hasLabel)
       .filter((l) => l.label.startsWith('Sum column'))
     const labels = container.querySelectorAll('[aria-hidden="false"] .calc-line .co')
@@ -172,6 +180,30 @@ describe('BaseMethodPage', () => {
 
     const newSteps = computeBaseMethodSteps(865, 9)
     expect(screen.getByText(`1 / ${newSteps.length}`)).toBeInTheDocument()
+  })
+
+  it('selects a worked example, fills the form, solves it, and marks it selected', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.click(screen.getByText('865 ÷ 9'))
+
+    const newSteps = computeBaseMethodSteps(865, 9)
+    expect(screen.getByText(`1 / ${newSteps.length}`)).toBeInTheDocument()
+    expect(screen.getByLabelText('Dividend')).toHaveValue(865)
+    expect(screen.getByLabelText('Divisor')).toHaveValue(9)
+    expect(screen.getByText('865 ÷ 9').closest('button')).toHaveClass('selected')
+    expect(screen.getByText('10600 ÷ 87').closest('button')).not.toHaveClass('selected')
+  })
+
+  it('closes the worked-example panel after a selection', () => {
+    render(<BaseMethodPage />)
+
+    const toggle = document.getElementById('toggle-examples') as HTMLInputElement
+    fireEvent.click(toggle)
+    expect(toggle.checked).toBe(true)
+
+    fireEvent.click(screen.getByText('865 ÷ 9'))
+    expect(toggle.checked).toBe(false)
   })
 
   it('shows an error banner instead of crashing when the dividend is too small for its base', () => {

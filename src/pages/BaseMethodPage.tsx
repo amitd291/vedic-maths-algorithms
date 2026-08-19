@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import BaseMethodDivisorCard from '../components/BaseMethodDivisorCard'
 import BaseMethodDigitBoard from '../components/BaseMethodDigitBoard'
 import BaseMethodRules from '../components/BaseMethodRules'
@@ -8,25 +8,25 @@ import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
 import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
 import { useStepNav } from '../hooks/useStepNav'
-import type { Step } from '../types'
+import type { BaseMethodStep } from '../types'
 
-const BASE_DIVIDEND = 10600
-const BASE_DIVISOR = 87
+const BASE_DIVIDEND = 123
+const BASE_DIVISOR = 9
 
-const DEV_EXAMPLES = [
-  { dividend: 123, divisor: 9, label: '123 ÷ 9 (no closing steps)' },
-  { dividend: 865, divisor: 9, label: '865 ÷ 9 (normalize quotient)' },
-  { dividend: 10030, divisor: 827, label: '10030 ÷ 827 (normalize remainder)' },
-  { dividend: 10600, divisor: 87, label: '10600 ÷ 87 (quotient carry cascade)' },
-  { dividend: 30122, divisor: 87, label: '30122 ÷ 87 (quotient carry cascade 2)' },
-  { dividend: 1693, divisor: 131, label: '1693 ÷ 131 (Paravartya sign flip)' },
-  { dividend: 14189, divisor: 102, label: '14189 ÷ 102 (quotient-only normalize)' },
+const EXAMPLES = [
+  { dividend: 123, divisor: 9, desc: 'Default, the simplest case, solved in one pass' },
+  { dividend: 865, divisor: 9, desc: 'The quotient needs a quick fix at the end' },
+  { dividend: 10600, divisor: 87, desc: 'A carry ripples back through the quotient' },
+  { dividend: 30122, divisor: 87, desc: 'A multi-step remainder fix, not just a single correction' },
+  { dividend: 10030, divisor: 827, desc: 'The remainder needs a quick fix at the end' },
+  { dividend: 14189, divisor: 102, desc: 'Paravartya technique, only the quotient needs fixing up' },
+  { dividend: 1693, divisor: 131, desc: 'Paravartya technique, i.e. the divisor sits above the base, so signs flip' },
 ]
 
 interface Problem {
   dividend: number
   divisor: number
-  steps: Step[]
+  steps: BaseMethodStep[]
 }
 
 function solve(dividend: number, divisor: number): { problem: Problem | null; error: string | null } {
@@ -43,6 +43,7 @@ export default function BaseMethodPage() {
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
   const [exampleKey, setExampleKey] = useState(`${BASE_DIVIDEND}/${BASE_DIVISOR}`)
+  const exampleToggleRef = useRef<HTMLInputElement>(null)
   const total = problem?.steps.length ?? 0
   const { cur, setCur, isFirst, isLast, onBack, onNext, onDot } = useStepNav(total)
 
@@ -53,10 +54,10 @@ export default function BaseMethodPage() {
     setCur(0)
   }
 
-  const onSelectExample = (value: string) => {
-    const [d, n] = value.split('/').map(Number)
-    handleSolve(d, n)
-    setExampleKey(value)
+  const onSelectExample = (dividend: number, divisor: number) => {
+    handleSolve(dividend, divisor)
+    setExampleKey(`${dividend}/${divisor}`)
+    if (exampleToggleRef.current) exampleToggleRef.current.checked = false
   }
 
   const [initialDividend, initialDivisor] = exampleKey.split('/').map(Number)
@@ -66,28 +67,38 @@ export default function BaseMethodPage() {
 
   return (
     <>
-      {import.meta.env.MODE === 'development' && (
-        <div className="problem-badge-row">
-          <select
-            aria-label="Dev example picker"
-            value={exampleKey}
-            onChange={(e) => onSelectExample(e.target.value)}
-          >
-            {DEV_EXAMPLES.map((ex) => (
-              <option key={`${ex.dividend}/${ex.divisor}`} value={`${ex.dividend}/${ex.divisor}`}>
-                {ex.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       <BaseMethodInputForm
         key={exampleKey}
         initialDividend={initialDividend}
         initialDivisor={initialDivisor}
         onSolve={handleSolve}
       />
+
+      <div className="example-toggle-row">
+        <input type="checkbox" id="toggle-examples" ref={exampleToggleRef} className="example-toggle-input" />
+        <label htmlFor="toggle-examples" className="example-toggle-label">
+          <svg className="chevron" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
+          Try a worked example
+        </label>
+
+        <div className="example-panel">
+          <div className="example-list">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={`${ex.dividend}/${ex.divisor}`}
+                type="button"
+                className={`example-item${exampleKey === `${ex.dividend}/${ex.divisor}` ? ' selected' : ''}`}
+                onClick={() => onSelectExample(ex.dividend, ex.divisor)}
+              >
+                <span className="ex-problem">{ex.dividend} ÷ {ex.divisor}</span>
+                <span className="ex-desc">{ex.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {error && <ErrorBanner message={error} />}
 
