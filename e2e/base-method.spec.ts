@@ -85,4 +85,17 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(page.getByText('normalize the remainder')).toBeVisible();
     await expect(page.locator('.carry-chip.show')).toHaveCount(0);
   });
+
+  test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {
+    for (let i = 1; i < 10; i++) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.locator('.step-counter')).toHaveText('10 / 10');
+
+    await page.setViewportSize({ width: 500, height: 800 });
+    await expect(page.locator('.ch').first()).toHaveCSS('font-size', '15px');
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await expect(page.locator('.ch').first()).toHaveCSS('font-size', '13px');
+  });
 });
