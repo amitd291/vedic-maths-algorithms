@@ -14,7 +14,7 @@ export default function App() {
 
       <main className="content">
         <div className="content-inner">
-          <Header />
+          <Header method={method} />
           {method === 'dhvajanka' ? <DhvajankaPage /> : <BaseMethodPage />}
           <Footer />
         </div>

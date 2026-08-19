@@ -172,6 +172,8 @@ Spec: build plan Iteration E.
       10600 ÷ 87 — the "already-finalized-looking digit gets redone"
       case: Q₂'s raw total is 1, a single digit easy to mistake for
       final, until Q₃'s carry bumps it to 2).
+- [x] Page title matches the method name; base-method listed first in the
+      hamburger menu.
 - [ ] **e2e coverage for the carry chip + other D/D.1 branches** currently
       untested at the e2e level, via the dev dropdown:
   - [ ] Positive carry: extend the 10600÷87 default-walkthrough test to

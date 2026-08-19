@@ -3,8 +3,8 @@ import { useState } from 'react'
 export type Method = 'dhvajanka' | 'base'
 
 const METHODS: { id: Method; label: string; sub: string }[] = [
-  { id: 'dhvajanka', label: 'Dhvajanka', sub: 'flag method' },
   { id: 'base', label: 'Base Method', sub: '+ Paravartya' },
+  { id: 'dhvajanka', label: 'Dhvajanka', sub: 'flag method' },
 ]
 
 interface MethodNavProps {
