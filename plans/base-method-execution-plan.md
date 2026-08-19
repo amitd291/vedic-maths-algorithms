@@ -184,18 +184,12 @@ Spec: build plan Iteration E.
       `BaseMethodPage`, plus `ErrorBanner` for engine throws
 - [x] `Q × D + R === N` self-check + error banner (closed by the above —
       the self-check throw already existed, just had no banner to surface through)
-- [ ] Unit tests: both sign cases and normalization edge cases are already
-      covered by D.1's hand-picked examples (865÷9, 10600÷87, 30122÷87,
-      14189÷102, 10030÷827, 1693÷131) — remaining scope is the full-range
-      sweep. Cheap: divisor 1..999 × ~20-50 dividends each (~20-50k calls,
-      O(digits) each) asserting `Q×D+R===dividend`/no-throw, math cost is
-      milliseconds, framework overhead dominates. Add it, but it
-      supplements rather than replaces the hand-picked edge cases — it
-      won't reliably hit the two throw-boundary conditions (too-small
-      dividend, board-too-narrow-for-quotient), the degenerate
-      self-check-throw divisor, or narrow flag combinations like 1693÷131's
-      remainder-overflow-past-board-width merge; those stay as explicit
-      pairs
+- [x] Full-range sweep test in `baseMethodMath.test.ts`: divisor 1..999 ×
+      10 deterministic dividends each, asserting `Q×D+R===dividend` or one
+      of the three known boundary errors. Supplements, not replaces, D.1's
+      hand-picked examples (865÷9, 10600÷87, 30122÷87, 14189÷102, 10030÷827,
+      1693÷131), which stay as explicit pairs for the narrow flag
+      combinations the sweep can't reliably hit
 - [ ] Once the input form drives the dividend/divisor, update
       `e2e/base-method.spec.ts` to set a specific input (not the page's
       default example) before asserting, so the e2e test stays a

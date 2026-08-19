@@ -77,4 +77,36 @@ describe('solveBaseMethod', () => {
     expect(solution.quotient).toBe(13)
     expect(solution.remainder).toBe(6)
   })
+
+  it('holds Q×D+R===dividend (or throws a known boundary error) across divisor 1..999', () => {
+    // Full-range sweep supplementing the hand-picked edge cases above — it
+    // won't reliably hit the narrow throw-boundary/flag combinations those
+    // cover on purpose, but it does exercise the self-check across a wide,
+    // deterministic spread of divisors and dividend widths.
+    const knownErrors = [/too small/, /wider board/, /self-check failed/]
+    let checked = 0
+
+    for (let divisor = 1; divisor <= 999; divisor++) {
+      const base = nearestBase(divisor)
+      const rhsWidth = String(base).length - 1
+      const minDigits = rhsWidth + 1
+
+      for (let k = 1; k <= 10; k++) {
+        const digits = minDigits + (k % 4)
+        const span = 10 ** digits - 10 ** (digits - 1)
+        const dividend = 10 ** (digits - 1) + ((divisor * 97 + k * 131) % span)
+
+        try {
+          const solution = solveBaseMethod(dividend, divisor)
+          expect(solution.quotient * divisor + solution.remainder).toBe(dividend)
+          checked++
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          expect(knownErrors.some((re) => re.test(message))).toBe(true)
+        }
+      }
+    }
+
+    expect(checked).toBeGreaterThan(8000)
+  })
 })
