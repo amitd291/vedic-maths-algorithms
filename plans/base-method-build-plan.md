@@ -90,8 +90,10 @@ See `base-method-execution-plan.md` Iteration E for the full checklist.
 
 Today, any valid nearest base is fine, chosen arbitrarily on a tie. Future:
 optimize the choice, including scaling the divisor to a nearby multiple of a
-base (e.g. 5428 ÷ 35 via 35×3=105, see "Examples with steps" above) instead
-of just nearest-power-of-10, and where more than one approach is genuinely
+base (e.g. 5428 ÷ 35 via 35×3=105, see "Examples with steps" above) or
+substituting the `difference` for a friendlier signed-digit form (e.g.
+10030 ÷ 827's 173 → `2,−3,3`, see "Examples with steps" above) instead of
+just nearest-power-of-10, and where more than one approach is genuinely
 viable, prompt the user to pick. See `base-method-execution-plan.md`
 Iteration F.
 
@@ -223,9 +225,11 @@ subtractions" case exists yet — every candidate found so far also triggers
 this same redo-on-carry complexity, or a further edge case where the
 quotient needs an extra leading digit beyond the assumed LHS width).
 
-**10030 ÷ 827 (substitution method, out of scope)** — same problem solved
-by substituting a scaled 3-digit difference `2,−3,3` instead of `173`
-directly:
+**10030 ÷ 827 (substitution method, in scope for iteration F)** — same
+problem solved by substituting a scaled 3-digit difference `2,−3,3`
+instead of `173` directly. The substituted digits come from rounding `173`
+up to the nearest hundred (`200`), then expressing the `27` gap the same
+way one place down (round up to `30`, gap `3`): `173 = 200 − 30 + 3`.
 
 | Step | Action | Digits after |
 |---|---|---|
@@ -234,8 +238,33 @@ directly:
 | 2 | Digit₂ = 2; 2×(2,−3,3)=(4,−6,6), add at positions 3–5 | `12 \| 106` |
 
 Quotient = 12, Remainder = 106 — same answer as the standard method above,
-confirming the substituted digits are self-correcting. Kept only as
-reference; the substitution technique itself stays out of scope (see below).
+confirming the substituted digits are self-correcting; note this variant
+never needs the standard method's closing "RHS ≥ divisor" correction step
+(3 steps → 2), since the chosen digits already land on the right total.
+
+**10000 ÷ 819 (substitution method)** — base 1000, difference 181, LHS
+`10` | RHS `000`. Substituted digits for `181`: round up to `200`, gap `19`
+→ round up to `20`, gap `1`: `181 = 200 − 20 + 1`.
+
+| Step | Action | Digits after |
+|---|---|---|
+| 0 | Split | `10 \| 000` |
+| 1 | Digit₁ = 1; 1×(2,−2,1), add at positions 2–4 | `12 \| (−210)` |
+| 2 | Digit₂ = 2; 2×(2,−2,1)=(4,−4,2), add at positions 3–5 | `12 \| 2,−3,2` |
+| 3 | Normalize the raw remainder (position 4 is negative): borrow 1 from position 3 into position 4 → `2,−3,2` becomes `1,7,2` | `12 \| 172` |
+
+Quotient = 12, Remainder = 172. Verify: 12 × 819 + 172 = 10000 ✓ — unlike
+10030 ÷ 827 above, this one doesn't land clean; it still needs a closing
+fixup. But compare it to the *standard* method on the same problem
+(difference 181 used directly): that one's raw RHS total is 991, which
+exceeds the divisor 819 and needs a full divisor subtraction
+(991 − 819 = 172, quotient +1) — the harder "compare and correct" step.
+The substituted-digit path instead only ever needs the lighter "normalize
+the remainder" borrow/carry step (already in the engine, see iteration
+D.1), never a full divisor-magnitude subtraction — that's the substitution
+method's real benefit, not "always finishes clean" (10030 ÷ 827 happens to,
+10000 ÷ 819 doesn't, but neither ever needs to compare against the full
+divisor).
 
 **5428 ÷ 35 (advanced variant: scale the divisor to a nearby multiple of a base — in scope for iteration F)**
 
@@ -280,13 +309,6 @@ same problem as the Dhvajanka app's built-in example (5428 ÷ 35, Q=155 R=3),
 useful as a cross-check between methods but not itself a planned iteration.
 
 ## Out of scope (not planned)
-
-- Substitution method proper (ch.16 section (b): re-deriving the difference
-  digits via a substituted scaled value, e.g. `173` → `2,−3,3` for 10030 ÷
-  827) — noted in the book as an alternative technique, not core to the
-  algorithm; revisit only if requested. Scaling the divisor to a nearby
-  multiple of a base (5428 ÷ 35 above) is a related but separate technique,
-  now in scope under iteration F.
 - Quotient wider than the assumed LHS width (e.g. 9995÷9 → 1110 needs 4
   columns but the board only allocated 3), there's no box to put it in.
   That stays a thrown, out-of-scope case — but it's now a pure

@@ -18,3 +18,7 @@
 
 ## Ignore / Exclude
  - Don't update .gitignore or .git/info/exclude without explicit review and approval by user
+
+# Subagents
+
+- When spawning Explore/general-purpose agents for exploration, search, or read-only research tasks, always pass model: "haiku".
