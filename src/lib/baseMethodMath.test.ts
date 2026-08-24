@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -108,5 +108,70 @@ describe('solveBaseMethod', () => {
     }
 
     expect(checked).toBeGreaterThan(8000)
+  })
+})
+
+describe('findScalingCandidates', () => {
+  it('returns the exact candidate set for divisor 35 (hand-verified)', () => {
+    const candidates = findScalingCandidates(35)
+    expect(candidates).toEqual([
+      { k: 2, direction: 'multiply', scaledDivisor: 70, base: 100, difference: 30 },
+      { k: 3, direction: 'multiply', scaledDivisor: 105, base: 100, difference: -5 },
+      { k: 4, direction: 'multiply', scaledDivisor: 140, base: 100, difference: -40 },
+      { k: 5, direction: 'divide', scaledDivisor: 7, base: 10, difference: 3 },
+      { k: 6, direction: 'multiply', scaledDivisor: 210, base: 100, difference: -110 },
+      { k: 7, direction: 'multiply', scaledDivisor: 245, base: 100, difference: -145 },
+      { k: 9, direction: 'multiply', scaledDivisor: 315, base: 100, difference: -215 },
+    ])
+    expect(candidates).toHaveLength(7)
+  })
+
+  it('excludes candidates whose scaled value is a single digit (base < 10 is degenerate)', () => {
+    // divisor 35, k=7 divide → scaledDivisor 5 → nearestBase(5) = 1, no real RHS split possible
+    const candidates = findScalingCandidates(35)
+    const degenerate = candidates.find((c) => c.k === 7 && c.direction === 'divide')
+    expect(degenerate).toBeUndefined()
+    expect(candidates.every((c) => c.base >= 10)).toBe(true)
+  })
+
+  it('excludes k=5 multiply for divisor 35 (digit 7 in difference -75 is unfriendly)', () => {
+    const candidates = findScalingCandidates(35)
+    const k5Multiply = candidates.find((c) => c.k === 5 && c.direction === 'multiply')
+    expect(k5Multiply).toBeUndefined()
+  })
+
+  it('includes k=7 divide for divisor 791 with scaledDivisor 113', () => {
+    const candidates = findScalingCandidates(791)
+    expect(candidates).toContainEqual({ k: 7, direction: 'divide', scaledDivisor: 113, base: 100, difference: -13 })
+  })
+
+  it('excludes all divide candidates for k in [2,3,4,5,6,8,9] for divisor 791 (not evenly divisible)', () => {
+    const candidates = findScalingCandidates(791)
+    const divideCandidates = candidates.filter((c) => c.direction === 'divide')
+    const divideKs = divideCandidates.map((c) => c.k)
+    expect(divideKs).not.toContain(2)
+    expect(divideKs).not.toContain(3)
+    expect(divideKs).not.toContain(4)
+    expect(divideKs).not.toContain(5)
+    expect(divideKs).not.toContain(6)
+    expect(divideKs).not.toContain(8)
+    expect(divideKs).not.toContain(9)
+  })
+
+  it('returns no multiply candidates for divisor 999', () => {
+    const candidates = findScalingCandidates(999)
+    const multiplyCandidates = candidates.filter((c) => c.direction === 'multiply')
+    expect(multiplyCandidates).toHaveLength(0)
+  })
+
+  it('ensures all candidates have k between 2 and 9 inclusive across multiple divisors', () => {
+    const testDivisors = [35, 87, 131, 791]
+    for (const divisor of testDivisors) {
+      const candidates = findScalingCandidates(divisor)
+      for (const candidate of candidates) {
+        expect(candidate.k).toBeGreaterThanOrEqual(2)
+        expect(candidate.k).toBeLessThanOrEqual(9)
+      }
+    }
   })
 })

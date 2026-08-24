@@ -219,32 +219,10 @@ and substitution are never combined. When the plain (nearest-power-of-10)
 difference is already all 0–5, no simplification is offered at all; the
 selection screen below only appears when actually needed.
 
-**Sliced thin, one technique shipped end-to-end before starting the next**:
-scale-factor math → selection UI (scaling-only) → wire scaling into the
-board — a complete, shippable feature — *then* substitution derivation →
-extend the selection UI → wire substitution into the board. The one thing
-that has to be true from the start for the "extend" step to stay trivial:
-the selection UI renders from a generic candidate list, not a hardcoded
-plain-vs-scaled pair, so adding a second candidate source later is just
-adding another function to the list, not restructuring the UI.
-
-**Implementation workflow (each task below)**: TDD, red → green →
-refactor (refactor optional). For each task, first prepare a Haiku
-subagent prompt containing explicit test cases (inputs/expected outputs,
-drawn from the worked examples and boundary cases above) — the subagent
-writes those tests first, confirms they fail, then writes the minimal code
-to pass them. The prompt is reviewed and approved here before the subagent
-is spun up. For UI tasks, TDD still applies to behavior/interaction (e.g.
-"renders one option per candidate", "clicking an option calls onSelect
-with that candidate", "renders nothing when all digits are 0–5"), not
-pixel fidelity to the mockup — that's not a unit-test concern.
-
-Once the subagent reports done, the **orchestrating agent**
-reviews before reporting back: a code review (diff matches the task's
-scope and test cases, implementation is minimal, full suite + typecheck
-pass) and, for UI tasks, a visual check (run the app, screenshot the real
-page, compare against the relevant mockup) — never taken on the
-subagent's own say-so.
+**Generic candidate list from the start**: the selection UI renders from a
+generic candidate list, not a hardcoded plain-vs-scaled pair, so adding
+substitution as a second candidate source later is just adding another
+function to the list, not restructuring the UI.
 
 - [x] Exposed the example picker to end users (no longer dev-gated); default
       is now the simplest example (123÷9), list ordered by complexity.
@@ -252,28 +230,33 @@ subagent's own say-so.
 - [x] Fixed a pre-existing `Step`/`BaseMethodStep` type bug in
       `BaseMethodPage.tsx`; added `npm run typecheck` (`tsc -b`) since bare
       `tsc --noEmit` was a silent no-op
-- [ ] **Scale-factor search** (pure math, no board/UI): try `k = 2..9`
-      (never `k=1`, trivial; never `k≥10` — not for difficulty, but because
-      it's provably useless: scaling by an exact power of 10 rescales base
-      and difference together, same digit pattern, a zero appended, so it
-      can never fix an unfriendly digit). Compute `D×k`'s nearest
-      base/difference for each `k`, keep only the ones where every
-      resulting difference digit is 0–5. `k` gets a wider range than the
-      0–5 goal itself because it's used at most twice per problem (`D×k`
-      once, `Q′×k`/`R′÷D` once in the descale step) rather than once per
-      LHS digit — a one-off 6–9 cost is a different trade-off than a
-      per-step one. Search is inherently bounded (≤8 candidates); combined
-      with the existing divisor≤999 input ceiling, the scaled divisor never
-      exceeds 8991, so no separate base cap is needed either.
+- [x] **Scale-factor search**: `findScalingCandidates(divisor)` added to
+      `baseMethodMath.ts`, trying `k = 2..9` in both directions (`D×k` and,
+      only when `divisor % k === 0`, `D÷k`), keeping a candidate only when
+      every decimal digit of the resulting difference is 0–5 AND the
+      resulting base is ≥10 (excludes a degenerate case surfaced by the
+      exact-candidate-set test: divisor 35's `k=7` divide scales to 5,
+      whose nearest base is 1 — no real LHS/RHS split exists there). Tests
+      cover 5428÷35's exact 7-candidate set (both directions), 12657÷791
+      (divide candidate at k=7), divisor 999 (no multiply candidates
+      qualify), and the k∈[2,9] range across several divisors.
 - [ ] **Simplification selection UI, scaling-only** (depends on the above):
       if the plain difference is already all 0–5, solve directly, no
-      screen. Otherwise present each qualifying candidate as a text-only
-      preview — `Plain: 173`, `Scaled ×3: −5` — from a generic candidate
+      screen. Otherwise present every qualifying candidate as a text-only
+      preview — e.g. for divisor 35: `Plain: -25`, `Scaled ×2: 3, 0`,
+      `Scaled ×3: 0, -5`; a divide-direction candidate labels as `÷k`
+      instead of `×k` (e.g. `Scaled ÷7: -13` for 791), switching on the
+      candidate's `direction` field — from a generic candidate
       list (options come from real component state/props, computed via the
       scale-factor search above — not hardcoded markup), not a full
       walkthrough; user picks exactly one, which becomes what's actually
-      solved and narrated. No automatic "best" scoring — surfacing options
-      and letting the human pick is the deliberate design. If no scaling
+      solved and narrated. Show all qualifying candidates, however many the
+      math layer returns, at least for this first cut — no automatic "best"
+      scoring; surfacing options and letting the human pick is the
+      deliberate design. Candidates are listed in ascending `k` order — an
+      arbitrary, stable ordering for implementation simplicity, not a
+      simplicity/preference ranking (a larger `k` isn't guaranteed to give
+      friendlier digits than a smaller one). If no scaling
       `k` qualifies, fall back to solving the plain difference directly, no
       screen. UI: reuses the existing "Try a worked example" chevron
       disclosure pattern (`plans/mockups/iteration-f-example-picker-v1.html`)
@@ -281,17 +264,33 @@ subagent's own say-so.
       not that mockup's CSS-only checkbox-hack: whether the panel renders
       *at all* is a `baseMethodMath`-derived flag (any candidate besides
       plain qualifies), not a component decision; expanded/collapsed is a
-      separate, ordinary `useState` toggle, only relevant once rendering —
-      this component needs to react to computed candidate data, which a
-      pure-CSS toggle can't branch on.
+      separate, ordinary `useState` toggle, only relevant once rendering.
+      Default to expanded whenever the panel renders at all (nothing to
+      hide behind a chevron on first render if the panel wouldn't exist
+      otherwise); selecting a candidate collapses it automatically, so a
+      solved problem doesn't sit there hosting a wall of already-decided
+      options — this component needs to react to computed candidate data,
+      which a pure-CSS toggle can't branch on.
 - [ ] **Wire divisor-scaling into the board** (once a scaling option is
-      chosen): no new math engine needed — dividend ÷ `D×k` is just an
-      ordinary case `computeBaseMethodSteps` already solves; see build plan
-      "Examples with steps" (5428÷35 via 105 and via 70) for the verified
-      arithmetic. New work is the wrapper: an intro step showing `D×k=D′`,
-      the unmodified board for dividend ÷ `D′`, then a closing descale step
-      using `Q = Q′×k + floor(R′/D)`, `R = R′ mod D` (verified k-independent
-      against both the ×3 and ×2 variants, both landing on Q=155, R=3).
+      chosen): no new math engine needed — dividend ÷ scaled-divisor is
+      just an ordinary case `computeBaseMethodSteps` already solves; see
+      build plan "Examples with steps" (5428÷35 via 105 and via 70; 12657÷791
+      via 113) for the verified arithmetic of both directions. New work is
+      the wrapper: an intro step showing the scaling (`D×k=D′` or
+      `D÷k=D′`), the unmodified board for dividend ÷ `D′`, then a closing
+      descale step. The two directions use mirror-image formulas, not one
+      shared one: multiplication descales via `Q = Q′×k + floor(R′/D)`,
+      `R = R′ mod D` (verified k-independent against both the ×3 and ×2
+      variants of 5428÷35, both landing on Q=155, R=3); division descales
+      via `Q = floor(Q′/k)`, `R = R′ + (Q′ mod k) × D′` (verified against
+      12657÷791 via k=7, Q′=112, R′=1 → Q=16, R=1). Test cases: 5428÷35
+      solved end-to-end via one of the chosen multiplication candidates (×2
+      or ×3), asserting the descaled Q=155, R=3; 12657÷791 solved
+      end-to-end via the ÷7 candidate, asserting the descaled Q=16, R=1.
+      Also add 5428÷35 and 12657÷791 to the "Try a worked example" picker
+      (see picker task above) now that both are end-to-end solvable —
+      first two examples that actually exercise the scaling path, one per
+      direction.
       **This is a complete, shippable slice** — substitution below builds
       on it but isn't required for it to ship.
 - [ ] **Substitution derivation** (pure math, adds a second candidate
@@ -309,7 +308,11 @@ subagent's own say-so.
       ```
       Tie convention `d>5` converts / `d≤5` keeps → range `[−4,5]`, so the
       only digit that can hit the ceiling is a clean `+5`. Verified:
-      `173→[2,−3,3]`, `181→[2,−2,1]` (both book examples, see build plan).
+      `173→[2,−3,3]`, `181→[2,−2,1]` (both book examples, see build plan);
+      also `209→[2,1,−1]` (12657÷791's natural difference, hand-derived —
+      not in the source PDF — see build plan, a rare case where the same
+      problem also has a valid divisor-scaling candidate, useful once this
+      task needs a fixture where both techniques independently apply).
       **Growth is bounded and provable, not just "handled":** a *natural*
       (nearest-power-of-10) difference's leading digit is always ≤4 — the
       boundary where "nearest" flips between adjacent bases `B` and `10B`

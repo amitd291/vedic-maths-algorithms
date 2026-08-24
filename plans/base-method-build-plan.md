@@ -308,6 +308,44 @@ Both give Quotient = 155, Remainder = 3. Verify: 155 × 35 + 3 = 5428 ✓ —
 same problem as the Dhvajanka app's built-in example (5428 ÷ 35, Q=155 R=3),
 useful as a cross-check between methods but not itself a planned iteration.
 
+**12657 ÷ 791 (advanced variant: divide the divisor by a factor — the other
+scaling direction, in scope for iteration F)** — source PDF example (n).
+791 = 7 × 113, so instead of scaling the divisor *up* to a multiple of a
+base (as in 5428 ÷ 35 above), it's scaled *down*: solve 12657 ÷ 113 (base
+100, difference −13, both digits friendly) then descale by dividing the
+resulting quotient by 7.
+
+```
+126 | 57
+(1×(−13): −1 into col 2, −3 into col 3)
+113 | 57
+(1×(−13): −1 into col 3, −3 into RHS col 1)
+112 | 27
+(2×(−13): −2 into RHS col 1, −6 into RHS col 2)
+112 | 01
+(112 < 113 divisor, no compare-and-correct needed — cleanest possible case)
+112 | 1
+(descale: 112 ÷ 7 = 16 remainder 0, so final remainder = 1 + 0×113 = 1)
+16 | 1
+```
+
+Quotient = 16, Remainder = 1. Verify: 16 × 791 + 1 = 12657 ✓ — the
+division-direction descale formula is the mirror of the multiplication one
+used for 5428 ÷ 35: `Q = floor(Q′/k)`, `R = R′ + (Q′ mod k) × newDivisor`
+(vs. multiplication's `Q = Q′×k + floor(R′/D)`, `R = R′ mod D`). Also a
+good division-scaling candidate for `findScalingCandidates`'s test suite,
+alongside 5428 ÷ 35's multiplication candidates.
+
+This same problem also has a substitution-method alternative (not in the
+source PDF, hand-derived here): the *natural* (unscaled) difference is
+base 1000, difference 209 (791 vs. nearest power of 10). Running the
+substitution algorithm on 209 (LSB-first, `9→[−1, carry 1]`,
+`0+1=1→[1]`, `2→[2]`) gives substituted digits `2, 1, −1` — all friendly,
+no scaling needed at all. So 12657 ÷ 791 is a rare case where *both*
+simplification techniques (divisor-scaling and substitution) independently
+apply to the same problem; useful as a cross-reference once the
+substitution derivation task picks a test fixture.
+
 ## Out of scope (not planned)
 - Quotient wider than the assumed LHS width (e.g. 9995÷9 → 1110 needs 4
   columns but the board only allocated 3), there's no box to put it in.

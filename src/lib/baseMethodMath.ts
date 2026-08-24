@@ -6,6 +6,14 @@ export function nearestBase(divisor: number): number {
   return upper - divisor <= divisor - lower ? upper : lower
 }
 
+export interface ScalingCandidate {
+  k: number
+  direction: 'multiply' | 'divide'
+  scaledDivisor: number
+  base: number
+  difference: number
+}
+
 /** Normalizes a raw chunk into a single 0–9 digit plus the carry/borrow it produces. */
 export function normalizeDigit(value: number): [digit: number, carry: number] {
   let d = value
@@ -19,6 +27,64 @@ export function normalizeDigit(value: number): [digit: number, carry: number] {
     carry += 1
   }
   return [d, carry]
+}
+
+/**
+ * Checks if every decimal digit of the given absolute value is 0–5 inclusive.
+ * Returns false if any digit is 6, 7, 8, or 9.
+ */
+function allDigitsFriendly(value: number): boolean {
+  const digits = String(Math.abs(value)).split('')
+  return digits.every((digit) => {
+    const d = Number(digit)
+    return d >= 0 && d <= 5
+  })
+}
+
+/**
+ * Returns all scaling candidates for a divisor, iterating k from 2 to 9.
+ * For each k: always try multiply (divisor × k); try divide (divisor ÷ k)
+ * only if divisor is evenly divisible by k. Keep only candidates where
+ * all decimal digits of the absolute difference are 0–5 inclusive.
+ */
+export function findScalingCandidates(divisor: number): ScalingCandidate[] {
+  const candidates: ScalingCandidate[] = []
+
+  for (let k = 2; k <= 9; k++) {
+    // Always try multiply
+    const multiplyScaled = divisor * k
+    const multiplyBase = nearestBase(multiplyScaled)
+    const multiplyDiff = multiplyBase - multiplyScaled
+    if (allDigitsFriendly(multiplyDiff)) {
+      candidates.push({
+        k,
+        direction: 'multiply',
+        scaledDivisor: multiplyScaled,
+        base: multiplyBase,
+        difference: multiplyDiff,
+      })
+    }
+
+    // Try divide only if evenly divisible
+    if (divisor % k === 0) {
+      const divideScaled = divisor / k
+      const divideBase = nearestBase(divideScaled)
+      const divideDiff = divideBase - divideScaled
+      // A base < 10 (nearestBase rounding a small scaled value down to 1)
+      // is degenerate — no real LHS/RHS split exists to solve against.
+      if (divideBase >= 10 && allDigitsFriendly(divideDiff)) {
+        candidates.push({
+          k,
+          direction: 'divide',
+          scaledDivisor: divideScaled,
+          base: divideBase,
+          difference: divideDiff,
+        })
+      }
+    }
+  }
+
+  return candidates
 }
 
 export interface BaseMethodSolution {

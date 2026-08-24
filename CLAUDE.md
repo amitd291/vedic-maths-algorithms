@@ -22,3 +22,24 @@
 # Subagents
 
 - When spawning Explore/general-purpose agents for exploration, search, or read-only research tasks, always pass model: "haiku".
+
+# Development Tasks
+## Implementation Workflow
+TDD, red → green → refactor (refactor optional).
+For each task where this method is applicable, first prepare a Haiku
+subagent prompt containing explicit test cases (inputs/expected outputs,
+drawn from the worked examples and boundary cases above) — the subagent
+writes those tests first, confirms they fail, then writes the minimal code
+to pass them. The prompt is reviewed and approved by the user before the subagent
+is spun up. For UI tasks, TDD still applies to behavior/interaction (e.g.
+"renders one option per candidate", "clicking an option calls onSelect
+with that candidate", "renders nothing when all digits are 0–5"), not
+pixel fidelity to the mockup, which is not a unit-test concern.
+
+## Code Review
+Once the subagent reports done, the **orchestrating agent**
+reviews before reporting back: a code review (diff matches the task's
+scope and test cases, implementation is minimal, full suite + typecheck
+pass) and, for UI tasks, a visual check (run the app, screenshot the real
+page, compare against the relevant mockup) — never taken on the
+subagent's own say-so.
