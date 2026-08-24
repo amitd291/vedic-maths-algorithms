@@ -234,26 +234,18 @@ function to the list, not restructuring the UI.
 - [x] **Simplification selection UI, scaling-only**: standalone
       `SimplificationSelector.tsx` (not yet wired into `BaseMethodPage`).
 - [x] Sparse-sampled the exhaustive sweep tests in `baseMethodMath.test.ts`/`computeSteps.test.ts` (CI flagged them amber): `k` range 1..10→1..5, `dividend` step 37→379
+- [x] **Descale pure math**: `solveScaledBaseMethod(dividend, divisor, candidate)`
+      in `baseMethodMath.ts` — runs `solveBaseMethod(dividend, candidate.scaledDivisor)`,
+      then descales via direction-specific mirror-image formulas (multiply:
+      `Q=Q′×k+floor(R′/D)`, `R=R′ mod D`; divide: `Q=floor(Q′/k)`,
+      `R=R′+(Q′ mod k)×D′`). Verified against 5428÷35 (both ×2 and ×3
+      candidates, Q=155/R=3) and 12657÷791 (÷7 candidate, Q=16/R=1).
 - [ ] **Wire divisor-scaling into the board** (once a scaling option is
-      chosen): no new math engine needed — dividend ÷ scaled-divisor is
-      just an ordinary case `computeBaseMethodSteps` already solves; see
-      build plan "Examples with steps" (5428÷35 via 105 and via 70; 12657÷791
-      via 113) for the verified arithmetic of both directions. New work is
-      the wrapper: an intro step showing the scaling (`D×k=D′` or
+      chosen): no new math engine needed beyond `solveScaledBaseMethod` above
+      — the wrapper needed is an intro step showing the scaling (`D×k=D′` or
       `D÷k=D′`), the unmodified board for dividend ÷ `D′`, then a closing
-      descale step. The two directions use mirror-image formulas, not one
-      shared one: multiplication descales via `Q = Q′×k + floor(R′/D)`,
-      `R = R′ mod D` (verified k-independent against both the ×3 and ×2
-      variants of 5428÷35, both landing on Q=155, R=3); division descales
-      via `Q = floor(Q′/k)`, `R = R′ + (Q′ mod k) × D′` (verified against
-      12657÷791 via k=7, Q′=112, R′=1 → Q=16, R=1). Test cases: 5428÷35
-      solved end-to-end via one of the chosen multiplication candidates (×2
-      or ×3), asserting the descaled Q=155, R=3; 12657÷791 solved
-      end-to-end via the ÷7 candidate, asserting the descaled Q=16, R=1.
-      Also add 5428÷35 and 12657÷791 to the "Try a worked example" picker
-      (see picker task above) now that both are end-to-end solvable —
-      first two examples that actually exercise the scaling path, one per
-      direction.
+      descale step. Also add 5428÷35 and 12657÷791 to the "Try a worked
+      example" picker now that both are end-to-end solvable.
       **This is a complete, shippable slice** — substitution below builds
       on it but isn't required for it to ship.
 - [ ] **Substitution derivation** (pure math, adds a second candidate

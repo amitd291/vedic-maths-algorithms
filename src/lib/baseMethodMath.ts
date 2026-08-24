@@ -14,6 +14,13 @@ export interface ScalingCandidate {
   difference: number
 }
 
+export interface ScaledBaseMethodSolution {
+  scaledDivisor: number
+  solution: BaseMethodSolution
+  quotient: number
+  remainder: number
+}
+
 /** Normalizes a raw chunk into a single 0–9 digit plus the carry/borrow it produces. */
 export function normalizeDigit(value: number): [digit: number, carry: number] {
   let d = value
@@ -287,5 +294,33 @@ export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSo
     quotient,
     finalRhsDigits,
     remainderFits,
+  }
+}
+
+export function solveScaledBaseMethod(
+  dividend: number,
+  divisor: number,
+  candidate: ScalingCandidate
+): ScaledBaseMethodSolution {
+  const solution = solveBaseMethod(dividend, candidate.scaledDivisor)
+  const qPrime = solution.quotient
+  const rPrime = solution.remainder
+
+  let quotient: number
+  let remainder: number
+
+  if (candidate.direction === 'multiply') {
+    quotient = qPrime * candidate.k + Math.floor(rPrime / divisor)
+    remainder = rPrime % divisor
+  } else {
+    quotient = Math.floor(qPrime / candidate.k)
+    remainder = rPrime + (qPrime % candidate.k) * candidate.scaledDivisor
+  }
+
+  return {
+    scaledDivisor: candidate.scaledDivisor,
+    solution,
+    quotient,
+    remainder,
   }
 }
