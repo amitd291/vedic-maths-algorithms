@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { computeBaseMethodSteps } from './computeBaseMethodSteps'
+import { computeBaseMethodSteps, computeScaledBaseMethodSteps } from './computeBaseMethodSteps'
+import { findScalingCandidates } from './baseMethodMath'
 
 // nearestBase and the solveBaseMethod validation throws (dividend/divisor
 // shape, too-small dividend, quotient-width overflow) are pure-math concerns
@@ -216,5 +217,111 @@ describe('computeBaseMethodSteps', () => {
     expect(multiplyQ1Step.cols[1].contributions[0]).toBe(1)
     expect(multiplyQ1Step.cols[2].contributions[0]).toBe(7)
     expect(multiplyQ1Step.cols[3].contributions[0]).toBe(3)
+  })
+})
+
+describe('computeScaledBaseMethodSteps', () => {
+  it('computes 5428 ÷ 35 via multiply candidate k=3 (scaledDivisor=105)', () => {
+    const dividend = 5428
+    const divisor = 35
+    const candidates = findScalingCandidates(divisor)
+    const candidate = candidates.find((c) => c.k === 3 && c.direction === 'multiply')
+
+    expect(candidate).toBeDefined()
+    expect(candidate!.scaledDivisor).toBe(105)
+
+    const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
+    const innerSteps = computeBaseMethodSteps(dividend, 105)
+
+    // Steps = intro + innerSteps + closing
+    expect(steps.length).toBe(innerSteps.length + 2)
+
+    // First step: setup — scale the divisor
+    expect(steps[0].title.toLowerCase()).toContain('scale')
+    expect(steps[0].lines[0]).toEqual({
+      kind: 'calc',
+      label: 'Scale divisor',
+      value: '35 × 3 = 105',
+    })
+
+    // Last step: descale the answer
+    expect(steps.at(-1)!.title.toLowerCase()).toContain('descale')
+
+    // Verify result lines
+    expect(steps.at(-1)!.lines).toContainEqual({
+      kind: 'result',
+      label: 'Quotient · Remainder',
+      value: '155 · 3',
+    })
+    expect(steps.at(-1)!.lines).toContainEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 155 × 35 + 3 = 5428 ✓',
+    })
+  })
+
+  it('computes 5428 ÷ 35 via multiply candidate k=2 (scaledDivisor=70)', () => {
+    const dividend = 5428
+    const divisor = 35
+    const candidates = findScalingCandidates(divisor)
+    const candidate = candidates.find((c) => c.k === 2 && c.direction === 'multiply')
+
+    expect(candidate).toBeDefined()
+    expect(candidate!.scaledDivisor).toBe(70)
+
+    const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
+
+    // First step shows multiply by k=2
+    expect(steps[0].lines[0]).toEqual({
+      kind: 'calc',
+      label: 'Scale divisor',
+      value: '35 × 2 = 70',
+    })
+
+    // Same final answer regardless of k
+    expect(steps.at(-1)!.lines).toContainEqual({
+      kind: 'result',
+      label: 'Quotient · Remainder',
+      value: '155 · 3',
+    })
+  })
+
+  it('computes 12657 ÷ 791 via divide candidate k=7 (scaledDivisor=113)', () => {
+    const dividend = 12657
+    const divisor = 791
+    const candidates = findScalingCandidates(divisor)
+    const candidate = candidates.find((c) => c.k === 7 && c.direction === 'divide')
+
+    expect(candidate).toBeDefined()
+    expect(candidate!.scaledDivisor).toBe(113)
+
+    const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
+
+    // First step shows divide by k=7
+    expect(steps[0].lines[0]).toEqual({
+      kind: 'calc',
+      label: 'Scale divisor',
+      value: '791 ÷ 7 = 113',
+    })
+
+    // Check final result
+    expect(steps.at(-1)!.lines).toContainEqual({
+      kind: 'result',
+      label: 'Quotient · Remainder',
+      value: '16 · 1',
+    })
+  })
+
+  it('preserves column structure: intro and closing steps match inner width', () => {
+    const dividend = 5428
+    const divisor = 35
+    const candidates = findScalingCandidates(divisor)
+    const candidate = candidates.find((c) => c.k === 3 && c.direction === 'multiply')!
+
+    const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate)
+    const innerSteps = computeBaseMethodSteps(dividend, 105)
+
+    expect(steps[0].cols.length).toBe(innerSteps[0].cols.length)
+    expect(steps.at(-1)!.cols.length).toBe(innerSteps.at(-1)!.cols.length)
   })
 })

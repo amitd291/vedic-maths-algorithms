@@ -240,14 +240,15 @@ function to the list, not restructuring the UI.
       `Q=Q′×k+floor(R′/D)`, `R=R′ mod D`; divide: `Q=floor(Q′/k)`,
       `R=R′+(Q′ mod k)×D′`). Verified against 5428÷35 (both ×2 and ×3
       candidates, Q=155/R=3) and 12657÷791 (÷7 candidate, Q=16/R=1).
-- [ ] **Wire divisor-scaling into the board** (once a scaling option is
-      chosen): no new math engine needed beyond `solveScaledBaseMethod` above
-      — the wrapper needed is an intro step showing the scaling (`D×k=D′` or
-      `D÷k=D′`), the unmodified board for dividend ÷ `D′`, then a closing
-      descale step. Also add 5428÷35 and 12657÷791 to the "Try a worked
-      example" picker now that both are end-to-end solvable.
-      **This is a complete, shippable slice** — substitution below builds
-      on it but isn't required for it to ship.
+- [x] **Wire divisor-scaling into the board**: `buildScaledBaseMethodSteps`
+      (`baseMethodNarration.ts`) wraps the unchanged inner
+      `buildBaseMethodSteps` board with an intro (scale) and closing
+      (descale) step; `computeScaledBaseMethodSteps` orchestrator.
+- [ ] Wire `computeScaledBaseMethodSteps` into `BaseMethodPage` (candidate
+      selection via `SimplificationSelector`) and add 5428÷35, 12657÷791 to
+      the "Try a worked example" picker now that both are end-to-end
+      solvable. **This is a complete, shippable slice** — substitution below
+      builds on it but isn't required for it to ship.
 - [ ] **Substitution derivation** (pure math, adds a second candidate
       source): standard balanced-digit conversion, least-significant-digit
       first, carry propagating left:

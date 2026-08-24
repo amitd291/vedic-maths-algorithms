@@ -1,5 +1,5 @@
 import type { BaseMethodCarry, BaseMethodColumn, BaseMethodStep, CalcLine } from '../types'
-import { normalizeDigit, type BaseMethodSolution } from './baseMethodMath'
+import { normalizeDigit, type BaseMethodSolution, type ScalingCandidate, solveScaledBaseMethod } from './baseMethodMath'
 
 const SUBSCRIPT_DIGITS = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉']
 
@@ -444,4 +444,84 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
   steps.push(...buildClosingSteps(dividend, divisor, solution, cols, counter, sumLines, noConnectors))
 
   return steps
+}
+
+/**
+ * Narrates a scaled Base Method division by wrapping the inner (scaled divisor) solve
+ * with intro and closing steps that explain the scaling and descaling.
+ */
+export function buildScaledBaseMethodSteps(
+  dividend: number,
+  divisor: number,
+  candidate: ScalingCandidate,
+): BaseMethodStep[] {
+  const scaled = solveScaledBaseMethod(dividend, divisor, candidate)
+  const innerSteps = buildBaseMethodSteps(dividend, candidate.scaledDivisor, scaled.solution)
+
+  const qPrime = scaled.solution.quotient
+  const rPrime = scaled.solution.remainder
+
+  // Intro step: setup — scale the divisor
+  const introStep: BaseMethodStep = {
+    title: 'Setup — scale the divisor',
+    cols: cloneCols(innerSteps[0].cols),
+    connectors: innerSteps[0].connectors,
+    lines: [
+      {
+        kind: 'calc',
+        label: 'Scale divisor',
+        value:
+          candidate.direction === 'multiply'
+            ? `${divisor} × ${candidate.k} = ${candidate.scaledDivisor}`
+            : `${divisor} ÷ ${candidate.k} = ${candidate.scaledDivisor}`,
+      },
+    ],
+  }
+
+  // Closing step: descale the answer
+  const closingLines: CalcLine[] = []
+
+  if (candidate.direction === 'multiply') {
+    closingLines.push({
+      kind: 'calc',
+      label: 'Descale quotient',
+      value: `${qPrime} × ${candidate.k} + ⌊${rPrime} ÷ ${divisor}⌋ = ${scaled.quotient}`,
+    })
+    closingLines.push({
+      kind: 'calc',
+      label: 'Descale remainder',
+      value: `${rPrime} mod ${divisor} = ${scaled.remainder}`,
+    })
+  } else {
+    closingLines.push({
+      kind: 'calc',
+      label: 'Descale quotient',
+      value: `⌊${qPrime} ÷ ${candidate.k}⌋ = ${scaled.quotient}`,
+    })
+    closingLines.push({
+      kind: 'calc',
+      label: 'Descale remainder',
+      value: `${rPrime} + (${qPrime} mod ${candidate.k}) × ${candidate.scaledDivisor} = ${scaled.remainder}`,
+    })
+  }
+
+  closingLines.push({
+    kind: 'result',
+    label: 'Quotient · Remainder',
+    value: `${scaled.quotient} · ${scaled.remainder}`,
+  })
+  closingLines.push({
+    kind: 'note',
+    tone: 'success',
+    text: `Verify: ${scaled.quotient} × ${divisor} + ${scaled.remainder} = ${dividend} ✓`,
+  })
+
+  const closingStep: BaseMethodStep = {
+    title: 'Descale the answer',
+    cols: cloneCols(innerSteps.at(-1)!.cols),
+    connectors: innerSteps.at(-1)!.connectors,
+    lines: closingLines,
+  }
+
+  return [introStep, ...innerSteps, closingStep]
 }

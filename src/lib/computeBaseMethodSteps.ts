@@ -1,6 +1,6 @@
 import type { BaseMethodStep } from '../types'
-import { solveBaseMethod } from './baseMethodMath'
-import { buildBaseMethodSteps } from './baseMethodNarration'
+import { solveBaseMethod, type ScalingCandidate } from './baseMethodMath'
+import { buildBaseMethodSteps, buildScaledBaseMethodSteps } from './baseMethodNarration'
 
 export { nearestBase } from './baseMethodMath'
 
@@ -13,4 +13,16 @@ export { nearestBase } from './baseMethodMath'
 export function computeBaseMethodSteps(dividend: number, divisor: number): BaseMethodStep[] {
   const solution = solveBaseMethod(dividend, divisor)
   return buildBaseMethodSteps(dividend, divisor, solution)
+}
+
+/**
+ * Computes the scaled Base Method / Paravartya division walkthrough for
+ * `dividend ÷ divisor` using a scaling candidate.
+ */
+export function computeScaledBaseMethodSteps(
+  dividend: number,
+  divisor: number,
+  candidate: ScalingCandidate,
+): BaseMethodStep[] {
+  return buildScaledBaseMethodSteps(dividend, divisor, candidate)
 }
