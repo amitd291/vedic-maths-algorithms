@@ -205,29 +205,12 @@ Spec: build plan Iteration E.
 
 Spec: build plan Iteration F. Speculative — no committed timeline.
 
-**Central goal:** every digit actually multiplied by *inside a step* — an
-LHS digit's multiplier, a substituted difference-digit — should be
-**0–5 inclusive**. 1–5 are the times tables nobody has to think about; 6–9
-means the borrowing/carrying effort this method exists to avoid. Exactly 5
-is an accepted, unavoidable tie (see substitution derivation below), not a
-defect. The divisor-scaling factor `k` is exempt from this range (kept at
-2–9, see its task below) since it's paid at most twice per problem, not
-once per step.
-
-**"0–5" means the real column split, not the flat digits of `difference`**:
-a bug found during the scaling-UI work checked flat decimal digits of the
-raw `difference` (e.g. `-25` → `['2','5']`, both ≤5, wrongly "friendly").
-The engine never actually splits a difference that way — `solveBaseMethod`
-splits a contribution into `rhsWidth − 1` trailing single digits plus one
-leading `leftPart` that absorbs everything else, and `leftPart` can itself
-be multi-digit whenever `difference` has more digits than `rhsWidth` holds
-(divisor 35: base 10 → `rhsWidth=1` → nothing splits at all, so `-25`
-lands as one raw, unsplit `25`; hand-simulated against `solveBaseMethod`,
-this genuinely blows up — LHS raw values hit `5, -121, 3027`). The fix,
-`isDifferenceFriendly(difference, base)`, runs the real split (extracted from
-`solveBaseMethod` as `splitMagnitude`) and checks every resulting part is
-0–5. This is strictly stronger than the flat-digit check, not just
-different — it subsumes it (a multi-digit `leftPart` is always `> 5`).
+**Central goal:** every digit actually multiplied by *inside a step* should
+be **0–5 inclusive** (times tables nobody has to think about; the
+divisor-scaling factor `k` is exempt, kept at 2–9). Friendliness is checked
+against the real column split (`isDifferenceFriendly`/`splitMagnitude`), not
+flat decimal digits of `difference` — a flat-digit check misses cases like
+divisor 35, base 10 (`rhsWidth=1`, no split at all).
 
 **Exactly one simplification technique active per solve** — divisor-scaling
 and substitution are never combined. When the plain (nearest-power-of-10)
@@ -245,32 +228,12 @@ function to the list, not restructuring the UI.
 - [x] Fixed a pre-existing `Step`/`BaseMethodStep` type bug in
       `BaseMethodPage.tsx`; added `npm run typecheck` (`tsc -b`) since bare
       `tsc --noEmit` was a silent no-op
-- [x] **Scale-factor search**: `findScalingCandidates(divisor)` added to
-      `baseMethodMath.ts`, trying `k = 2..9` in both directions (`D×k` and,
-      only when `divisor % k === 0`, `D÷k`), keeping a candidate only when
-      `isDifferenceFriendly(difference, base)` (see central-goal note above) AND
-      the resulting base is ≥10 (excludes a degenerate case: divisor 35's
-      `k=7` divide scales to 5, whose nearest base is 1 — no real LHS/RHS
-      split exists there). Divisor 35's exact candidate set is now 4 (k=2,
-      3, 4 multiply, k=5 divide) — k=6/7/9 multiply were dropped once the
-      split-based check replaced the flat-digit one. Tests cover 5428÷35's
-      exact candidate set plus a regression guard for the dropped k=6/7/9,
-      12657÷791 (divide candidate at k=7), divisor 999 (no multiply
-      candidates qualify), and the k∈[2,9] range across several divisors.
-- [x] **Simplification selection UI, scaling-only**: `SimplificationSelector.tsx`
-      added — standalone, not yet wired into `BaseMethodPage` (next task).
-      Renders nothing when the plain difference is already friendly
-      (`isDifferenceFriendly`) or no candidates qualify; otherwise shows a
-      "Plain" option plus one button per candidate from
-      `findScalingCandidates`, labeled `×k`/`÷k` per `direction`. Expanded
-      by default, auto-collapses on selection, re-expands on toggle click.
-      Regression-tested against the friendliness bug above with divisor 11
-      (own digits friendly, plain diff already fine → renders nothing) and
-      divisor 16 (own digits contain a 6, plain diff genuinely needs
-      simplifying → renders the panel) — the original divisor 9/35/182
-      fixtures all coincidentally gave the same answer whether or not that
-      bug was present, so they didn't catch it.
-- [ ] Sparse-sample the exhaustive sweep tests in `baseMethodMath.test.ts`/`computeSteps.test.ts` (CI flagged them amber); trimmed `k`/`dividend` step as a stopgap, revisit if coverage feels thin
+- [x] **Scale-factor search**: `findScalingCandidates(divisor)` in
+      `baseMethodMath.ts`, `k = 2..9` both directions, filtered by
+      `isDifferenceFriendly` + resulting base ≥10.
+- [x] **Simplification selection UI, scaling-only**: standalone
+      `SimplificationSelector.tsx` (not yet wired into `BaseMethodPage`).
+- [x] Sparse-sampled the exhaustive sweep tests in `baseMethodMath.test.ts`/`computeSteps.test.ts` (CI flagged them amber): `k` range 1..10→1..5, `dividend` step 37→379
 - [ ] **Wire divisor-scaling into the board** (once a scaling option is
       chosen): no new math engine needed — dividend ÷ scaled-divisor is
       just an ordinary case `computeBaseMethodSteps` already solves; see
