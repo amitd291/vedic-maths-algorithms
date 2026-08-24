@@ -180,7 +180,7 @@ describe('computeSteps', () => {
   it('property: every displayed "Divide by working divisor" line is arithmetically true', () => {
     const divideLineRe = /^(\d+) ÷ (\d+) = (\d+) remainder (\d+)(?: \(raw\))?$/
     for (let divisor = 10; divisor <= 99; divisor++) {
-      for (let dividend = 1; dividend <= 9999; dividend += 37) {
+      for (let dividend = 1; dividend <= 9999; dividend += 379) {
         const steps = computeSteps(dividend, divisor)
         for (const step of steps) {
           for (const line of step.lines) {

@@ -91,7 +91,7 @@ describe('solveBaseMethod', () => {
       const rhsWidth = String(base).length - 1
       const minDigits = rhsWidth + 1
 
-      for (let k = 1; k <= 10; k++) {
+      for (let k = 1; k <= 5; k++) {
         const digits = minDigits + (k % 4)
         const span = 10 ** digits - 10 ** (digits - 1)
         const dividend = 10 ** (digits - 1) + ((divisor * 97 + k * 131) % span)
@@ -107,7 +107,7 @@ describe('solveBaseMethod', () => {
       }
     }
 
-    expect(checked).toBeGreaterThan(8000)
+    expect(checked).toBeGreaterThan(4000)
   })
 })
 

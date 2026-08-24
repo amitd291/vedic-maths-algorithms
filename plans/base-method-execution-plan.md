@@ -270,6 +270,7 @@ function to the list, not restructuring the UI.
       simplifying → renders the panel) — the original divisor 9/35/182
       fixtures all coincidentally gave the same answer whether or not that
       bug was present, so they didn't catch it.
+- [ ] Sparse-sample the exhaustive sweep tests in `baseMethodMath.test.ts`/`computeSteps.test.ts` (CI flagged them amber); trimmed `k`/`dividend` step as a stopgap, revisit if coverage feels thin
 - [ ] **Wire divisor-scaling into the board** (once a scaling option is
       chosen): no new math engine needed — dividend ÷ scaled-divisor is
       just an ordinary case `computeBaseMethodSteps` already solves; see
