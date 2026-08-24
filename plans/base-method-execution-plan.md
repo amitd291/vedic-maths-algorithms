@@ -251,6 +251,36 @@ function to the list, not restructuring the UI.
       even after a scaled candidate was chosen — fixed to use
       `candidate.base`/`.difference` when one is selected; covered by a
       component regression test plus a new e2e test.
+- [ ] **Style the scaling UI to match its mockup**:
+      `plans/mockups/iteration-f-divisor-scaling-v1.html` (this reference
+      was missing from this plan entirely — `plans/mockups/` is gitignored,
+      so once a task's detail got condensed there was no durable trail back
+      to it; a follow-up visual check caught both gaps below, unstyled
+      selector + no dedicated final-answer row, that jsdom-only component
+      tests didn't).
+      **In progress, uncommitted — resume here:**
+      `SimplificationSelector` restructured into option-cards (name + tag +
+      Base/Difference lines) with matching CSS added to `global.css`; new
+      `ScaledAnswerBanner.tsx` (the mockup's dedicated final-answer row,
+      class `.scaled-answer`) wired into `BaseMethodPage` under the digit
+      board, shown only when `candidate && isLast`. Quotient/remainder
+      separator switched from `·` to `|` throughout (`baseMethodNarration.ts`
+      result-line values, `ScaledAnswerBanner`, and all affected test
+      assertions) per explicit user request — the label text `Quotient ·
+      Remainder` and unrelated uses of `·` (e.g. `Footer.tsx`) were
+      deliberately left alone. Also fixed an accessibility regression the
+      first implementation pass introduced: the toggle needs `role="button"`
+      per spec, but was shipped without it solely to dodge updating the
+      `getAllByRole('button')` count tests — restored the role and fixed the
+      counts (`candidates.length + 2`) instead.
+      **Still to do before this task is done:** run `npx playwright test`
+      (dev server on :5173) to verify the e2e suite end-to-end — was
+      interrupted before this ran in this session. Unit suite (127 tests)
+      + `npm run typecheck` already pass. All changes are uncommitted in the
+      working tree (`SimplificationSelector.tsx`/`.test.tsx`, `BaseMethodPage.tsx`/`.test.tsx`,
+      `baseMethodNarration.ts`, `computeBaseMethodSteps.test.ts`,
+      `global.css`, `e2e/base-method.spec.ts`, new `ScaledAnswerBanner.tsx`) —
+      review the diff, run e2e, then commit.
       **This is a complete, shippable slice** — substitution below builds
       on it but isn't required for it to ship.
 - [ ] **Substitution derivation** (pure math, adds a second candidate

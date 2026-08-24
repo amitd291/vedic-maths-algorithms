@@ -512,6 +512,49 @@ body {
   background: var(--border);
 }
 
+/* ---------- Simplification selector ---------- */
+.simplification-selector { margin-bottom: 1.5rem; }
+.simplification-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.88rem; font-weight: 600; color: var(--blue);
+  cursor: pointer; user-select: none; padding: 0.3rem 0.1rem;
+}
+.simplification-toggle:hover { text-decoration: underline; }
+.simplification-toggle .chevron {
+  width: 14px; height: 14px; stroke: currentColor;
+  transition: transform 0.15s ease; flex: none;
+}
+.simplification-toggle[aria-expanded="true"] .chevron { transform: rotate(90deg); }
+.simplification-options {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.1rem; margin-top: 0.6rem;
+  display: flex; flex-direction: column; gap: 0.8rem;
+}
+.simplification-option {
+  display: block; width: 100%; text-align: left; font: inherit;
+  border-radius: 10px; padding: 0.85rem 1rem;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text);
+  cursor: pointer;
+}
+.simplification-option:hover { background: var(--bg2); border-color: var(--text3); }
+.simplification-option-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.simplification-option-name { font-size: 0.85rem; font-weight: 700; }
+.simplification-option-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
+.simplification-option-line { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.3rem; }
+.simplification-option-line span:first-child { color: var(--text2); }
+.simplification-option-line span:last-child { font-weight: 700; }
+
+/* ---------- Scaled final-answer banner ---------- */
+.scaled-answer {
+  text-align: center; background: var(--green-bg); border: 1px solid var(--green);
+  border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.5rem;
+}
+.scaled-answer-label {
+  display: block; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--green); margin-bottom: 0.3rem;
+}
+.scaled-answer-value { font-size: 1.3rem; font-weight: 700; color: var(--green); }
+
 /* ---------- Digit board ---------- */
 
 .digit-board {

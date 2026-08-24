@@ -7,7 +7,9 @@ import NavControls from '../components/NavControls'
 import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
 import SimplificationSelector from '../components/SimplificationSelector'
+import ScaledAnswerBanner from '../components/ScaledAnswerBanner'
 import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
+import { solveScaledBaseMethod } from '../lib/baseMethodMath'
 import { useStepNav } from '../hooks/useStepNav'
 import type { BaseMethodStep } from '../types'
 import type { ScalingCandidate } from '../lib/baseMethodMath'
@@ -134,6 +136,10 @@ export default function BaseMethodPage() {
           />
           <BaseMethodDivisorCard base={base} difference={difference} />
           <BaseMethodDigitBoard step={problem.steps[cur]} onBack={onBack} onNext={onNext} isFirst={isFirst} isLast={isLast} />
+          {candidate && isLast && (() => {
+            const scaled = solveScaledBaseMethod(current.dividend, current.divisor, candidate)
+            return <ScaledAnswerBanner divisor={current.divisor} quotient={scaled.quotient} remainder={scaled.remainder} />
+          })()}
           <NavControls cur={cur} total={total} onDot={onDot} />
           <StepPanel steps={problem.steps} cur={cur} />
         </>

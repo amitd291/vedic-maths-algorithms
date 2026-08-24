@@ -50,7 +50,7 @@ describe('computeBaseMethodSteps', () => {
     // is the final step.
     expect(last.title).toBe('Step 7 — compare and correct')
     expect(last.cols.map((c) => c.total)).toEqual([1, 2, 1, 0, 6])
-    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 · 106' })
+    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 | 106' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
@@ -88,7 +88,7 @@ describe('computeBaseMethodSteps', () => {
     // column), so no interim normalize-the-remainder step either —
     // compare-and-correct is the final step.
     expect(last.title).toBe('Step 6 — compare and correct')
-    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 · 121' })
+    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 | 121' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
@@ -137,7 +137,7 @@ describe('computeBaseMethodSteps', () => {
     // Hand-verified against the source PDF's own worked example (343/281 → 346/20).
     const steps = computeBaseMethodSteps(30122, 87)
     const last = steps[steps.length - 1]
-    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '346 · 20' })
+    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '346 | 20' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
@@ -155,7 +155,7 @@ describe('computeBaseMethodSteps', () => {
       label: 'Normalize',
       value: 'Q₂ = 16 − 10 = 6; Q₁ = 8 + 1 = 9',
     })
-    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '96 · 1' })
+    expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '96 | 1' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
@@ -251,7 +251,7 @@ describe('computeScaledBaseMethodSteps', () => {
     expect(steps.at(-1)!.lines).toContainEqual({
       kind: 'result',
       label: 'Quotient · Remainder',
-      value: '155 · 3',
+      value: '155 | 3',
     })
     expect(steps.at(-1)!.lines).toContainEqual({
       kind: 'note',
@@ -282,7 +282,7 @@ describe('computeScaledBaseMethodSteps', () => {
     expect(steps.at(-1)!.lines).toContainEqual({
       kind: 'result',
       label: 'Quotient · Remainder',
-      value: '155 · 3',
+      value: '155 | 3',
     })
   })
 
@@ -308,7 +308,7 @@ describe('computeScaledBaseMethodSteps', () => {
     expect(steps.at(-1)!.lines).toContainEqual({
       kind: 'result',
       label: 'Quotient · Remainder',
-      value: '16 · 1',
+      value: '16 | 1',
     })
   })
 

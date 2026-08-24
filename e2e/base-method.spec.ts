@@ -106,8 +106,20 @@ test.describe('Base Method pane (dev server)', () => {
       await page.getByLabel('Next step').click();
     }
     await expect(page.getByText('Descale the answer')).toBeVisible();
-    await expect(page.getByText('155 · 3')).toBeVisible();
+    // '155 | 3' now appears twice by design: the .scaled-answer banner
+    // (asserted below) and the ordinary result chip in the step panel.
+    await expect(page.locator('.step-panel').getByText('155 | 3')).toBeVisible();
     await expect(page.getByText('Verify: 155 × 35 + 3 = 5428 ✓')).toBeVisible();
+
+    // Assert scaled-answer banner is visible and positioned above step-panel
+    await expect(page.locator('.scaled-answer')).toBeVisible();
+    await expect(page.locator('.scaled-answer')).toContainText('Real answer (÷ 35)');
+
+    const bannerBox = await page.locator('.scaled-answer').boundingBox();
+    const stepPanelBox = await page.locator('.step-panel').boundingBox();
+    expect(bannerBox).not.toBeNull();
+    expect(stepPanelBox).not.toBeNull();
+    expect(bannerBox!.y).toBeLessThan(stepPanelBox!.y);
 
     await page.getByText('How should this be simplified?').click();
     await page.getByRole('button', { name: /^Plain/ }).click();

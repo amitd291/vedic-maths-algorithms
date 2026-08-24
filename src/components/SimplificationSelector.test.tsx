@@ -32,7 +32,9 @@ describe('SimplificationSelector', () => {
 
     render(<SimplificationSelector divisor={16} onSelect={vi.fn()} />)
 
-    expect(screen.getAllByRole('button')).toHaveLength(candidates.length + 1)
+    // +1 for the Plain option, +1 for the expand/collapse toggle (also a
+    // `role="button"` for keyboard/screen-reader accessibility).
+    expect(screen.getAllByRole('button')).toHaveLength(candidates.length + 2)
   })
 
   it('renders 1 Plain + N candidate buttons visible by default for divisor 35', () => {
@@ -42,7 +44,7 @@ describe('SimplificationSelector', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
     const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(allCandidates.length + 1)
+    expect(buttons).toHaveLength(allCandidates.length + 2)
   })
 
   it('calls onSelect with the correct candidate when ×3 button is clicked for divisor 35', () => {
@@ -99,5 +101,29 @@ describe('SimplificationSelector', () => {
     fireEvent.click(toggleElement)
 
     expect(screen.getByText(/×3/)).toBeInTheDocument()
+  })
+
+  it('renders Plain option card with Base 10 and Difference -25 for divisor 35', () => {
+    render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
+
+    const plainButton = screen.getByRole('button', { name: /^Plain/ })
+    const plainCardContent = plainButton.textContent || ''
+
+    expect(plainCardContent).toContain('Base')
+    expect(plainCardContent).toContain('10')
+    expect(plainCardContent).toContain('Difference')
+    expect(plainCardContent).toContain('-25')
+  })
+
+  it('renders ×3 candidate card with Base 100 and Difference -5 for divisor 35', () => {
+    render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
+
+    const multiplyButton = screen.getByRole('button', { name: /×3/ })
+    const cardContent = multiplyButton.textContent || ''
+
+    expect(cardContent).toContain('Base')
+    expect(cardContent).toContain('100')
+    expect(cardContent).toContain('Difference')
+    expect(cardContent).toContain('-5')
   })
 })

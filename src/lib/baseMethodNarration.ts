@@ -246,7 +246,7 @@ function buildClosingSteps(
     const lines: CalcLine[] = [compareLine, correctLine]
     if (!lhsNormalizeChanged) {
       for (let i = 0; i < lhsWidth; i++) cols[i].colState = 'done'
-      lines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} · ${remainder}` })
+      lines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} | ${remainder}` })
       lines.push({ kind: 'note', tone: 'success', text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓` })
     } else {
       lines.push({
@@ -288,7 +288,7 @@ function buildClosingSteps(
     }
     for (let i = 0; i < lhsWidth; i++) cols[i].colState = 'done'
 
-    normalizeLines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} · ${remainder}` })
+    normalizeLines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} | ${remainder}` })
     normalizeLines.push({
       kind: 'note',
       tone: 'success',
@@ -508,7 +508,7 @@ export function buildScaledBaseMethodSteps(
   closingLines.push({
     kind: 'result',
     label: 'Quotient · Remainder',
-    value: `${scaled.quotient} · ${scaled.remainder}`,
+    value: `${scaled.quotient} | ${scaled.remainder}`,
   })
   closingLines.push({
     kind: 'note',

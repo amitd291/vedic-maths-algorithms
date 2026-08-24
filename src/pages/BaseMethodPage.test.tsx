@@ -246,7 +246,9 @@ describe('BaseMethodPage', () => {
       }
 
       expect(screen.getByText('Descale the answer')).toBeInTheDocument()
-      expect(screen.getByText('155 · 3')).toBeInTheDocument()
+      // Appears twice by design: the prominent .scaled-answer banner under
+      // the board, and the ordinary result chip inside the step panel.
+      expect(screen.getAllByText('155 | 3')).toHaveLength(2)
     })
 
     it('choosing Plain reverts', () => {
@@ -305,6 +307,56 @@ describe('BaseMethodPage', () => {
 
       expect(screen.getByText('base').nextElementSibling).toHaveTextContent('100')
       expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-5')
+    })
+
+    it('shows scaled-answer banner on final step after selecting ×3 for 5428÷35', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+
+      const nextButton = screen.getByLabelText('Next step')
+      for (let i = 0; i < 20; i++) {
+        if (nextButton.hasAttribute('disabled')) break
+        fireEvent.click(nextButton)
+      }
+
+      const banner = document.querySelector('.scaled-answer')
+      expect(banner).not.toBeNull()
+      expect(banner?.textContent).toContain('Real answer (÷ 35)')
+      expect(banner?.textContent).toContain('155 | 3')
+    })
+
+    it('does not show scaled-answer banner before final step after selecting ×3 for 5428÷35', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+
+      // Still on first step (Setup — scale the divisor)
+      expect(document.querySelector('.scaled-answer')).toBeNull()
+    })
+
+    it('does not show scaled-answer banner for friendly divisor (123÷9)', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      const nextButton = screen.getByLabelText('Next step')
+      for (let i = 0; i < 20; i++) {
+        if (nextButton.hasAttribute('disabled')) break
+        fireEvent.click(nextButton)
+      }
+
+      expect(document.querySelector('.scaled-answer')).toBeNull()
     })
   })
 })
