@@ -461,20 +461,20 @@ export function buildScaledBaseMethodSteps(
   const qPrime = scaled.solution.quotient
   const rPrime = scaled.solution.remainder
 
-  // Intro step: setup — scale the divisor
-  const introStep: BaseMethodStep = {
-    title: 'Setup — scale the divisor',
-    cols: cloneCols(innerSteps[0].cols),
-    connectors: innerSteps[0].connectors,
+  // Patch the first line of innerSteps[0] (Setup) to show the scaled divisor
+  const setupStep = innerSteps[0]
+  const op = candidate.direction === 'multiply' ? '×' : '÷'
+  const patchedSetupStep: BaseMethodStep = {
+    title: setupStep.title,
+    cols: cloneCols(setupStep.cols),
+    connectors: setupStep.connectors,
     lines: [
       {
         kind: 'calc',
-        label: 'Scale divisor',
-        value:
-          candidate.direction === 'multiply'
-            ? `${divisor} × ${candidate.k} = ${candidate.scaledDivisor}`
-            : `${divisor} ÷ ${candidate.k} = ${candidate.scaledDivisor}`,
+        label: 'Scaled divisor',
+        value: `${candidate.scaledDivisor} (${divisor} ${op} ${candidate.k})`,
       },
+      ...setupStep.lines.slice(1),
     ],
   }
 
@@ -523,5 +523,5 @@ export function buildScaledBaseMethodSteps(
     lines: closingLines,
   }
 
-  return [introStep, ...innerSteps, closingStep]
+  return [patchedSetupStep, ...innerSteps.slice(1), closingStep]
 }

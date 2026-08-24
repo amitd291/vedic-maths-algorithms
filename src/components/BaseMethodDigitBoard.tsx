@@ -12,9 +12,10 @@ interface BaseMethodDigitBoardProps {
   onNext: () => void
   isFirst: boolean
   isLast: boolean
+  finalAnswer?: { divisor: number; quotient: number; remainder: number } | null
 }
 
-export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, isLast }: BaseMethodDigitBoardProps) {
+export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, isLast, finalAnswer }: BaseMethodDigitBoardProps) {
   const maxContributions = Math.max(1, ...step.cols.map((c) => c.contributions.length))
   const carries = step.carries ?? []
   const carryFor = (colIndex: number) => carries.find((c) => c.fromCol === colIndex || c.toCol === colIndex)
@@ -87,6 +88,12 @@ export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, is
             )
           })}
         </div>
+        {finalAnswer && (
+          <div className="descale-row">
+            <span className="descale-row-label">Real answer (÷ {finalAnswer.divisor})</span>
+            <span className="descale-row-value">{finalAnswer.quotient} | {finalAnswer.remainder}</span>
+          </div>
+        )}
       </div>
 
       <button type="button" className="arrow-btn" aria-label="Next step" onClick={onNext} disabled={isLast}>

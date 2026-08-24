@@ -284,11 +284,14 @@ body {
   color: var(--blue);
   cursor: pointer;
   user-select: none;
-  padding: 0.3rem 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 999px;
+  margin: -0.5rem -0.6rem;
+  transition: background-color 0.15s ease;
 }
 
-.example-toggle-label:hover {
-  text-decoration: underline;
+.example-toggle-label:hover, .example-toggle-label:focus-visible {
+  background: var(--bg3);
 }
 
 .example-toggle-label .chevron {
@@ -517,9 +520,12 @@ body {
 .simplification-toggle {
   display: inline-flex; align-items: center; gap: 0.4rem;
   font-size: 0.88rem; font-weight: 600; color: var(--blue);
-  cursor: pointer; user-select: none; padding: 0.3rem 0.1rem;
+  cursor: pointer; user-select: none; padding: 0.5rem 0.6rem;
+  border-radius: 999px; margin: -0.5rem -0.6rem; transition: background-color 0.15s ease;
 }
-.simplification-toggle:hover { text-decoration: underline; }
+.simplification-toggle:hover, .simplification-toggle:focus-visible { background: var(--bg3); }
+.simplification-toggle.selected { color: var(--green); }
+.simplification-toggle.selected .chevron { stroke: var(--green); }
 .simplification-toggle .chevron {
   width: 14px; height: 14px; stroke: currentColor;
   transition: transform 0.15s ease; flex: none;
@@ -537,23 +543,28 @@ body {
   cursor: pointer;
 }
 .simplification-option:hover { background: var(--bg2); border-color: var(--text3); }
+.simplification-option.selected { border: 1px solid var(--green); background: var(--green-bg); }
+.simplification-option.selected .simplification-option-name, .simplification-option.selected .simplification-option-tag { color: var(--green); }
 .simplification-option-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
 .simplification-option-name { font-size: 0.85rem; font-weight: 700; }
+.simplification-option-result { font-size: 1.15rem; font-weight: 800; }
 .simplification-option-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
 .simplification-option-line { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.3rem; }
 .simplification-option-line span:first-child { color: var(--text2); }
 .simplification-option-line span:last-child { font-weight: 700; }
+.simplification-option-line.combined { display: block; color: var(--text2); }
+.simplification-option-line.combined b { color: var(--text); font-weight: 700; }
 
-/* ---------- Scaled final-answer banner ---------- */
-.scaled-answer {
-  text-align: center; background: var(--green-bg); border: 1px solid var(--green);
-  border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1.5rem;
+/* ---------- Descale row (inside digit-board) ---------- */
+.descale-row {
+  text-align: center; border-top: 1px dashed var(--border);
+  margin-top: 0.75rem; padding-top: 0.75rem;
 }
-.scaled-answer-label {
+.descale-row-label {
   display: block; font-size: 0.72rem; text-transform: uppercase;
   letter-spacing: 0.06em; color: var(--green); margin-bottom: 0.3rem;
 }
-.scaled-answer-value { font-size: 1.3rem; font-weight: 700; color: var(--green); }
+.descale-row-value { font-size: 1.3rem; font-weight: 700; color: var(--green); }
 
 /* ---------- Digit board ---------- */
 

@@ -97,31 +97,40 @@ test.describe('Base Method pane (dev server)', () => {
     await solve(page, 5428, 35);
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
 
-    await page.getByRole('button', { name: /×3/ }).click();
+    // Default state, before any selection: expanded, plain question text, no highlight.
+    await expect(page.getByText('How should this be simplified?')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^105 – Scaled ×3/ })).toBeVisible();
+    await expect(page.locator('.simplification-option.selected')).toHaveCount(0);
+
+    await page.getByRole('button', { name: /^105 – Scaled ×3/ }).click();
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-5');
-    await expect(page.getByText('Setup — scale the divisor')).toBeVisible();
-    await expect(page.getByText('35 × 3 = 105')).toBeVisible();
+    await expect(page.getByText('Setup')).toBeVisible();
 
     while (await page.getByLabel('Next step').isEnabled()) {
       await page.getByLabel('Next step').click();
     }
     await expect(page.getByText('Descale the answer')).toBeVisible();
-    // '155 | 3' now appears twice by design: the .scaled-answer banner
+    // '155 | 3' now appears twice by design: the .descale-row inside the board
     // (asserted below) and the ordinary result chip in the step panel.
     await expect(page.locator('.step-panel').getByText('155 | 3')).toBeVisible();
     await expect(page.getByText('Verify: 155 × 35 + 3 = 5428 ✓')).toBeVisible();
 
-    // Assert scaled-answer banner is visible and positioned above step-panel
-    await expect(page.locator('.scaled-answer')).toBeVisible();
-    await expect(page.locator('.scaled-answer')).toContainText('Real answer (÷ 35)');
+    // Assert descale-row is visible and positioned inside the digit-board (above step-panel)
+    await expect(page.locator('.digit-board-cols .descale-row')).toBeVisible();
+    await expect(page.locator('.digit-board-cols .descale-row')).toContainText('Real answer (÷ 35)');
 
-    const bannerBox = await page.locator('.scaled-answer').boundingBox();
+    const descaleRowBox = await page.locator('.digit-board-cols .descale-row').boundingBox();
     const stepPanelBox = await page.locator('.step-panel').boundingBox();
-    expect(bannerBox).not.toBeNull();
+    expect(descaleRowBox).not.toBeNull();
     expect(stepPanelBox).not.toBeNull();
-    expect(bannerBox!.y).toBeLessThan(stepPanelBox!.y);
+    expect(descaleRowBox!.y).toBeLessThan(stepPanelBox!.y);
 
-    await page.getByText('How should this be simplified?').click();
+    await page.getByText(/Scaled divisor 105 \(35 × 3\) selected/).click();
+
+    // Re-expanded: the previously chosen ×3 card is still visibly selected (green).
+    await expect(page.getByRole('button', { name: /^105 – Scaled ×3/ })).toHaveClass(/\bselected\b/);
+    await expect(page.locator('.simplification-option.selected')).toHaveCount(1);
+
     await page.getByRole('button', { name: /^Plain/ }).click();
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
     await expect(page.getByText('Setup', { exact: true })).toBeVisible();

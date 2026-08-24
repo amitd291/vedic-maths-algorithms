@@ -225,7 +225,7 @@ describe('BaseMethodPage', () => {
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      expect(screen.getByRole('button', { name: /×3/ })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^105 – Scaled ×3/ })).toBeInTheDocument()
     })
 
     it('choosing a scaled candidate updates the board', () => {
@@ -235,9 +235,9 @@ describe('BaseMethodPage', () => {
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^105 – Scaled ×3/ }))
 
-      expect(screen.getByText('Setup — scale the divisor')).toBeInTheDocument()
+      expect(screen.getByText('Setup')).toBeInTheDocument()
 
       const nextButton = screen.getByLabelText('Next step')
       for (let i = 0; i < 20; i++) {
@@ -246,8 +246,8 @@ describe('BaseMethodPage', () => {
       }
 
       expect(screen.getByText('Descale the answer')).toBeInTheDocument()
-      // Appears twice by design: the prominent .scaled-answer banner under
-      // the board, and the ordinary result chip inside the step panel.
+      // Appears twice by design: the .descale-row inside the board, and the
+      // ordinary result chip inside the step panel.
       expect(screen.getAllByText('155 | 3')).toHaveLength(2)
     })
 
@@ -258,15 +258,14 @@ describe('BaseMethodPage', () => {
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^105 – Scaled ×3/ }))
 
-      // Re-expand the selector by clicking the toggle
-      fireEvent.click(screen.getByText(/How should this be simplified/))
+      // Re-expand the selector by clicking the toggle (green summary text)
+      fireEvent.click(screen.getByText(/Scaled divisor 105 \(35 × 3\) selected/))
 
       fireEvent.click(screen.getByRole('button', { name: /^Plain/ }))
 
       expect(screen.getByText('Setup', { selector: 'h2' })).toBeInTheDocument()
-      expect(screen.queryByText('Setup — scale the divisor')).not.toBeInTheDocument()
     })
 
     it('a friendly divisor hides the selector', () => {
@@ -303,20 +302,20 @@ describe('BaseMethodPage', () => {
       expect(screen.getByText('base').nextElementSibling).toHaveTextContent('10')
       expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-25')
 
-      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^105 – Scaled ×3/ }))
 
       expect(screen.getByText('base').nextElementSibling).toHaveTextContent('100')
       expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-5')
     })
 
-    it('shows scaled-answer banner on final step after selecting ×3 for 5428÷35', () => {
+    it('shows descale-row on final step after selecting ×3 for 5428÷35', () => {
       render(<BaseMethodPage />)
 
       fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^105 – Scaled ×3/ }))
 
       const nextButton = screen.getByLabelText('Next step')
       for (let i = 0; i < 20; i++) {
@@ -324,26 +323,26 @@ describe('BaseMethodPage', () => {
         fireEvent.click(nextButton)
       }
 
-      const banner = document.querySelector('.scaled-answer')
-      expect(banner).not.toBeNull()
-      expect(banner?.textContent).toContain('Real answer (÷ 35)')
-      expect(banner?.textContent).toContain('155 | 3')
+      const descaleRow = document.querySelector('.digit-board-cols .descale-row')
+      expect(descaleRow).not.toBeNull()
+      expect(descaleRow?.textContent).toContain('Real answer (÷ 35)')
+      expect(descaleRow?.textContent).toContain('155 | 3')
     })
 
-    it('does not show scaled-answer banner before final step after selecting ×3 for 5428÷35', () => {
+    it('does not show descale-row before final step after selecting ×3 for 5428÷35', () => {
       render(<BaseMethodPage />)
 
       fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+      fireEvent.click(screen.getByRole('button', { name: /^105 – Scaled ×3/ }))
 
-      // Still on first step (Setup — scale the divisor)
-      expect(document.querySelector('.scaled-answer')).toBeNull()
+      // Still on first step (Setup)
+      expect(document.querySelector('.digit-board-cols .descale-row')).toBeNull()
     })
 
-    it('does not show scaled-answer banner for friendly divisor (123÷9)', () => {
+    it('does not show descale-row for friendly divisor (123÷9)', () => {
       render(<BaseMethodPage />)
 
       fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
@@ -356,7 +355,7 @@ describe('BaseMethodPage', () => {
         fireEvent.click(nextButton)
       }
 
-      expect(document.querySelector('.scaled-answer')).toBeNull()
+      expect(document.querySelector('.digit-board-cols .descale-row')).toBeNull()
     })
   })
 })

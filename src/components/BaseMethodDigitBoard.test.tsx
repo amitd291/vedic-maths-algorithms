@@ -52,4 +52,39 @@ describe('BaseMethodDigitBoard carry chip', () => {
     expect(container.querySelectorAll('.carry-chip.show')).toHaveLength(0)
     expect(container.querySelectorAll('.carry-connector.show')).toHaveLength(0)
   })
+
+  it('renders descale-row when finalAnswer prop is provided', () => {
+    const step = makeStep(undefined)
+    const { container } = render(
+      <BaseMethodDigitBoard
+        step={step}
+        onBack={noop}
+        onNext={noop}
+        isFirst
+        isLast
+        finalAnswer={{ divisor: 35, quotient: 155, remainder: 3 }}
+      />,
+    )
+
+    const descaleRow = container.querySelector('.digit-board-cols .descale-row')
+    expect(descaleRow).not.toBeNull()
+    expect(descaleRow?.textContent).toContain('Real answer (÷ 35)')
+    expect(descaleRow?.textContent).toContain('155 | 3')
+  })
+
+  it('renders no descale-row when finalAnswer prop is omitted', () => {
+    const step = makeStep(undefined)
+    const { container } = render(<BaseMethodDigitBoard step={step} onBack={noop} onNext={noop} isFirst isLast={false} />)
+
+    expect(container.querySelector('.digit-board-cols .descale-row')).toBeNull()
+  })
+
+  it('renders no descale-row when finalAnswer prop is null', () => {
+    const step = makeStep(undefined)
+    const { container } = render(
+      <BaseMethodDigitBoard step={step} onBack={noop} onNext={noop} isFirst isLast={false} finalAnswer={null} />,
+    )
+
+    expect(container.querySelector('.digit-board-cols .descale-row')).toBeNull()
+  })
 })

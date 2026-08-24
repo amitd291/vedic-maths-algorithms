@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { computeBaseMethodSteps, computeScaledBaseMethodSteps } from './computeBaseMethodSteps'
 import { findScalingCandidates } from './baseMethodMath'
+import type { CalcLine } from '../types'
 
 // nearestBase and the solveBaseMethod validation throws (dividend/divisor
 // shape, too-small dividend, quotient-width overflow) are pure-math concerns
@@ -233,16 +234,18 @@ describe('computeScaledBaseMethodSteps', () => {
     const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
     const innerSteps = computeBaseMethodSteps(dividend, 105)
 
-    // Steps = intro + innerSteps + closing
-    expect(steps.length).toBe(innerSteps.length + 2)
+    // Steps = patchedSetupStep + innerSteps.slice(1) + closingStep (length = innerSteps.length + 1)
+    expect(steps.length).toBe(innerSteps.length + 1)
 
-    // First step: setup — scale the divisor
-    expect(steps[0].title.toLowerCase()).toContain('scale')
+    // First step: Setup with patched first line
+    expect(steps[0].title).toBe('Setup')
     expect(steps[0].lines[0]).toEqual({
       kind: 'calc',
-      label: 'Scale divisor',
-      value: '35 × 3 = 105',
+      label: 'Scaled divisor',
+      value: '105 (35 × 3)',
     })
+    // Remaining lines should match innerSteps[0]
+    expect(steps[0].lines.slice(1)).toEqual(innerSteps[0].lines.slice(1))
 
     // Last step: descale the answer
     expect(steps.at(-1)!.title.toLowerCase()).toContain('descale')
@@ -272,11 +275,7 @@ describe('computeScaledBaseMethodSteps', () => {
     const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
 
     // First step shows multiply by k=2
-    expect(steps[0].lines[0]).toEqual({
-      kind: 'calc',
-      label: 'Scale divisor',
-      value: '35 × 2 = 70',
-    })
+    expect((steps[0].lines[0] as Extract<CalcLine, { kind: 'calc' }>).value).toBe('70 (35 × 2)')
 
     // Same final answer regardless of k
     expect(steps.at(-1)!.lines).toContainEqual({
@@ -298,11 +297,7 @@ describe('computeScaledBaseMethodSteps', () => {
     const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate!)
 
     // First step shows divide by k=7
-    expect(steps[0].lines[0]).toEqual({
-      kind: 'calc',
-      label: 'Scale divisor',
-      value: '791 ÷ 7 = 113',
-    })
+    expect((steps[0].lines[0] as Extract<CalcLine, { kind: 'calc' }>).value).toBe('113 (791 ÷ 7)')
 
     // Check final result
     expect(steps.at(-1)!.lines).toContainEqual({
@@ -312,7 +307,7 @@ describe('computeScaledBaseMethodSteps', () => {
     })
   })
 
-  it('preserves column structure: intro and closing steps match inner width', () => {
+  it('preserves column structure: Setup and closing steps match inner width', () => {
     const dividend = 5428
     const divisor = 35
     const candidates = findScalingCandidates(divisor)
@@ -321,6 +316,8 @@ describe('computeScaledBaseMethodSteps', () => {
     const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate)
     const innerSteps = computeBaseMethodSteps(dividend, 105)
 
+    // Steps is now patchedSetupStep + innerSteps.slice(1) + closingStep
+    expect(steps.length).toBe(innerSteps.length + 1)
     expect(steps[0].cols.length).toBe(innerSteps[0].cols.length)
     expect(steps.at(-1)!.cols.length).toBe(innerSteps.at(-1)!.cols.length)
   })

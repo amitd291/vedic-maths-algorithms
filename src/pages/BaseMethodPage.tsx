@@ -7,7 +7,6 @@ import NavControls from '../components/NavControls'
 import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
 import SimplificationSelector from '../components/SimplificationSelector'
-import ScaledAnswerBanner from '../components/ScaledAnswerBanner'
 import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
 import { solveScaledBaseMethod } from '../lib/baseMethodMath'
 import { useStepNav } from '../hooks/useStepNav'
@@ -33,6 +32,7 @@ interface Problem {
   dividend: number
   divisor: number
   steps: BaseMethodStep[]
+  scaledAnswer: { quotient: number; remainder: number } | null
 }
 
 function solve(
@@ -41,11 +41,13 @@ function solve(
   candidate: ScalingCandidate | null,
 ): { problem: Problem | null; error: string | null } {
   try {
-    const steps =
-      candidate !== null
-        ? computeScaledBaseMethodSteps(dividend, divisor, candidate)
-        : computeBaseMethodSteps(dividend, divisor)
-    return { problem: { dividend, divisor, steps }, error: null }
+    if (candidate !== null) {
+      const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate)
+      const { quotient, remainder } = solveScaledBaseMethod(dividend, divisor, candidate)
+      return { problem: { dividend, divisor, steps, scaledAnswer: { quotient, remainder } }, error: null }
+    }
+    const steps = computeBaseMethodSteps(dividend, divisor)
+    return { problem: { dividend, divisor, steps, scaledAnswer: null }, error: null }
   } catch (err) {
     return { problem: null, error: err instanceof Error ? err.message : String(err) }
   }
@@ -89,6 +91,10 @@ export default function BaseMethodPage() {
 
   const base = problem ? (candidate ? candidate.base : nearestBase(problem.divisor)) : 0
   const difference = problem ? (candidate ? candidate.difference : base - problem.divisor) : 0
+  const finalAnswer =
+    problem?.scaledAnswer && isLast
+      ? { divisor: current.divisor, quotient: problem.scaledAnswer.quotient, remainder: problem.scaledAnswer.remainder }
+      : null
 
   return (
     <>
@@ -135,11 +141,14 @@ export default function BaseMethodPage() {
             onSelect={handleSelectCandidate}
           />
           <BaseMethodDivisorCard base={base} difference={difference} />
-          <BaseMethodDigitBoard step={problem.steps[cur]} onBack={onBack} onNext={onNext} isFirst={isFirst} isLast={isLast} />
-          {candidate && isLast && (() => {
-            const scaled = solveScaledBaseMethod(current.dividend, current.divisor, candidate)
-            return <ScaledAnswerBanner divisor={current.divisor} quotient={scaled.quotient} remainder={scaled.remainder} />
-          })()}
+          <BaseMethodDigitBoard
+            step={problem.steps[cur]}
+            onBack={onBack}
+            onNext={onNext}
+            isFirst={isFirst}
+            isLast={isLast}
+            finalAnswer={finalAnswer}
+          />
           <NavControls cur={cur} total={total} onDot={onDot} />
           <StepPanel steps={problem.steps} cur={cur} />
         </>

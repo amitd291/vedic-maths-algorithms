@@ -251,38 +251,47 @@ function to the list, not restructuring the UI.
       even after a scaled candidate was chosen — fixed to use
       `candidate.base`/`.difference` when one is selected; covered by a
       component regression test plus a new e2e test.
-- [ ] **Style the scaling UI to match its mockup**:
-      `plans/mockups/iteration-f-divisor-scaling-v1.html` (this reference
-      was missing from this plan entirely — `plans/mockups/` is gitignored,
-      so once a task's detail got condensed there was no durable trail back
-      to it; a follow-up visual check caught both gaps below, unstyled
-      selector + no dedicated final-answer row, that jsdom-only component
-      tests didn't).
-      **In progress, uncommitted — resume here:**
-      `SimplificationSelector` restructured into option-cards (name + tag +
-      Base/Difference lines) with matching CSS added to `global.css`; new
-      `ScaledAnswerBanner.tsx` (the mockup's dedicated final-answer row,
-      class `.scaled-answer`) wired into `BaseMethodPage` under the digit
-      board, shown only when `candidate && isLast`. Quotient/remainder
-      separator switched from `·` to `|` throughout (`baseMethodNarration.ts`
-      result-line values, `ScaledAnswerBanner`, and all affected test
-      assertions) per explicit user request — the label text `Quotient ·
-      Remainder` and unrelated uses of `·` (e.g. `Footer.tsx`) were
-      deliberately left alone. Also fixed an accessibility regression the
-      first implementation pass introduced: the toggle needs `role="button"`
-      per spec, but was shipped without it solely to dodge updating the
-      `getAllByRole('button')` count tests — restored the role and fixed the
-      counts (`candidates.length + 2`) instead.
-      **Still to do before this task is done:** run `npx playwright test`
-      (dev server on :5173) to verify the e2e suite end-to-end — was
-      interrupted before this ran in this session. Unit suite (127 tests)
-      + `npm run typecheck` already pass. All changes are uncommitted in the
-      working tree (`SimplificationSelector.tsx`/`.test.tsx`, `BaseMethodPage.tsx`/`.test.tsx`,
-      `baseMethodNarration.ts`, `computeBaseMethodSteps.test.ts`,
-      `global.css`, `e2e/base-method.spec.ts`, new `ScaledAnswerBanner.tsx`) —
-      review the diff, run e2e, then commit.
-      **This is a complete, shippable slice** — substitution below builds
-      on it but isn't required for it to ship.
+- [x] **Style the scaling UI to match its mockup**:
+      `plans/mockups/iteration-f-divisor-scaling-v1.html`. `SimplificationSelector`
+      restructured into option-cards; new `ScaledAnswerBanner.tsx` wired
+      into `BaseMethodPage`; quotient/remainder separator switched `·` → `|`.
+      Verified via unit suite + typecheck + full `npx playwright test` run,
+      then committed (`c3358e1`).
+- [x] **Refresh the scaling UI per v2 mockup feedback**:
+      `plans/mockups/iteration-f-divisor-scaling-v2.html`. Dropped the
+      redundant "Setup — scale the divisor" intro step (scaled
+      divisor/provenance folded into the ordinary Setup step's first line);
+      `SimplificationSelector` titles lead with a bold scaled-divisor
+      number then the scale expression, Base/Difference combined onto one
+      line; selected option green in both expanded and new collapsed-state
+      summary; hover-pill affordance standardized across both disclosure
+      toggles; `ScaledAnswerBanner` reworked into a `.descale-row` embedded
+      in the digit-board (no separate boxed card), fed via a `finalAnswer`
+      prop computed once in `solve()` rather than recomputed on render.
+      Verified via unit suite + typecheck + `npx playwright test` + a
+      Playwright screenshot pass compared against the mockup.
+- [ ] **Stretch goal: drop "Plain" from the selector + true unselected
+      state.** `Plain` only ever renders as an option when it's already the
+      dominated choice (the `isDifferenceFriendly` guard filters out the
+      case where it's actually competitive), so listing it is arguably just
+      noise — consider removing that row entirely. Paired with this: today
+      `candidate === null` silently means both "nothing chosen yet" and
+      "Plain explicitly chosen," so the initial screen already computes and
+      displays Plain's base/difference/digits before the user picks
+      anything — which fights the v2 refresh's intent of a true unselected
+      state (expanded selector, no highlight). Needs a real tri-state
+      (unselected / Plain / a candidate) so that before any explicit pick,
+      the divisor card and digit-board render dashes (`—`) for base,
+      difference, digits, etc. instead of eagerly falling back to Plain.
+- [ ] **Corner case: no simplification available.** When the plain
+      difference is unfriendly but the candidate list (scaling today,
+      scaling + substitution later) comes back empty, `SimplificationSelector`
+      currently returns `null` and the app silently falls back to the
+      unfriendly Plain board with no explanation at all. Revisit once
+      substitution is in: is this case actually unreachable then, or does a
+      genuine residual gap remain? If it remains, decide what the UI should
+      show (a quiet "no simplification available" note vs. leaving the
+      divisor card looking perfectly ordinary).
 - [ ] **Substitution derivation** (pure math, adds a second candidate
       source): standard balanced-digit conversion, least-significant-digit
       first, carry propagating left:

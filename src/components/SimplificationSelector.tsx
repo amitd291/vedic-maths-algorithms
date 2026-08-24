@@ -16,6 +16,7 @@ export default function SimplificationSelector({
   onSelect,
 }: SimplificationSelectorProps) {
   const [expanded, setExpanded] = useState(true)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   const plainBase = nearestBase(divisor)
   const plainDiff = plainBase - divisor
@@ -26,11 +27,13 @@ export default function SimplificationSelector({
   }
 
   const handlePlainClick = () => {
+    setSelectedKey('plain')
     onSelect(null)
     setExpanded(false)
   }
 
   const handleCandidateClick = (candidate: ScalingCandidate) => {
+    setSelectedKey(`${candidate.direction}-${candidate.k}`)
     onSelect(candidate)
     setExpanded(false)
   }
@@ -39,10 +42,25 @@ export default function SimplificationSelector({
     setExpanded(!expanded)
   }
 
+  const getToggleLabel = () => {
+    if (selectedKey === null) {
+      return 'How should this be simplified?'
+    }
+    if (selectedKey === 'plain') {
+      return '✓ Plain selected'
+    }
+    const candidate = candidates.find((c) => selectedKey === `${c.direction}-${c.k}`)
+    if (candidate) {
+      const op = candidate.direction === 'multiply' ? '×' : '÷'
+      return `✓ Scaled divisor ${candidate.scaledDivisor} (${divisor} ${op} ${candidate.k}) selected`
+    }
+    return 'How should this be simplified?'
+  }
+
   return (
     <div className="simplification-selector">
       <div
-        className="simplification-toggle"
+        className={`simplification-toggle${selectedKey !== null ? ' selected' : ''}`}
         onClick={handleToggle}
         role="button"
         tabIndex={0}
@@ -57,39 +75,46 @@ export default function SimplificationSelector({
         <svg className="chevron" viewBox="0 0 24 24" fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 6 15 12 9 18" />
         </svg>
-        How should this be simplified?
+        {getToggleLabel()}
       </div>
 
       {expanded && (
         <div className="simplification-options">
-          <button type="button" className="simplification-option plain-option" onClick={handlePlainClick}>
+          <button
+            type="button"
+            className={`simplification-option plain-option${selectedKey === 'plain' ? ' selected' : ''}`}
+            onClick={handlePlainClick}
+          >
             <div className="simplification-option-head">
               <span className="simplification-option-name">Plain</span>
               <span className="simplification-option-tag">diff {plainDiff}</span>
             </div>
-            <div className="simplification-option-line"><span>Base</span><span>{plainBase}</span></div>
-            <div className="simplification-option-line"><span>Difference</span><span>{plainDiff}</span></div>
+            <div className="simplification-option-line combined">
+              Base: <b>{plainBase}</b> | Difference: <b>{plainDiff}</b>
+            </div>
           </button>
 
-          {candidates.map((candidate) => (
-            <button
-              key={`${candidate.direction}-${candidate.k}`}
-              type="button"
-              className={`simplification-option scaled-option scaled-${candidate.direction}`}
-              onClick={() => handleCandidateClick(candidate)}
-            >
-              <div className="simplification-option-head">
-                <span className="simplification-option-name">
-                  Scaled {candidate.direction === 'multiply' ? '×' : '÷'}{candidate.k}
-                </span>
-                <span className="simplification-option-tag">
-                  {divisor} {candidate.direction === 'multiply' ? '×' : '÷'} {candidate.k} = {candidate.scaledDivisor}
-                </span>
-              </div>
-              <div className="simplification-option-line"><span>Base</span><span>{candidate.base}</span></div>
-              <div className="simplification-option-line"><span>Difference</span><span>{candidate.difference}</span></div>
-            </button>
-          ))}
+          {candidates.map((candidate) => {
+            const op = candidate.direction === 'multiply' ? '×' : '÷'
+            const candidateKey = `${candidate.direction}-${candidate.k}`
+            return (
+              <button
+                key={candidateKey}
+                type="button"
+                className={`simplification-option scaled-option scaled-${candidate.direction}${selectedKey === candidateKey ? ' selected' : ''}`}
+                onClick={() => handleCandidateClick(candidate)}
+              >
+                <div className="simplification-option-head">
+                  <span className="simplification-option-name">
+                    <b className="simplification-option-result">{candidate.scaledDivisor}</b> – Scaled {op}{candidate.k} ({divisor} {op} {candidate.k})
+                  </span>
+                </div>
+                <div className="simplification-option-line combined">
+                  Base: <b>{candidate.base}</b> | Difference: <b>{candidate.difference}</b>
+                </div>
+              </button>
+            )
+          })}
         </div>
       )}
     </div>
