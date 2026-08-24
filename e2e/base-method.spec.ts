@@ -93,6 +93,28 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(page.locator('.carry-chip.show')).toHaveCount(0);
   });
 
+  test('scales the divisor via a chosen candidate, then descales back to the original answer (5428 ÷ 35)', async ({ page }) => {
+    await solve(page, 5428, 35);
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
+
+    await page.getByRole('button', { name: /×3/ }).click();
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('-5');
+    await expect(page.getByText('Setup — scale the divisor')).toBeVisible();
+    await expect(page.getByText('35 × 3 = 105')).toBeVisible();
+
+    while (await page.getByLabel('Next step').isEnabled()) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.getByText('Descale the answer')).toBeVisible();
+    await expect(page.getByText('155 · 3')).toBeVisible();
+    await expect(page.getByText('Verify: 155 × 35 + 3 = 5428 ✓')).toBeVisible();
+
+    await page.getByText('How should this be simplified?').click();
+    await page.getByRole('button', { name: /^Plain/ }).click();
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
+    await expect(page.getByText('Setup', { exact: true })).toBeVisible();
+  });
+
   test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {
     await solve(page, 10600, 87);
     for (let i = 1; i < 10; i++) {

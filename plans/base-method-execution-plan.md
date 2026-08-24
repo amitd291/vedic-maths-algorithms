@@ -244,11 +244,15 @@ function to the list, not restructuring the UI.
       (`baseMethodNarration.ts`) wraps the unchanged inner
       `buildBaseMethodSteps` board with an intro (scale) and closing
       (descale) step; `computeScaledBaseMethodSteps` orchestrator.
-- [ ] Wire `computeScaledBaseMethodSteps` into `BaseMethodPage` (candidate
-      selection via `SimplificationSelector`) and add 5428÷35, 12657÷791 to
-      the "Try a worked example" picker now that both are end-to-end
-      solvable. **This is a complete, shippable slice** — substitution below
-      builds on it but isn't required for it to ship.
+- [x] Wired `computeScaledBaseMethodSteps` into `BaseMethodPage` via
+      `SimplificationSelector`; added 5428÷35, 12657÷791 to the worked
+      example picker. Visual check caught a bug unit tests missed:
+      `BaseMethodDivisorCard` showed the original divisor's base/difference
+      even after a scaled candidate was chosen — fixed to use
+      `candidate.base`/`.difference` when one is selected; covered by a
+      component regression test plus a new e2e test.
+      **This is a complete, shippable slice** — substitution below builds
+      on it but isn't required for it to ship.
 - [ ] **Substitution derivation** (pure math, adds a second candidate
       source): standard balanced-digit conversion, least-significant-digit
       first, carry propagating left:

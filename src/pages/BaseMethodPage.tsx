@@ -6,9 +6,11 @@ import StepPanel from '../components/StepPanel'
 import NavControls from '../components/NavControls'
 import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
-import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
+import SimplificationSelector from '../components/SimplificationSelector'
+import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
 import { useStepNav } from '../hooks/useStepNav'
 import type { BaseMethodStep } from '../types'
+import type { ScalingCandidate } from '../lib/baseMethodMath'
 
 const BASE_DIVIDEND = 123
 const BASE_DIVISOR = 9
@@ -21,6 +23,8 @@ const EXAMPLES = [
   { dividend: 10030, divisor: 827, desc: 'The remainder needs a quick fix at the end' },
   { dividend: 14189, divisor: 102, desc: 'Paravartya technique, only the quotient needs fixing up' },
   { dividend: 1693, divisor: 131, desc: 'Paravartya technique, i.e. the divisor sits above the base, so signs flip' },
+  { dividend: 5428, divisor: 35, desc: 'Needs divisor scaling to keep every multiplier friendly' },
+  { dividend: 12657, divisor: 791, desc: 'Divisor scaling via division, not multiplication' },
 ]
 
 interface Problem {
@@ -29,9 +33,16 @@ interface Problem {
   steps: BaseMethodStep[]
 }
 
-function solve(dividend: number, divisor: number): { problem: Problem | null; error: string | null } {
+function solve(
+  dividend: number,
+  divisor: number,
+  candidate: ScalingCandidate | null,
+): { problem: Problem | null; error: string | null } {
   try {
-    const steps = computeBaseMethodSteps(dividend, divisor)
+    const steps =
+      candidate !== null
+        ? computeScaledBaseMethodSteps(dividend, divisor, candidate)
+        : computeBaseMethodSteps(dividend, divisor)
     return { problem: { dividend, divisor, steps }, error: null }
   } catch (err) {
     return { problem: null, error: err instanceof Error ? err.message : String(err) }
@@ -39,16 +50,28 @@ function solve(dividend: number, divisor: number): { problem: Problem | null; er
 }
 
 export default function BaseMethodPage() {
-  const initial = useMemo(() => solve(BASE_DIVIDEND, BASE_DIVISOR), [])
+  const initial = useMemo(() => solve(BASE_DIVIDEND, BASE_DIVISOR, null), [])
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
   const [exampleKey, setExampleKey] = useState(`${BASE_DIVIDEND}/${BASE_DIVISOR}`)
+  const [current, setCurrent] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR })
+  const [candidate, setCandidate] = useState<ScalingCandidate | null>(null)
   const exampleToggleRef = useRef<HTMLInputElement>(null)
   const total = problem?.steps.length ?? 0
   const { cur, setCur, isFirst, isLast, onBack, onNext, onDot } = useStepNav(total)
 
   function handleSolve(dividend: number, divisor: number) {
-    const result = solve(dividend, divisor)
+    setCurrent({ dividend, divisor })
+    setCandidate(null)
+    const result = solve(dividend, divisor, null)
+    setProblem(result.problem)
+    setError(result.error)
+    setCur(0)
+  }
+
+  function handleSelectCandidate(selectedCandidate: ScalingCandidate | null) {
+    setCandidate(selectedCandidate)
+    const result = solve(current.dividend, current.divisor, selectedCandidate)
     setProblem(result.problem)
     setError(result.error)
     setCur(0)
@@ -62,8 +85,8 @@ export default function BaseMethodPage() {
 
   const [initialDividend, initialDivisor] = exampleKey.split('/').map(Number)
 
-  const base = problem ? nearestBase(problem.divisor) : 0
-  const difference = problem ? base - problem.divisor : 0
+  const base = problem ? (candidate ? candidate.base : nearestBase(problem.divisor)) : 0
+  const difference = problem ? (candidate ? candidate.difference : base - problem.divisor) : 0
 
   return (
     <>
@@ -104,6 +127,11 @@ export default function BaseMethodPage() {
 
       {problem && (
         <>
+          <SimplificationSelector
+            key={`${current.dividend}/${current.divisor}`}
+            divisor={current.divisor}
+            onSelect={handleSelectCandidate}
+          />
           <BaseMethodDivisorCard base={base} difference={difference} />
           <BaseMethodDigitBoard step={problem.steps[cur]} onBack={onBack} onNext={onNext} isFirst={isFirst} isLast={isLast} />
           <NavControls cur={cur} total={total} onDot={onDot} />

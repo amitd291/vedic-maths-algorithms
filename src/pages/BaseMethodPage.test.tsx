@@ -216,4 +216,95 @@ describe('BaseMethodPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('dividend is too small for this base')
     expect(screen.queryByText('Setup')).not.toBeInTheDocument()
   })
+
+  describe('divisor-scaling selector', () => {
+    it('solving 5428÷35 shows the selector', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.getByRole('button', { name: /×3/ })).toBeInTheDocument()
+    })
+
+    it('choosing a scaled candidate updates the board', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+
+      expect(screen.getByText('Setup — scale the divisor')).toBeInTheDocument()
+
+      const nextButton = screen.getByLabelText('Next step')
+      for (let i = 0; i < 20; i++) {
+        if (nextButton.hasAttribute('disabled')) break
+        fireEvent.click(nextButton)
+      }
+
+      expect(screen.getByText('Descale the answer')).toBeInTheDocument()
+      expect(screen.getByText('155 · 3')).toBeInTheDocument()
+    })
+
+    it('choosing Plain reverts', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+
+      // Re-expand the selector by clicking the toggle
+      fireEvent.click(screen.getByText(/How should this be simplified/))
+
+      fireEvent.click(screen.getByRole('button', { name: /^Plain/ }))
+
+      expect(screen.getByText('Setup', { selector: 'h2' })).toBeInTheDocument()
+      expect(screen.queryByText('Setup — scale the divisor')).not.toBeInTheDocument()
+    })
+
+    it('a friendly divisor hides the selector', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.queryByRole('button', { name: /^Scaled/ })).not.toBeInTheDocument()
+    })
+
+    it('new worked examples appear and are selectable', () => {
+      render(<BaseMethodPage />)
+
+      const toggle = document.getElementById('toggle-examples') as HTMLInputElement
+      fireEvent.click(toggle)
+      expect(toggle.checked).toBe(true)
+
+      fireEvent.click(screen.getByText('5428 ÷ 35'))
+
+      expect(screen.getByLabelText('Dividend')).toHaveValue(5428)
+      expect(screen.getByLabelText('Divisor')).toHaveValue(35)
+      expect(screen.getByRole('button', { name: /×3/ })).toBeInTheDocument()
+    })
+
+    it('divisor card shows the scaled base/difference, not the original divisor\'s, once a candidate is chosen', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('10')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-25')
+
+      fireEvent.click(screen.getByRole('button', { name: /×3/ }))
+
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('100')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-5')
+    })
+  })
 })
