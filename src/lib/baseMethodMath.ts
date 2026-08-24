@@ -29,23 +29,34 @@ export function normalizeDigit(value: number): [digit: number, carry: number] {
   return [d, carry]
 }
 
+/** Splits a magnitude into `[leftPart, ...rightDigits]` per `rhsWidth`, as `solveBaseMethod` does when fanning a contribution across columns. */
+function splitMagnitude(magnitude: number, rhsWidth: number): number[] {
+  const rightWidth = rhsWidth - 1
+  const rightPart = rightWidth > 0 ? magnitude % 10 ** rightWidth : 0
+  const leftPart = rightWidth > 0 ? Math.floor(magnitude / 10 ** rightWidth) : magnitude
+  const rightDigits = rightWidth > 0 ? String(rightPart).padStart(rightWidth, '0').split('').map(Number) : []
+  return [leftPart, ...rightDigits]
+}
+
 /**
- * Checks if every decimal digit of the given absolute value is 0–5 inclusive.
- * Returns false if any digit is 6, 7, 8, or 9.
+ * Checks every part of `difference`'s real column split (see
+ * `splitMagnitude`) is 0–5 — stricter than a flat digit check, since
+ * `leftPart` absorbs excess digits beyond `rhsWidth` and can itself
+ * exceed 5 (e.g. base 10, difference -25: rhsWidth is 1, so nothing
+ * splits and the whole 25 lands unsplit, even though '2' and '5' are
+ * each individually ≤5).
  */
-function allDigitsFriendly(value: number): boolean {
-  const digits = String(Math.abs(value)).split('')
-  return digits.every((digit) => {
-    const d = Number(digit)
-    return d >= 0 && d <= 5
-  })
+export function isDifferenceFriendly(difference: number, base: number): boolean {
+  const rhsWidth = String(base).length - 1
+  const parts = splitMagnitude(Math.abs(difference), rhsWidth)
+  return parts.every((part) => part >= 0 && part <= 5)
 }
 
 /**
  * Returns all scaling candidates for a divisor, iterating k from 2 to 9.
  * For each k: always try multiply (divisor × k); try divide (divisor ÷ k)
- * only if divisor is evenly divisible by k. Keep only candidates where
- * all decimal digits of the absolute difference are 0–5 inclusive.
+ * only if divisor is evenly divisible by k. Keep only candidates whose
+ * real column split (see `isDifferenceFriendly`) is entirely 0–5.
  */
 export function findScalingCandidates(divisor: number): ScalingCandidate[] {
   const candidates: ScalingCandidate[] = []
@@ -55,7 +66,7 @@ export function findScalingCandidates(divisor: number): ScalingCandidate[] {
     const multiplyScaled = divisor * k
     const multiplyBase = nearestBase(multiplyScaled)
     const multiplyDiff = multiplyBase - multiplyScaled
-    if (allDigitsFriendly(multiplyDiff)) {
+    if (isDifferenceFriendly(multiplyDiff, multiplyBase)) {
       candidates.push({
         k,
         direction: 'multiply',
@@ -72,7 +83,7 @@ export function findScalingCandidates(divisor: number): ScalingCandidate[] {
       const divideDiff = divideBase - divideScaled
       // A base < 10 (nearestBase rounding a small scaled value down to 1)
       // is degenerate — no real LHS/RHS split exists to solve against.
-      if (divideBase >= 10 && allDigitsFriendly(divideDiff)) {
+      if (divideBase >= 10 && isDifferenceFriendly(divideDiff, divideBase)) {
         candidates.push({
           k,
           direction: 'divide',
@@ -175,10 +186,7 @@ export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSo
     const contribution = total * difference
     const sign = Math.sign(contribution)
     const magnitude = Math.abs(contribution)
-    const rightPart = rightWidth > 0 ? magnitude % 10 ** rightWidth : 0
-    const leftPart = rightWidth > 0 ? Math.floor(magnitude / 10 ** rightWidth) : magnitude
-    const rightDigits = rightWidth > 0 ? String(rightPart).padStart(rightWidth, '0').split('').map(Number) : []
-    const parts = [leftPart, ...rightDigits]
+    const parts = splitMagnitude(magnitude, rhsWidth)
 
     for (let k = 0; k < rhsWidth; k++) {
       const idx = i + 1 + k

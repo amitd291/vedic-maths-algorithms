@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -111,19 +111,46 @@ describe('solveBaseMethod', () => {
   })
 })
 
+describe('isDifferenceFriendly', () => {
+  it('rejects a difference whose leftPart absorbs multiple digits (base 10, diff -25 → single unsplit part [25])', () => {
+    // rhsWidth=1 for base 10 means rightWidth=0, so nothing is split at
+    // all — the whole magnitude (25) is one raw part, not friendly.
+    expect(isDifferenceFriendly(-25, 10)).toBe(false)
+  })
+
+  it('rejects a difference whose leftPart is multi-digit even though its flat digits are individually ≤5 (base 100, diff 234 → parts [23, 4])', () => {
+    expect(isDifferenceFriendly(234, 100)).toBe(false)
+  })
+
+  it('accepts a difference whose real split parts are all 0-5 (base 100, diff -5 → parts [0, 5])', () => {
+    expect(isDifferenceFriendly(-5, 100)).toBe(true)
+  })
+
+  it('rejects 10030 ÷ 827\'s natural difference (base 1000, diff 173 → parts [1, 7, 3], 7 is unfriendly)', () => {
+    expect(isDifferenceFriendly(173, 1000)).toBe(false)
+  })
+})
+
 describe('findScalingCandidates', () => {
-  it('returns the exact candidate set for divisor 35 (hand-verified)', () => {
+  it('returns the exact candidate set for divisor 35 (hand-verified against the real column split)', () => {
     const candidates = findScalingCandidates(35)
     expect(candidates).toEqual([
       { k: 2, direction: 'multiply', scaledDivisor: 70, base: 100, difference: 30 },
       { k: 3, direction: 'multiply', scaledDivisor: 105, base: 100, difference: -5 },
       { k: 4, direction: 'multiply', scaledDivisor: 140, base: 100, difference: -40 },
       { k: 5, direction: 'divide', scaledDivisor: 7, base: 10, difference: 3 },
-      { k: 6, direction: 'multiply', scaledDivisor: 210, base: 100, difference: -110 },
-      { k: 7, direction: 'multiply', scaledDivisor: 245, base: 100, difference: -145 },
-      { k: 9, direction: 'multiply', scaledDivisor: 315, base: 100, difference: -215 },
     ])
-    expect(candidates).toHaveLength(7)
+    expect(candidates).toHaveLength(4)
+  })
+
+  it('excludes k=6, k=7, k=9 multiply for divisor 35 despite their flat digits individually being ≤5 (leftPart is multi-digit once split by rhsWidth)', () => {
+    // Regression guard: k=6 → diff -110 → parts [11, 0]; k=7 → diff -145 →
+    // parts [14, 5]; k=9 → diff -215 → parts [21, 5]. A naive flat-digit
+    // check on the raw difference wrongly accepted all three.
+    const candidates = findScalingCandidates(35)
+    expect(candidates.find((c) => c.k === 6 && c.direction === 'multiply')).toBeUndefined()
+    expect(candidates.find((c) => c.k === 7 && c.direction === 'multiply')).toBeUndefined()
+    expect(candidates.find((c) => c.k === 9 && c.direction === 'multiply')).toBeUndefined()
   })
 
   it('excludes candidates whose scaled value is a single digit (base < 10 is degenerate)', () => {

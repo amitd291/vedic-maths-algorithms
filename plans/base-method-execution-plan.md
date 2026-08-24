@@ -214,6 +214,21 @@ defect. The divisor-scaling factor `k` is exempt from this range (kept at
 2–9, see its task below) since it's paid at most twice per problem, not
 once per step.
 
+**"0–5" means the real column split, not the flat digits of `difference`**:
+a bug found during the scaling-UI work checked flat decimal digits of the
+raw `difference` (e.g. `-25` → `['2','5']`, both ≤5, wrongly "friendly").
+The engine never actually splits a difference that way — `solveBaseMethod`
+splits a contribution into `rhsWidth − 1` trailing single digits plus one
+leading `leftPart` that absorbs everything else, and `leftPart` can itself
+be multi-digit whenever `difference` has more digits than `rhsWidth` holds
+(divisor 35: base 10 → `rhsWidth=1` → nothing splits at all, so `-25`
+lands as one raw, unsplit `25`; hand-simulated against `solveBaseMethod`,
+this genuinely blows up — LHS raw values hit `5, -121, 3027`). The fix,
+`isDifferenceFriendly(difference, base)`, runs the real split (extracted from
+`solveBaseMethod` as `splitMagnitude`) and checks every resulting part is
+0–5. This is strictly stronger than the flat-digit check, not just
+different — it subsumes it (a multi-digit `leftPart` is always `> 5`).
+
 **Exactly one simplification technique active per solve** — divisor-scaling
 and substitution are never combined. When the plain (nearest-power-of-10)
 difference is already all 0–5, no simplification is offered at all; the
@@ -233,44 +248,28 @@ function to the list, not restructuring the UI.
 - [x] **Scale-factor search**: `findScalingCandidates(divisor)` added to
       `baseMethodMath.ts`, trying `k = 2..9` in both directions (`D×k` and,
       only when `divisor % k === 0`, `D÷k`), keeping a candidate only when
-      every decimal digit of the resulting difference is 0–5 AND the
-      resulting base is ≥10 (excludes a degenerate case surfaced by the
-      exact-candidate-set test: divisor 35's `k=7` divide scales to 5,
-      whose nearest base is 1 — no real LHS/RHS split exists there). Tests
-      cover 5428÷35's exact 7-candidate set (both directions), 12657÷791
-      (divide candidate at k=7), divisor 999 (no multiply candidates
-      qualify), and the k∈[2,9] range across several divisors.
-- [ ] **Simplification selection UI, scaling-only** (depends on the above):
-      if the plain difference is already all 0–5, solve directly, no
-      screen. Otherwise present every qualifying candidate as a text-only
-      preview — e.g. for divisor 35: `Plain: -25`, `Scaled ×2: 3, 0`,
-      `Scaled ×3: 0, -5`; a divide-direction candidate labels as `÷k`
-      instead of `×k` (e.g. `Scaled ÷7: -13` for 791), switching on the
-      candidate's `direction` field — from a generic candidate
-      list (options come from real component state/props, computed via the
-      scale-factor search above — not hardcoded markup), not a full
-      walkthrough; user picks exactly one, which becomes what's actually
-      solved and narrated. Show all qualifying candidates, however many the
-      math layer returns, at least for this first cut — no automatic "best"
-      scoring; surfacing options and letting the human pick is the
-      deliberate design. Candidates are listed in ascending `k` order — an
-      arbitrary, stable ordering for implementation simplicity, not a
-      simplicity/preference ranking (a larger `k` isn't guaranteed to give
-      friendlier digits than a smaller one). If no scaling
-      `k` qualifies, fall back to solving the plain difference directly, no
-      screen. UI: reuses the existing "Try a worked example" chevron
-      disclosure pattern (`plans/mockups/iteration-f-example-picker-v1.html`)
-      for shape/feel. Two separate pieces of state, both real React state,
-      not that mockup's CSS-only checkbox-hack: whether the panel renders
-      *at all* is a `baseMethodMath`-derived flag (any candidate besides
-      plain qualifies), not a component decision; expanded/collapsed is a
-      separate, ordinary `useState` toggle, only relevant once rendering.
-      Default to expanded whenever the panel renders at all (nothing to
-      hide behind a chevron on first render if the panel wouldn't exist
-      otherwise); selecting a candidate collapses it automatically, so a
-      solved problem doesn't sit there hosting a wall of already-decided
-      options — this component needs to react to computed candidate data,
-      which a pure-CSS toggle can't branch on.
+      `isDifferenceFriendly(difference, base)` (see central-goal note above) AND
+      the resulting base is ≥10 (excludes a degenerate case: divisor 35's
+      `k=7` divide scales to 5, whose nearest base is 1 — no real LHS/RHS
+      split exists there). Divisor 35's exact candidate set is now 4 (k=2,
+      3, 4 multiply, k=5 divide) — k=6/7/9 multiply were dropped once the
+      split-based check replaced the flat-digit one. Tests cover 5428÷35's
+      exact candidate set plus a regression guard for the dropped k=6/7/9,
+      12657÷791 (divide candidate at k=7), divisor 999 (no multiply
+      candidates qualify), and the k∈[2,9] range across several divisors.
+- [x] **Simplification selection UI, scaling-only**: `SimplificationSelector.tsx`
+      added — standalone, not yet wired into `BaseMethodPage` (next task).
+      Renders nothing when the plain difference is already friendly
+      (`isDifferenceFriendly`) or no candidates qualify; otherwise shows a
+      "Plain" option plus one button per candidate from
+      `findScalingCandidates`, labeled `×k`/`÷k` per `direction`. Expanded
+      by default, auto-collapses on selection, re-expands on toggle click.
+      Regression-tested against the friendliness bug above with divisor 11
+      (own digits friendly, plain diff already fine → renders nothing) and
+      divisor 16 (own digits contain a 6, plain diff genuinely needs
+      simplifying → renders the panel) — the original divisor 9/35/182
+      fixtures all coincidentally gave the same answer whether or not that
+      bug was present, so they didn't catch it.
 - [ ] **Wire divisor-scaling into the board** (once a scaling option is
       chosen): no new math engine needed — dividend ÷ scaled-divisor is
       just an ordinary case `computeBaseMethodSteps` already solves; see
