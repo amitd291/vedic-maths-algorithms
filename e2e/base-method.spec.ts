@@ -99,10 +99,10 @@ test.describe('Base Method pane (dev server)', () => {
 
     // Default state, before any selection: expanded, plain question text, no highlight.
     await expect(page.getByText('How should this be simplified?')).toBeVisible();
-    await expect(page.getByRole('button', { name: /^105 – Scaled ×3/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^105: Scaled divisor/ })).toBeVisible();
     await expect(page.locator('.simplification-option.selected')).toHaveCount(0);
 
-    await page.getByRole('button', { name: /^105 – Scaled ×3/ }).click();
+    await page.getByRole('button', { name: /^105: Scaled divisor/ }).click();
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-5');
     await expect(page.getByText('Setup')).toBeVisible();
 
@@ -125,13 +125,13 @@ test.describe('Base Method pane (dev server)', () => {
     expect(stepPanelBox).not.toBeNull();
     expect(descaleRowBox!.y).toBeLessThan(stepPanelBox!.y);
 
-    await page.getByText(/Scaled divisor 105 \(35 × 3\) selected/).click();
+    await page.getByText(/✓ 105: Scaled divisor/).click();
 
     // Re-expanded: the previously chosen ×3 card is still visibly selected (green).
-    await expect(page.getByRole('button', { name: /^105 – Scaled ×3/ })).toHaveClass(/\bselected\b/);
+    await expect(page.getByRole('button', { name: /^105: Scaled divisor/ })).toHaveClass(/\bselected\b/);
     await expect(page.locator('.simplification-option.selected')).toHaveCount(1);
 
-    await page.getByRole('button', { name: /^Plain/ }).click();
+    await page.getByRole('button', { name: /^35: Plain/ }).click();
     await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
     await expect(page.getByText('Setup', { exact: true })).toBeVisible();
   });

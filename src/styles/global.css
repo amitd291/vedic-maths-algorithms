@@ -547,7 +547,7 @@ body {
 .simplification-option.selected .simplification-option-name, .simplification-option.selected .simplification-option-tag { color: var(--green); }
 .simplification-option-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
 .simplification-option-name { font-size: 0.85rem; font-weight: 700; }
-.simplification-option-result { font-size: 1.15rem; font-weight: 800; }
+.simplification-option-result { font-size: 1.1rem; font-weight: 800; }
 .simplification-option-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); }
 .simplification-option-line { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.3rem; }
 .simplification-option-line span:first-child { color: var(--text2); }

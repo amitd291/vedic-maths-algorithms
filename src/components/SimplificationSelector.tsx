@@ -47,12 +47,12 @@ export default function SimplificationSelector({
       return 'How should this be simplified?'
     }
     if (selectedKey === 'plain') {
-      return '✓ Plain selected'
+      return `'✓ ${divisor}: Plain'`
     }
     const candidate = candidates.find((c) => selectedKey === `${c.direction}-${c.k}`)
     if (candidate) {
       const op = candidate.direction === 'multiply' ? '×' : '÷'
-      return `✓ Scaled divisor ${candidate.scaledDivisor} (${divisor} ${op} ${candidate.k}) selected`
+      return `✓ ${candidate.scaledDivisor}: Scaled divisor (${divisor} ${op} ${candidate.k})`
     }
     return 'How should this be simplified?'
   }
@@ -86,8 +86,9 @@ export default function SimplificationSelector({
             onClick={handlePlainClick}
           >
             <div className="simplification-option-head">
-              <span className="simplification-option-name">Plain</span>
-              <span className="simplification-option-tag">diff {plainDiff}</span>
+              <span className="simplification-option-name">
+                <b className="simplification-option-result">{divisor}: </b> Plain
+              </span>
             </div>
             <div className="simplification-option-line combined">
               Base: <b>{plainBase}</b> | Difference: <b>{plainDiff}</b>
@@ -106,7 +107,7 @@ export default function SimplificationSelector({
               >
                 <div className="simplification-option-head">
                   <span className="simplification-option-name">
-                    <b className="simplification-option-result">{candidate.scaledDivisor}</b> – Scaled {op}{candidate.k} ({divisor} {op} {candidate.k})
+                    <b className="simplification-option-result">{candidate.scaledDivisor}: </b> Scaled divisor ({divisor} {op} {candidate.k})
                   </span>
                 </div>
                 <div className="simplification-option-line combined">

@@ -18,8 +18,9 @@ describe('SimplificationSelector', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
     expect(screen.getByText('How should this be simplified?')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^Plain/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Scaled ×3/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Plain/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /70: Scaled divisor/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /105: Scaled divisor/ })).toBeInTheDocument()
   })
 
   it('renders nothing for divisor 11, even though it has 5 raw candidates, because its plain difference is already friendly', () => {
@@ -59,8 +60,8 @@ describe('SimplificationSelector', () => {
     const onSelect = vi.fn()
     render(<SimplificationSelector divisor={35} onSelect={onSelect} />)
 
-    const multiplyButton = screen.getByRole('button', { name: /^105 – Scaled ×3/ })
-    fireEvent.click(multiplyButton)
+    const candidateButton = screen.getByRole('button', { name: /105: Scaled divisor/ })
+    fireEvent.click(candidateButton)
 
     expect(onSelect).toHaveBeenCalledOnce()
     const calledWith = onSelect.mock.calls[0][0]
@@ -88,34 +89,34 @@ describe('SimplificationSelector', () => {
     const onSelect = vi.fn()
     render(<SimplificationSelector divisor={35} onSelect={onSelect} />)
 
-    const plainButton = screen.getByRole('button', { name: /^Plain/ })
+    const plainButton = screen.getByRole('button', { name: /^35: Plain/ })
     fireEvent.click(plainButton)
 
     expect(screen.queryByRole('button', { name: /^Plain/ })).toBeNull()
-    expect(screen.queryByText(/×3/)).toBeNull()
-    expect(screen.getByText('✓ Plain selected')).toBeInTheDocument()
+    expect(screen.queryByText(/105: Scaled divisor/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /✓ 35: Plain/ })).toBeInTheDocument()
   })
 
   it('re-expands options when toggle header is clicked again after selection for divisor 35', () => {
     const onSelect = vi.fn()
     render(<SimplificationSelector divisor={35} onSelect={onSelect} />)
 
-    const plainButton = screen.getByRole('button', { name: /^Plain/ })
+    const plainButton = screen.getByRole('button', { name: /^35: Plain/ })
     fireEvent.click(plainButton)
 
-    expect(screen.queryByText(/×3/)).toBeNull()
+    expect(screen.queryByText('✓ 105: Scaled divisor (35 × 3)')).toBeNull()
 
-    // Click on the green summary text to re-expand
-    const summaryElement = screen.getByText('✓ Plain selected')
+    // Click on the selector with plain pre-selected text to re-expand
+    const summaryElement = screen.getByRole('button', { name: /✓ 35: Plain/ })
     fireEvent.click(summaryElement)
 
-    expect(screen.getByText(/Scaled ×3/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /105: Scaled divisor/ })).toBeInTheDocument()
   })
 
   it('renders Plain option card with Base 10 and Difference -25 for divisor 35', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
-    const plainButton = screen.getByRole('button', { name: /^Plain/ })
+    const plainButton = screen.getByRole('button', { name: /^35: Plain/ })
     const plainCardContent = plainButton.textContent || ''
 
     expect(plainCardContent).toContain('Base')
@@ -124,11 +125,12 @@ describe('SimplificationSelector', () => {
     expect(plainCardContent).toContain('-25')
   })
 
-  it('renders ×3 candidate card with Base 100 and Difference -5 for divisor 35', () => {
+  it('renders ×3 candidate card (105) with Base 100 and Difference -5 for divisor 35', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
-    const multiplyButton = screen.getByRole('button', { name: /×3/ })
-    const cardContent = multiplyButton.textContent || ''
+    // Find the button with the expected pattern
+    const candidateButton = screen.getByRole('button', { name: /^105: Scaled divisor \(35 × 3\)/ })
+    const cardContent = candidateButton.textContent || ''
 
     expect(cardContent).toContain('Base')
     expect(cardContent).toContain('100')
@@ -136,55 +138,48 @@ describe('SimplificationSelector', () => {
     expect(cardContent).toContain('-5')
   })
 
-  it('candidate button name for divisor 35 matches the expected pattern with scaled divisor', () => {
+  it('displays green summary when ×3 candidate (105) is selected for divisor 35', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
-    const button = screen.getByRole('button', { name: /^105 – Scaled ×3 \(35 × 3\)/ })
-    expect(button).toBeInTheDocument()
-  })
+    const candidateButton = screen.getByRole('button', { name: /105: Scaled divisor/ })
+    fireEvent.click(candidateButton)
 
-  it('displays green summary when ×3 candidate is selected for divisor 35', () => {
-    render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
-
-    const multiplyButton = screen.getByRole('button', { name: /×3/ })
-    fireEvent.click(multiplyButton)
-
-    expect(screen.getByText('✓ Scaled divisor 105 (35 × 3) selected')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /✓ 105: Scaled divisor/ })).toBeInTheDocument()
     expect(screen.queryByText(/How should this be simplified/)).not.toBeInTheDocument()
   })
 
   it('displays green summary when Plain is selected for divisor 35', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
-    const plainButton = screen.getByRole('button', { name: /^Plain/ })
+    const plainButton = screen.getByRole('button', { name: /^35: Plain/ })
     fireEvent.click(plainButton)
 
-    expect(screen.getByText('✓ Plain selected')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /✓ 35: Plain/ })).toBeInTheDocument()
     expect(screen.queryByText(/How should this be simplified/)).not.toBeInTheDocument()
   })
 
   it('selected ×3 button has class "selected" and summary persists when re-expanded for divisor 35', () => {
     render(<SimplificationSelector divisor={35} onSelect={vi.fn()} />)
 
-    const multiplyButton = screen.getByRole('button', { name: /^105 – Scaled ×3/ })
-    fireEvent.click(multiplyButton)
+    const candidateButton = screen.getByRole('button', { name: /^105: Scaled divisor/ })
+    fireEvent.click(candidateButton)
 
     // Summary should be visible
-    expect(screen.getByText('✓ Scaled divisor 105 (35 × 3) selected')).toBeInTheDocument()
+    expect(screen.getByText('✓ 105: Scaled divisor (35 × 3)')).toBeInTheDocument()
 
     // Re-expand by clicking the summary text
-    const summaryText = screen.getByText('✓ Scaled divisor 105 (35 × 3) selected')
+    const summaryText = screen.getByText('✓ 105: Scaled divisor (35 × 3)')
     fireEvent.click(summaryText)
 
     // Button should have selected class after re-expansion
-    const expandedButton = screen.getByRole('button', { name: /^105 – Scaled ×3/ })
+    const expandedButton = screen.getByRole('button', { name: /^105: Scaled divisor/ })
     expect(expandedButton.classList.contains('selected')).toBe(true)
 
     // Summary should still be visible after re-expansion
-    expect(screen.getByText('✓ Scaled divisor 105 (35 × 3) selected')).toBeInTheDocument()
+    expect(screen.getByText('✓ 105: Scaled divisor (35 × 3)')).toBeInTheDocument()
 
     // The button name should be visible since expanded
-    expect(screen.getByRole('button', { name: /^105 – Scaled ×3/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^105: Scaled divisor/ })).toBeInTheDocument()
   })
 
 })
