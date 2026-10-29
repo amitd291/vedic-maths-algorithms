@@ -324,3 +324,22 @@ export function solveScaledBaseMethod(
     remainder,
   }
 }
+
+export function substituteDigits(n: number): number[] {
+  const digits = String(n).split('').reverse().map(Number)
+  const result: number[] = []
+  let carry = 0
+  let i = 0
+  while (i < digits.length || carry !== 0) {
+    const d = (digits[i] ?? 0) + carry
+    if (d > 5) {
+      result[i] = d - 10
+      carry = 1
+    } else {
+      result[i] = d
+      carry = 0
+    }
+    i += 1
+  }
+  return result.reverse()
+}

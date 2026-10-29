@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, solveScaledBaseMethod } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, solveScaledBaseMethod, substituteDigits } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -278,5 +278,55 @@ describe('solveScaledBaseMethod', () => {
     }
 
     expect(checked).toBeGreaterThan(0)
+  })
+})
+
+describe('substituteDigits', () => {
+  it('converts digits above 5 into negative digits with a carry (173, 181, 209)', () => {
+    expect(substituteDigits(173)).toEqual([2, -3, 3])
+    expect(substituteDigits(181)).toEqual([2, -2, 1])
+    // 12657 ÷ 791's natural difference; that problem also has a valid divisor-scaling
+    // candidate (÷7), so it is a fixture where both techniques apply
+    expect(substituteDigits(209)).toEqual([2, 1, -1])
+  })
+
+  it('grows a single digit 6-9 into two places (7 -> [1, -3], 6 -> [1, -4])', () => {
+    expect(substituteDigits(7)).toEqual([1, -3])
+    expect(substituteDigits(6)).toEqual([1, -4])
+  })
+
+  it('leaves 5 and below unchanged (5 -> [5], 3 -> [3])', () => {
+    expect(substituteDigits(5)).toEqual([5])
+    expect(substituteDigits(3)).toEqual([3])
+  })
+
+  it('handles carries across several digits (44, 449, 10)', () => {
+    expect(substituteDigits(44)).toEqual([4, 4])
+    expect(substituteDigits(449)).toEqual([4, 5, -1])
+    expect(substituteDigits(10)).toEqual([1, 0])
+  })
+
+  it('reconstructs n from its digits for every n in 1..2000', () => {
+    const failing: number[] = []
+    for (let n = 1; n <= 2000; n++) {
+      if (substituteDigits(n).reduce((a, d) => a * 10 + d, 0) !== n) failing.push(n)
+    }
+    expect(failing).toEqual([])
+  })
+
+  it('keeps every digit in [-4, 5] for every n in 1..2000', () => {
+    const failing: number[] = []
+    for (let n = 1; n <= 2000; n++) {
+      if (substituteDigits(n).some(d => d < -4 || d > 5)) failing.push(n)
+    }
+    expect(failing).toEqual([])
+  })
+
+  it('does not grow length when the leading digit is <= 4 and n has >= 2 digits', () => {
+    const failing: number[] = []
+    for (let n = 10; n <= 2000; n++) {
+      if (Number(String(n)[0]) <= 4 && substituteDigits(n).length !== String(n).length) failing.push(n)
+    }
+    expect(failing).toEqual([])
   })
 })

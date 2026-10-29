@@ -292,42 +292,16 @@ function to the list, not restructuring the UI.
       genuine residual gap remain? If it remains, decide what the UI should
       show (a quiet "no simplification available" note vs. leaving the
       divisor card looking perfectly ordinary).
-- [ ] **Substitution derivation** (pure math, adds a second candidate
-      source): standard balanced-digit conversion, least-significant-digit
-      first, carry propagating left:
-      ```
-      substitute(n):                      // digits of n, index 0 = units
-        digits = decimalDigitsOf(n); carry = 0; i = 0; result = []
-        while i < digits.length || carry != 0:
-          d = (digits[i] ?? 0) + carry
-          if d > 5: result[i] = d - 10; carry = 1
-          else:     result[i] = d;      carry = 0
-          i += 1
-        return reverse(result)            // MSB-first for display
-      ```
-      Tie convention `d>5` converts / `d≤5` keeps → range `[−4,5]`, so the
-      only digit that can hit the ceiling is a clean `+5`. Verified:
-      `173→[2,−3,3]`, `181→[2,−2,1]` (both book examples, see build plan);
-      also `209→[2,1,−1]` (12657÷791's natural difference, hand-derived —
-      not in the source PDF — see build plan, a rare case where the same
-      problem also has a valid divisor-scaling candidate, useful once this
-      task needs a fixture where both techniques independently apply).
-      **Growth is bounded and provable, not just "handled":** a *natural*
-      (nearest-power-of-10) difference's leading digit is always ≤4 — the
-      boundary where "nearest" flips between adjacent bases `B` and `10B`
-      sits at `D=5.5B`, capping the worst-case natural difference at
-      `4.5B−1` (e.g. base 10 → max 44, base 100 → max 449, base 1000 → max
-      4499 — all leading-digit ≤4; a leading digit of 5+ would mean the
-      divisor was actually closer to the *other* base, so it'd never be
-      "nearest" in the first place). A ≤4 leading digit plus at most a `+1`
-      incoming carry tops out at exactly 5, which *stays* — so a
-      **multi-digit natural difference's substituted array is always the
-      same length as the original, never longer.** The only real growth
-      case is a **single-digit** natural difference of 6–9 (e.g. divisor 93
-      → base 100 → diff 7 → `[1,−3]`), which always grows from 1 place to
-      exactly 2 — general digit-friendliness normalization, not reserved
-      for multi-digit differences, but its growth behavior is this one
-      narrow, well-understood case, not an open-ended board-width concern.
+- [x] **Substitution derivation**: `substituteDigits(n)` in
+      `baseMethodMath.ts`, balanced-digit conversion (LSD first, carry
+      left, `d>5` converts, range `[−4,5]`, MSB-first output). Tests:
+      173→`[2,−3,3]`, 181→`[2,−2,1]`, 209→`[2,1,−1]`, 7→`[1,−3]`,
+      449→`[4,5,−1]`, plus 1..2000 round-trip/range/no-growth properties.
+      **Growth bound (relied on by the board-wiring task):** a natural
+      difference's leading digit is ≤4 (cap `4.5B−1`, e.g. 44/449/4499), so
+      a multi-digit substituted array never grows; the only growth case is
+      a single-digit 6–9 difference going 1→2 places (e.g. 93 → diff 7 →
+      `[1,−3]`).
 - [ ] **Simplification selection UI, add substitution** (should be a small
       delta if the scaling-only UI used a generic candidate list): add the
       substitution rewrite of the plain difference as a second candidate,
