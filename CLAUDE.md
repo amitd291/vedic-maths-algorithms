@@ -22,6 +22,7 @@
 # Subagents
 
 - When spawning Explore/general-purpose agents for exploration, search, or read-only research tasks, always pass model: "haiku".
+- Tell implementation subagents to use the Write/Edit tools for file changes, not Bash (heredocs, sed, echo redirects).
 
 # Development Tasks
 ## Implementation Workflow
