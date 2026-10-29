@@ -120,6 +120,13 @@ export function findScalingCandidates(divisor: number): ScalingCandidate[] {
   return candidates
 }
 
+/** True when the plain (nearest-base) difference is unfriendly and at least one scaling candidate exists. */
+export function needsSimplification(divisor: number): boolean {
+  const plainBase = nearestBase(divisor)
+  const plainDiff = plainBase - divisor
+  return !isDifferenceFriendly(plainDiff, plainBase) && findScalingCandidates(divisor).length > 0
+}
+
 export interface BaseMethodSolution {
   base: number
   difference: number

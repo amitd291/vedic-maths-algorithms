@@ -8,7 +8,7 @@ import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
 import SimplificationSelector from '../components/SimplificationSelector'
 import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
-import { describeBaseMethodError, solveScaledBaseMethod } from '../lib/baseMethodMath'
+import { describeBaseMethodError, needsSimplification, solveScaledBaseMethod } from '../lib/baseMethodMath'
 import { useStepNav } from '../hooks/useStepNav'
 import type { BaseMethodStep } from '../types'
 import type { ScalingCandidate } from '../lib/baseMethodMath'
@@ -62,6 +62,7 @@ export default function BaseMethodPage() {
   const [exampleKey, setExampleKey] = useState(`${BASE_DIVIDEND}/${BASE_DIVISOR}`)
   const [current, setCurrent] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR })
   const [candidate, setCandidate] = useState<ScalingCandidate | null>(null)
+  const [solveSeq, setSolveSeq] = useState(0)
   const exampleToggleRef = useRef<HTMLInputElement>(null)
   const total = problem?.steps.length ?? 0
   const { cur, setCur, isFirst, isLast, onBack, onNext, onDot } = useStepNav(total)
@@ -69,6 +70,7 @@ export default function BaseMethodPage() {
   function handleSolve(dividend: number, divisor: number) {
     setCurrent({ dividend, divisor })
     setCandidate(null)
+    setSolveSeq((n) => n + 1)
     const result = solve(dividend, divisor, null)
     setProblem(result.problem)
     setError(result.error)
@@ -76,7 +78,7 @@ export default function BaseMethodPage() {
     setCur(0)
   }
 
-  function handleSelectCandidate(selectedCandidate: ScalingCandidate | null) {
+  function handleSelectCandidate(selectedCandidate: ScalingCandidate) {
     setCandidate(selectedCandidate)
     const result = solve(current.dividend, current.divisor, selectedCandidate)
     setProblem(result.problem)
@@ -93,8 +95,10 @@ export default function BaseMethodPage() {
 
   const [initialDividend, initialDivisor] = exampleKey.split('/').map(Number)
 
-  const base = problem ? (candidate ? candidate.base : nearestBase(problem.divisor)) : 0
-  const difference = problem ? (candidate ? candidate.difference : base - problem.divisor) : 0
+  const pending = needsSimplification(current.divisor) && candidate === null
+  const plainBase = nearestBase(current.divisor)
+  const base = pending ? null : candidate ? candidate.base : plainBase
+  const difference = pending ? null : candidate ? candidate.difference : plainBase - current.divisor
   const finalAnswer =
     problem?.scaledAnswer && isLast
       ? { divisor: current.divisor, quotient: problem.scaledAnswer.quotient, remainder: problem.scaledAnswer.remainder }
@@ -137,14 +141,15 @@ export default function BaseMethodPage() {
 
       {error && <ErrorBanner message={error} showPrefix={!errorFriendly} />}
 
-      {problem && (
+      <SimplificationSelector
+        key={solveSeq}
+        divisor={current.divisor}
+        onSelect={handleSelectCandidate}
+      />
+      {(pending || problem) && <BaseMethodDivisorCard base={base} difference={difference} />}
+
+      {problem && !pending && (
         <>
-          <SimplificationSelector
-            key={`${current.dividend}/${current.divisor}`}
-            divisor={current.divisor}
-            onSelect={handleSelectCandidate}
-          />
-          <BaseMethodDivisorCard base={base} difference={difference} />
           <BaseMethodDigitBoard
             step={problem.steps[cur]}
             onBack={onBack}

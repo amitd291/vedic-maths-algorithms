@@ -3,12 +3,12 @@ import type { ScalingCandidate } from '../lib/baseMethodMath'
 import {
   findScalingCandidates,
   nearestBase,
-  isDifferenceFriendly,
+  needsSimplification,
 } from '../lib/baseMethodMath'
 
 interface SimplificationSelectorProps {
   divisor: number
-  onSelect: (candidate: ScalingCandidate | null) => void
+  onSelect: (candidate: ScalingCandidate) => void
 }
 
 export default function SimplificationSelector({
@@ -18,18 +18,11 @@ export default function SimplificationSelector({
   const [expanded, setExpanded] = useState(true)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
-  const plainBase = nearestBase(divisor)
-  const plainDiff = plainBase - divisor
+  const plainDiff = nearestBase(divisor) - divisor
   const candidates = findScalingCandidates(divisor)
 
-  if (isDifferenceFriendly(plainDiff, plainBase) || candidates.length === 0) {
+  if (!needsSimplification(divisor)) {
     return null
-  }
-
-  const handlePlainClick = () => {
-    setSelectedKey('plain')
-    onSelect(null)
-    setExpanded(false)
   }
 
   const handleCandidateClick = (candidate: ScalingCandidate) => {
@@ -45,9 +38,6 @@ export default function SimplificationSelector({
   const getToggleLabel = () => {
     if (selectedKey === null) {
       return 'How should this be simplified?'
-    }
-    if (selectedKey === 'plain') {
-      return `'✓ ${divisor}: Plain'`
     }
     const candidate = candidates.find((c) => selectedKey === `${c.direction}-${c.k}`)
     if (candidate) {
@@ -80,20 +70,11 @@ export default function SimplificationSelector({
 
       {expanded && (
         <div className="simplification-options">
-          <button
-            type="button"
-            className={`simplification-option plain-option${selectedKey === 'plain' ? ' selected' : ''}`}
-            onClick={handlePlainClick}
-          >
-            <div className="simplification-option-head">
-              <span className="simplification-option-name">
-                <b className="simplification-option-result">{divisor}: </b> Plain
-              </span>
-            </div>
-            <div className="simplification-option-line combined">
-              Base: <b>{plainBase}</b> | Difference: <b>{plainDiff}</b>
-            </div>
-          </button>
+          <div className="select-intro">
+            The plain difference (<b>{plainDiff}</b>) isn't simple to calculate with. Pick how to simplify.
+            <br />
+            Note that only one option is ever applied.
+          </div>
 
           {candidates.map((candidate) => {
             const op = candidate.direction === 'multiply' ? '×' : '÷'

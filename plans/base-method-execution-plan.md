@@ -270,19 +270,41 @@ function to the list, not restructuring the UI.
       prop computed once in `solve()` rather than recomputed on render.
       Verified via unit suite + typecheck + `npx playwright test` + a
       Playwright screenshot pass compared against the mockup.
-- [ ] **Stretch goal: drop "Plain" from the selector + true unselected
-      state.** `Plain` only ever renders as an option when it's already the
-      dominated choice (the `isDifferenceFriendly` guard filters out the
-      case where it's actually competitive), so listing it is arguably just
-      noise — consider removing that row entirely. Paired with this: today
-      `candidate === null` silently means both "nothing chosen yet" and
-      "Plain explicitly chosen," so the initial screen already computes and
-      displays Plain's base/difference/digits before the user picks
-      anything — which fights the v2 refresh's intent of a true unselected
-      state (expanded selector, no highlight). Needs a real tri-state
-      (unselected / Plain / a candidate) so that before any explicit pick,
-      the divisor card and digit-board render dashes (`—`) for base,
-      difference, digits, etc. instead of eagerly falling back to Plain.
+- [x] **Dropped "Plain" + true unselected state** (mockup:
+      `plans/mockups/iteration-f-unselected-state-v1.html`, Option A).
+      Plain card removed; its contrast moved into a new `select-intro` line
+      ("The plain difference (-25) isn't simple..."). `needsSimplification`
+      (`baseMethodMath.ts`) gates the selector; while pending
+      (`needsSimplification && candidate === null`) the divisor card shows
+      `—` and the board, nav dots and step panel are not rendered. The
+      selector is keyed by a per-solve counter so re-submitting the same
+      problem clears a stale highlight. Consequence: an unfriendly divisor's
+      Plain board is no longer reachable in the UI, so the 10030 ÷ 827 e2e
+      ("normalize the remainder") was deleted; that step stays covered by
+      `computeBaseMethodSteps.test.ts` / `baseMethodMath.test.ts`, and
+      carry-chip UI by the 10600÷87, 14189÷102, 1693÷131 e2e tests and the
+      board/page component tests. The 5428÷35 e2e is the only e2e that
+      picks an unfriendly-divisor candidate (multiply direction).
+- [ ] **Follow-up to "Dropped Plain + true unselected state": don't solve the
+      hidden Plain board while pending.**
+      `BaseMethodPage.handleSolve` still solves Plain eagerly even when
+      `needsSimplification(divisor)` is true, although that board is never
+      shown. Effect (seen on 5 ÷ 35): a Plain-board error banner ("too few
+      digits for this divisor") appears alongside the selector before the
+      user has chosen anything, and the banner belongs to a board they
+      didn't pick; it is also wasted work. Fix: in `handleSolve` (and the
+      initial state), when `needsSimplification(divisor)`, set
+      `problem = null` and `error = null` and wait; solve only in
+      `handleSelectCandidate`, so any error belongs to the chosen
+      candidate's board. The selector and `—` card already render without a
+      `problem` (selector is unconditional, card renders when `pending ||
+      problem`), so no layout change is needed. Tests (page level, no new
+      e2e): 5 ÷ 35 shows the selector and `—` card with no alert until a
+      candidate is picked, then shows the friendly "too few digits" error;
+      5428 ÷ 35 pick-then-board flow unchanged; picking a worked example
+      such as 10030 ÷ 827 or 12657 ÷ 791 starts pending with no alert;
+      friendly divisors (9, 182) still solve immediately. Draft a TDD
+      Haiku prompt for approval when this is picked up.
 - [x] **Fixed: single-digit divisors 1-5 (found on 5428 ÷ 3).**
       `nearestBase` now floors at 10 (1..5 used to get base 1 and fail the
       self-check). New `describeBaseMethodError` maps the "too small" and

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import BaseMethodPage from './BaseMethodPage'
-import { computeBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
+import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
+import { findScalingCandidates } from '../lib/baseMethodMath'
 import type { CalcLine } from '../types'
 
 function hasLabel(l: CalcLine): l is Extract<CalcLine, { label: string }> {
@@ -278,21 +279,66 @@ describe('BaseMethodPage', () => {
       expect(screen.getAllByText('155 | 3')).toHaveLength(2)
     })
 
-    it('choosing Plain reverts', () => {
+    it('starts pending for 5428÷35: dashes in the card, no board, selector expanded; picking ×3 shows the board', () => {
       render(<BaseMethodPage />)
 
       fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('—')
+      expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('Next step')).not.toBeInTheDocument()
+      expect(document.querySelector('.dot-row')).toBeNull()
+      expect(document.querySelector('.digit-board')).toBeNull()
+      expect(document.querySelector('.step-panel')).toBeNull()
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toHaveAttribute('aria-expanded', 'true')
+
+      const candidate = findScalingCandidates(35).find((c) => c.k === 3 && c.direction === 'multiply')!
       fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
 
-      // Re-expand the selector by clicking the toggle (green summary text)
-      fireEvent.click(screen.getByText(/✓ 105: Scaled divisor/))
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe(String(candidate.base))
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe(String(candidate.difference))
+      const scaledSteps = computeScaledBaseMethodSteps(5428, 35, candidate)
+      expect(screen.getByText(`1 / ${scaledSteps.length}`)).toBeInTheDocument()
+    })
 
-      fireEvent.click(screen.getByRole('button', { name: /^35: Plain/ }))
+    it('shows base 10 and difference 1 for 123÷9 immediately, with no selector', () => {
+      render(<BaseMethodPage />)
 
-      expect(screen.getByText('Setup', { selector: 'h2' })).toBeInTheDocument()
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe('10')
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('1')
+      expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+    })
+
+    it('returns to pending when a worked example that needs simplification is selected again', () => {
+      const scaledSteps = computeScaledBaseMethodSteps(5428, 35, findScalingCandidates(35).find((c) => c.k === 3 && c.direction === 'multiply')!)
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+      fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
+      expect(screen.getByText(`1 / ${scaledSteps.length}`)).toBeInTheDocument()
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '9' } })
+      fireEvent.submit(document.querySelector('form')!)
+      expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+      expect(screen.getByText(`1 / ${computeBaseMethodSteps(123, 9).length}`)).toBeInTheDocument()
+
+      fireEvent.click(screen.getByText('5428 ÷ 35'))
+
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('—')
+      expect(screen.queryByLabelText('Next step')).not.toBeInTheDocument()
+      expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toHaveAttribute('aria-expanded', 'true')
     })
 
     it('a friendly divisor hides the selector', () => {
@@ -325,8 +371,8 @@ describe('BaseMethodPage', () => {
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
 
-      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('10')
-      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-25')
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('—')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('—')
 
       fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
 

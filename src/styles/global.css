@@ -554,6 +554,8 @@ body {
 .simplification-option-line span:last-child { font-weight: 700; }
 .simplification-option-line.combined { display: block; color: var(--text2); }
 .simplification-option-line.combined b { color: var(--text); font-weight: 700; }
+.select-intro { font-size: 0.85rem; color: var(--text2); margin-bottom: 0.9rem; }
+.select-intro b { color: var(--text); }
 
 /* ---------- Descale row (inside digit-board) ---------- */
 .descale-row {

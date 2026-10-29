@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, needsSimplification, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -159,6 +159,20 @@ describe('isDifferenceFriendly', () => {
 
   it('rejects 10030 ÷ 827\'s natural difference (base 1000, diff 173 → parts [1, 7, 3], 7 is unfriendly)', () => {
     expect(isDifferenceFriendly(173, 1000)).toBe(false)
+  })
+})
+
+describe('needsSimplification', () => {
+  it('is false when the plain difference is already friendly (9, 182, 11)', () => {
+    expect(needsSimplification(9)).toBe(false)
+    expect(needsSimplification(182)).toBe(false)
+    expect(needsSimplification(11)).toBe(false)
+  })
+
+  it('is true when the plain difference is unfriendly and a candidate exists (35, 16, 791)', () => {
+    expect(needsSimplification(35)).toBe(true)
+    expect(needsSimplification(16)).toBe(true)
+    expect(needsSimplification(791)).toBe(true)
   })
 })
 

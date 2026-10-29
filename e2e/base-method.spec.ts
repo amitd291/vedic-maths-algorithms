@@ -76,26 +76,9 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(totals.last()).toHaveText('121');
   });
 
-  test('reaches "normalize the remainder" with self-contained RHS carry correction (10030 ÷ 827)', async ({ page }) => {
-    await solve(page, 10030, 827);
-    await expect(page.locator('.step-counter')).toHaveText('1 / 8');
-
-    for (let i = 1; i < 6; i++) {
-      await page.getByLabel('Next step').click();
-    }
-    await expect(page.locator('.step-counter')).toHaveText('6 / 8');
-    await expect(page.getByText('sum the RHS columns')).toBeVisible();
-    await expect(page.locator('.carry-chip.show')).toHaveText(['+ 1', '− 10']);
-
-    await page.getByLabel('Next step').click();
-    await expect(page.locator('.step-counter')).toHaveText('7 / 8');
-    await expect(page.getByText('normalize the remainder')).toBeVisible();
-    await expect(page.locator('.carry-chip.show')).toHaveCount(0);
-  });
-
   test('scales the divisor via a chosen candidate, then descales back to the original answer (5428 ÷ 35)', async ({ page }) => {
     await solve(page, 5428, 35);
-    await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('—');
 
     // Default state, before any selection: expanded, plain question text, no highlight.
     await expect(page.getByText('How should this be simplified?')).toBeVisible();
@@ -130,10 +113,6 @@ test.describe('Base Method pane (dev server)', () => {
     // Re-expanded: the previously chosen ×3 card is still visibly selected (green).
     await expect(page.getByRole('button', { name: /^105: Scaled divisor/ })).toHaveClass(/\bselected\b/);
     await expect(page.locator('.simplification-option.selected')).toHaveCount(1);
-
-    await page.getByRole('button', { name: /^35: Plain/ }).click();
-    await expect(page.locator('.divisor-digit-diff')).toHaveText('-25');
-    await expect(page.getByText('Setup', { exact: true })).toBeVisible();
   });
 
   test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {
