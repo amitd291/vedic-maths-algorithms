@@ -8,7 +8,7 @@ import BaseMethodInputForm from '../components/BaseMethodInputForm'
 import ErrorBanner from '../components/ErrorBanner'
 import SimplificationSelector from '../components/SimplificationSelector'
 import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } from '../lib/computeBaseMethodSteps'
-import { solveScaledBaseMethod } from '../lib/baseMethodMath'
+import { describeBaseMethodError, solveScaledBaseMethod } from '../lib/baseMethodMath'
 import { useStepNav } from '../hooks/useStepNav'
 import type { BaseMethodStep } from '../types'
 import type { ScalingCandidate } from '../lib/baseMethodMath'
@@ -39,17 +39,18 @@ function solve(
   dividend: number,
   divisor: number,
   candidate: ScalingCandidate | null,
-): { problem: Problem | null; error: string | null } {
+): { problem: Problem | null; error: string | null; friendly: boolean } {
   try {
     if (candidate !== null) {
       const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate)
       const { quotient, remainder } = solveScaledBaseMethod(dividend, divisor, candidate)
-      return { problem: { dividend, divisor, steps, scaledAnswer: { quotient, remainder } }, error: null }
+      return { problem: { dividend, divisor, steps, scaledAnswer: { quotient, remainder } }, error: null, friendly: false }
     }
     const steps = computeBaseMethodSteps(dividend, divisor)
-    return { problem: { dividend, divisor, steps, scaledAnswer: null }, error: null }
+    return { problem: { dividend, divisor, steps, scaledAnswer: null }, error: null, friendly: false }
   } catch (err) {
-    return { problem: null, error: err instanceof Error ? err.message : String(err) }
+    const { message, friendly } = describeBaseMethodError(err)
+    return { problem: null, error: message, friendly }
   }
 }
 
@@ -57,6 +58,7 @@ export default function BaseMethodPage() {
   const initial = useMemo(() => solve(BASE_DIVIDEND, BASE_DIVISOR, null), [])
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
+  const [errorFriendly, setErrorFriendly] = useState<boolean>(initial.friendly)
   const [exampleKey, setExampleKey] = useState(`${BASE_DIVIDEND}/${BASE_DIVISOR}`)
   const [current, setCurrent] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR })
   const [candidate, setCandidate] = useState<ScalingCandidate | null>(null)
@@ -70,6 +72,7 @@ export default function BaseMethodPage() {
     const result = solve(dividend, divisor, null)
     setProblem(result.problem)
     setError(result.error)
+    setErrorFriendly(result.friendly)
     setCur(0)
   }
 
@@ -78,6 +81,7 @@ export default function BaseMethodPage() {
     const result = solve(current.dividend, current.divisor, selectedCandidate)
     setProblem(result.problem)
     setError(result.error)
+    setErrorFriendly(result.friendly)
     setCur(0)
   }
 
@@ -131,7 +135,7 @@ export default function BaseMethodPage() {
         </div>
       </div>
 
-      {error && <ErrorBanner message={error} />}
+      {error && <ErrorBanner message={error} showPrefix={!errorFriendly} />}
 
       {problem && (
         <>

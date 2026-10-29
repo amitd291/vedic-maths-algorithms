@@ -1,7 +1,7 @@
-export default function ErrorBanner({ message }: { message: string }) {
+export default function ErrorBanner({ message, showPrefix = true }: { message: string; showPrefix?: boolean }) {
   return (
     <div className="error-banner" role="alert">
-      Something went wrong computing this problem: {message}
+      {showPrefix ? `Something went wrong computing this problem: ${message}` : message}
     </div>
   )
 }

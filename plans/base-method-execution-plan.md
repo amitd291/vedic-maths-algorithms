@@ -283,15 +283,16 @@ function to the list, not restructuring the UI.
       (unselected / Plain / a candidate) so that before any explicit pick,
       the divisor card and digit-board render dashes (`—`) for base,
       difference, digits, etc. instead of eagerly falling back to Plain.
-- [ ] **Corner case: no simplification available.** When the plain
-      difference is unfriendly but the candidate list (scaling today,
-      scaling + substitution later) comes back empty, `SimplificationSelector`
-      currently returns `null` and the app silently falls back to the
-      unfriendly Plain board with no explanation at all. Revisit once
-      substitution is in: is this case actually unreachable then, or does a
-      genuine residual gap remain? If it remains, decide what the UI should
-      show (a quiet "no simplification available" note vs. leaving the
-      divisor card looking perfectly ordinary).
+- [x] **Fixed: single-digit divisors 1-5 (found on 5428 ÷ 3).**
+      `nearestBase` now floors at 10 (1..5 used to get base 1 and fail the
+      self-check). New `describeBaseMethodError` maps the "too small" and
+      "wider board" engine errors to learner-facing text, shown without the
+      "Something went wrong" prefix (`ErrorBanner` `showPrefix`); unknown
+      errors keep it. Small divisors on large dividends (e.g. 5428 ÷ 3)
+      still hit the display-width guard, now with the friendly message.
+      The `findScalingCandidates` divide guard became `divideScaled >= 6`
+      (preserves the old boundary under the floor). The 1..999 sweep no
+      longer allows `self-check failed` as a known error.
 - [x] **Substitution derivation**: `substituteDigits(n)` in
       `baseMethodMath.ts`, balanced-digit conversion (LSD first, carry
       left, `d>5` converts, range `[−4,5]`, MSB-first output). Tests:
@@ -305,7 +306,10 @@ function to the list, not restructuring the UI.
 - [ ] **Simplification selection UI, add substitution** (should be a small
       delta if the scaling-only UI used a generic candidate list): add the
       substitution rewrite of the plain difference as a second candidate,
-      e.g. `Substituted: 2,−3,3`.
+      e.g. `Substituted: 2,−3,3`. Add an invariant test: every divisor 1..999
+      is either friendly or has at least one candidate (substituted digits
+      are always in `[−4,5]`, so the "no simplification available" case
+      should be unreachable).
 - [ ] **Wire substitution into the board** (once a substitution option is
       chosen): today `baseMethodMath.ts` computes one
       `contribution = total × difference` per LHS digit, then splits that

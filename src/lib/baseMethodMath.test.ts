@@ -1,11 +1,20 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, solveScaledBaseMethod, substituteDigits } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
     expect(nearestBase(9)).toBe(10)
     expect(nearestBase(95)).toBe(100)
     expect(nearestBase(12)).toBe(10)
+  })
+
+  it('floors the base at 10 for 1-digit divisors', () => {
+    expect(nearestBase(1)).toBe(10)
+    expect(nearestBase(2)).toBe(10)
+    expect(nearestBase(3)).toBe(10)
+    expect(nearestBase(5)).toBe(10)
+    expect(nearestBase(9)).toBe(10)
+    expect(nearestBase(10)).toBe(10)
   })
 })
 
@@ -45,12 +54,34 @@ describe('solveBaseMethod', () => {
     expect(() => solveBaseMethod(9995, 9)).toThrow(/wider board/)
   })
 
-  it('throws a self-check failure when nearestBase picks a base at or below the divisor (1 ÷ 2)', () => {
-    // divisor 2's nearest power of 10 is 1 (tie-break favors the smaller
-    // side), which is ≤ the divisor itself — the base/difference math is
-    // no longer meaningful, and the self-check catches it rather than
-    // silently returning a wrong quotient/remainder.
-    expect(() => solveBaseMethod(1, 2)).toThrow(/self-check failed/)
+  it('rejects a 1-digit dividend for a 1-digit divisor as too small (1 ÷ 2)', () => {
+    expect(() => solveBaseMethod(1, 2)).toThrow(/too small/)
+  })
+
+  it('solves 123 ÷ 5 (quotient 24, remainder 3)', () => {
+    const solution = solveBaseMethod(123, 5)
+    expect(solution.quotient).toBe(24)
+    expect(solution.remainder).toBe(3)
+  })
+
+  it('solves 1234 ÷ 2 (quotient 617, remainder 0)', () => {
+    const solution = solveBaseMethod(1234, 2)
+    expect(solution.quotient).toBe(617)
+    expect(solution.remainder).toBe(0)
+  })
+
+  it('solves 5428 ÷ 6 (quotient 904, remainder 4)', () => {
+    const solution = solveBaseMethod(5428, 6)
+    expect(solution.quotient).toBe(904)
+    expect(solution.remainder).toBe(4)
+  })
+
+  it('throws /wider board/ for 5428 ÷ 3 (quotient 1809 needs a wider board)', () => {
+    expect(() => solveBaseMethod(5428, 3)).toThrow(/wider board/)
+  })
+
+  it('throws /too small/ for 7 ÷ 2', () => {
+    expect(() => solveBaseMethod(7, 2)).toThrow(/too small/)
   })
 
   it('flags a correction and an LHS normalize together (865 ÷ 9)', () => {
@@ -83,7 +114,7 @@ describe('solveBaseMethod', () => {
     // won't reliably hit the narrow throw-boundary/flag combinations those
     // cover on purpose, but it does exercise the self-check across a wide,
     // deterministic spread of divisors and dividend widths.
-    const knownErrors = [/too small/, /wider board/, /self-check failed/]
+    const knownErrors = [/too small/, /wider board/]
     let checked = 0
 
     for (let divisor = 1; divisor <= 999; divisor++) {
@@ -328,5 +359,32 @@ describe('substituteDigits', () => {
       if (Number(String(n)[0]) <= 4 && substituteDigits(n).length !== String(n).length) failing.push(n)
     }
     expect(failing).toEqual([])
+  })
+})
+
+describe('describeBaseMethodError', () => {
+  it('maps the too-small error to a friendly dividend message', () => {
+    expect(describeBaseMethodError(new Error('dividend is too small for this base'))).toEqual({
+      friendly: true,
+      message: 'This dividend has too few digits for this divisor. Try a larger dividend.',
+    })
+  })
+
+  it('maps the wider-board error to a friendly quotient message', () => {
+    expect(
+      describeBaseMethodError(new Error('quotient needs a wider board than the assumed LHS width (iteration D display limit)')),
+    ).toEqual({
+      friendly: true,
+      message: 'The quotient is too long for the board at this size. Try a smaller dividend or a larger divisor.',
+    })
+  })
+
+  it('passes self-check failures through unchanged and unfriendly', () => {
+    const text = 'solveBaseMethod self-check failed: 1 × 2 + 0 !== 1'
+    expect(describeBaseMethodError(new Error(text))).toEqual({ friendly: false, message: text })
+  })
+
+  it('stringifies non-Error values unfriendly', () => {
+    expect(describeBaseMethodError('boom')).toEqual({ friendly: false, message: 'boom' })
   })
 })

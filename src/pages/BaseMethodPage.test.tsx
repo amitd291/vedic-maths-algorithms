@@ -206,15 +206,42 @@ describe('BaseMethodPage', () => {
     expect(toggle.checked).toBe(false)
   })
 
-  it('shows an error banner instead of crashing when the dividend is too small for its base', () => {
+  it('shows a friendly error banner instead of crashing when the dividend is too small for its base', () => {
     render(<BaseMethodPage />)
 
     fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
     fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '87' } })
     fireEvent.submit(document.querySelector('form')!)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('dividend is too small for this base')
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('This dividend has too few digits for this divisor. Try a larger dividend.')
+    expect(alert).not.toHaveTextContent('Something went wrong')
     expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+  })
+
+  it('shows a friendly wider-board message instead of a raw engine error (5428 ÷ 3)', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '3' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('The quotient is too long for the board at this size.')
+    expect(alert).not.toHaveTextContent('Something went wrong')
+    expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+  })
+
+  it('solves 123 ÷ 5 via the input form with no alert and the board rendered', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '5' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    const newSteps = computeBaseMethodSteps(123, 5)
+    expect(screen.getByText(`1 / ${newSteps.length}`)).toBeInTheDocument()
   })
 
   describe('divisor-scaling selector', () => {

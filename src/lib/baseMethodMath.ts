@@ -1,9 +1,24 @@
-/** Nearest power of 10 to `divisor` (ties broken arbitrarily — see iteration F). */
+/** Nearest power of 10 to `divisor` (ties broken arbitrarily — see iteration F), floored at 10. */
 export function nearestBase(divisor: number): number {
   const width = String(divisor).length
   const lower = 10 ** (width - 1)
   const upper = 10 ** width
-  return upper - divisor <= divisor - lower ? upper : lower
+  return Math.max(10, upper - divisor <= divisor - lower ? upper : lower)
+}
+
+/** Maps a solver/engine error to learner-facing text; `friendly` means the message is safe to show without the generic prefix. */
+export function describeBaseMethodError(err: unknown): { message: string; friendly: boolean } {
+  const text = err instanceof Error ? err.message : String(err)
+  if (/too small/.test(text)) {
+    return { friendly: true, message: 'This dividend has too few digits for this divisor. Try a larger dividend.' }
+  }
+  if (/wider board/.test(text)) {
+    return {
+      friendly: true,
+      message: 'The quotient is too long for the board at this size. Try a smaller dividend or a larger divisor.',
+    }
+  }
+  return { friendly: false, message: text }
 }
 
 export interface ScalingCandidate {
@@ -88,9 +103,9 @@ export function findScalingCandidates(divisor: number): ScalingCandidate[] {
       const divideScaled = divisor / k
       const divideBase = nearestBase(divideScaled)
       const divideDiff = divideBase - divideScaled
-      // A base < 10 (nearestBase rounding a small scaled value down to 1)
-      // is degenerate — no real LHS/RHS split exists to solve against.
-      if (divideBase >= 10 && isDifferenceFriendly(divideDiff, divideBase)) {
+      // Scaled divisors 1–5 are degenerate (no real LHS/RHS split to solve
+      // against); 6–9 are kept, as they were when they rounded up to base 10.
+      if (divideScaled >= 6 && isDifferenceFriendly(divideDiff, divideBase)) {
         candidates.push({
           k,
           direction: 'divide',
