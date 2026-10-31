@@ -120,6 +120,41 @@ export function findScalingCandidates(divisor: number): ScalingCandidate[] {
   return candidates
 }
 
+export interface SubstitutionCandidate {
+  kind: 'substitution'
+  digits: number[]
+  base: number
+  difference: number
+}
+
+export type SimplificationCandidate = (ScalingCandidate & { kind: 'scaling' }) | SubstitutionCandidate
+
+/**
+ * Simplification options for a divisor whose plain difference is unfriendly:
+ * scaling candidates (filtered to those whose difference is no wider than the
+ * plain one), then one substitution candidate. Empty when the plain difference
+ * is already friendly.
+ */
+export function findSimplificationCandidates(divisor: number): SimplificationCandidate[] {
+  const plainBase = nearestBase(divisor)
+  const plainDiff = plainBase - divisor
+  if (isDifferenceFriendly(plainDiff, plainBase)) return []
+
+  const plainDigitCount = String(Math.abs(plainDiff)).length
+  const scaling: SimplificationCandidate[] = findScalingCandidates(divisor)
+    .filter((c) => String(Math.abs(c.difference)).length <= plainDigitCount)
+    .map((c) => ({ kind: 'scaling', ...c }))
+
+  const substitution: SubstitutionCandidate = {
+    kind: 'substitution',
+    digits: substituteDigits(Math.abs(plainDiff)),
+    base: plainBase,
+    difference: plainDiff,
+  }
+
+  return [...scaling, substitution]
+}
+
 /** True when the plain (nearest-base) difference is unfriendly and at least one scaling candidate exists. */
 export function needsSimplification(divisor: number): boolean {
   const plainBase = nearestBase(divisor)

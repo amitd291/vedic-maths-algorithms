@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, isDifferenceFriendly, needsSimplification, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, findSimplificationCandidates, isDifferenceFriendly, needsSimplification, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -173,6 +173,69 @@ describe('needsSimplification', () => {
     expect(needsSimplification(35)).toBe(true)
     expect(needsSimplification(16)).toBe(true)
     expect(needsSimplification(791)).toBe(true)
+  })
+})
+
+describe('findSimplificationCandidates', () => {
+  it('returns no candidates when the plain difference is friendly (9)', () => {
+    expect(findSimplificationCandidates(9)).toEqual([])
+  })
+
+  it('returns only the substitution candidate for 182 (plain difference -82 is unfriendly, no scaling)', () => {
+    expect(findSimplificationCandidates(182)).toEqual([{ kind: 'substitution', digits: [1, -2, 2], base: 100, difference: -82 }])
+  })
+
+  it('returns only the substitution candidate for 827 (no k=7 multiply scaling)', () => {
+    const candidates = findSimplificationCandidates(827)
+    expect(candidates).toEqual([{ kind: 'substitution', digits: [2, -3, 3], base: 1000, difference: 173 }])
+    expect(candidates.some((c) => c.kind === 'scaling' && c.k === 7 && c.direction === 'multiply')).toBe(false)
+  })
+
+  it('returns scaling candidates followed by one substitution candidate for 35', () => {
+    const candidates = findSimplificationCandidates(35)
+    expect(candidates.slice(0, -1).map((c) => (c.kind === 'scaling' ? [c.k, c.direction] : null))).toEqual([
+      [2, 'multiply'],
+      [3, 'multiply'],
+      [4, 'multiply'],
+      [5, 'divide'],
+    ])
+    expect(candidates[candidates.length - 1]).toMatchObject({ kind: 'substitution', base: 10, difference: -25 })
+  })
+
+  it('includes k=7 divide and a substitution candidate for 791', () => {
+    const candidates = findSimplificationCandidates(791)
+    expect(candidates).toContainEqual(expect.objectContaining({ kind: 'scaling', k: 7, direction: 'divide' }))
+    expect(candidates[candidates.length - 1]).toEqual({ kind: 'substitution', digits: [2, 1, -1], base: 1000, difference: 209 })
+  })
+
+  it('holds the candidate invariants for every divisor 1..999', () => {
+    const failures: { divisor: number; reason: string }[] = []
+    for (let divisor = 1; divisor <= 999; divisor++) {
+      const plainBase = nearestBase(divisor)
+      const plainDiff = plainBase - divisor
+      const candidates = findSimplificationCandidates(divisor)
+
+      if (isDifferenceFriendly(plainDiff, plainBase)) {
+        if (candidates.length !== 0) failures.push({ divisor, reason: 'friendly difference returned candidates' })
+        continue
+      }
+
+      const last = candidates[candidates.length - 1]
+      if (!last || last.kind !== 'substitution') {
+        failures.push({ divisor, reason: 'last candidate is not substitution' })
+        continue
+      }
+      if (last.digits.some((d) => d < -4 || d > 5)) {
+        failures.push({ divisor, reason: 'substitution digit out of [-4, 5]' })
+      }
+      const plainDigitCount = String(Math.abs(plainDiff)).length
+      for (const c of candidates) {
+        if (c.kind === 'scaling' && String(Math.abs(c.difference)).length > plainDigitCount) {
+          failures.push({ divisor, reason: `scaling candidate k=${c.k} ${c.direction} difference too wide` })
+        }
+      }
+    }
+    expect(failures).toEqual([])
   })
 })
 

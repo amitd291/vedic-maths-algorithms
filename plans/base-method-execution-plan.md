@@ -201,9 +201,9 @@ Spec: build plan Iteration E.
 
 ---
 
-## Iteration F — smarter base selection (future) ⬜
+## Iteration F — smarter base selection (in progress) ⬜
 
-Spec: build plan Iteration F. Speculative — no committed timeline.
+Spec: build plan Iteration F. Scaling is built; substitution is pending.
 
 **Central goal:** every digit actually multiplied by *inside a step* should
 be **0–5 inclusive** (times tables nobody has to think about; the
@@ -313,22 +313,26 @@ function to the list, not restructuring the UI.
       `formSeed` (with a `seq` counter as the form `key`) remounts the form
       on every example click, so re-picking restores the example. Covered by
       two page tests and an extension of the 5428 ÷ 35 e2e.
-- [ ] **Simplification selection UI, add substitution** (should be a small
-      delta if the scaling-only UI used a generic candidate list): add the
-      substitution rewrite of the plain difference as a second candidate,
-      e.g. `Substituted: 2,−3,3`. Add an invariant test: every divisor 1..999
-      is either friendly or has at least one candidate (substituted digits
-      are always in `[−4,5]`, so the "no simplification available" case
-      should be unreachable).
-      **Decide first (before implementing):** heavy-but-valid scaling
-      candidates. 10030 ÷ 827 offers only ×7 (5789, base 10000, difference
-      4211): every digit is 0-5, but the 5-column board looks confusing next
-      to the plain 3-column solve. Candidates are accepted purely on "all
-      column parts 0-5". Options: rank/limit by board width or scale factor,
-      and/or let the substituted candidate (`[2,-3,3]`, same width as plain)
-      take over such cases.
-- [ ] **Wire substitution into the board** (once a substitution option is
-      chosen): today `baseMethodMath.ts` computes one
+- [x] **Substitution candidate (pure math, no UI)**: added
+      `findSimplificationCandidates(divisor)` in `baseMethodMath.ts`: `[]`
+      when plain is friendly, else filtered scaling candidates (rule (a), see
+      `base-method-build-plan.md` "Decisions") followed by one substituted
+      candidate. Deliberately NOT wired into `findScalingCandidates` /
+      `needsSimplification`: the filter would empty 827's list and flip the
+      10030 ÷ 827 pending-state behaviour. Unit tests: fixtures 9, 182, 827,
+      35, 791 plus a 1..999 invariant. The UI switch is the next task.
+- [ ] **Wire substitution into the selector and board.** Selector: switch
+      `SimplificationSelector`/`needsSimplification`/`BaseMethodPage` from
+      `findScalingCandidates` to `findSimplificationCandidates` (chosen rule
+      (a), see `base-method-build-plan.md` "Decisions"); `needsSimplification`
+      becomes "the candidate list is non-empty". Show the substituted
+      candidate as a card (e.g. `Substituted: 2,−3,3`, same card style as
+      scaling). Update the pending-state tests that assume 10030 ÷ 827
+      offers ×7, and any test that treats 182 as friendly (it has a
+      substitution option, so it will start pending). Decide how to present
+      the 19 no-op-only divisors (substitution identical to plain, listed in
+      the build plan). Board (once a
+      substitution option is chosen): today `baseMethodMath.ts` computes one
       `contribution = total × difference` per LHS digit, then splits that
       product into decimal digits to fan out across columns. Replace with:
       for each element `d` at index `j` of the substituted-digit array,

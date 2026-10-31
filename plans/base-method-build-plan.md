@@ -7,7 +7,7 @@ sign-generic engine rather than two separate ones.
 
 ## Method recap
 
-- `base` = nearest power of 10 to the divisor. `difference = base − divisor`.
+- `base` = nearest power of 10 to the divisor, at least 10. `difference = base − divisor`.
   - `difference > 0` → Base Method (divisor's leading digit is high, e.g. 88 → base 100).
   - `difference < 0` → Paravartya (divisor sits just above the base, e.g. 113 → base 100).
 - Dividend splits into LHS (quotient region, variable width) and RHS (fixed
@@ -19,8 +19,10 @@ sign-generic engine rather than two separate ones.
 - Final normalization: if the remainder is negative or ≥ divisor, adjust
   quotient by ∓1 and remainder by ±divisor.
 - Base selection can tie (e.g. divisor 55 is equidistant between bases 10
-  and 100). Any valid nearest base is fine for now — see iteration F for
-  the future optimization/UX vision here.
+  and 100). Any valid nearest base is fine; iteration F covers simplifying
+  an unfriendly `difference` instead.
+- Inputs: dividend 1..99999, divisor 1..999. The quotient must fit the
+  board's LHS width (see "Out of scope").
 
 Iteration B is scoped to single-digit `difference` and a 1-digit LHS to
 prove the board first; iteration C generalizes to a multi-digit
@@ -37,9 +39,9 @@ Reused as-is: `Header`, `Footer`, `ErrorBanner`, `InputForm` pattern,
 `global.css` tokens, Vite single-file build, Vitest setup.
 
 New, not reused:
-- `computeSteps` for this method — column/cross-multiplication engine,
+- `computeBaseMethodSteps` for this method — column/cross-multiplication engine,
   independent of the flag-subtraction logic.
-- A new board component (working name `BaseDigitBoard`) — LHS/RHS split
+- A new board component (now `BaseMethodDigitBoard`) — LHS/RHS split
   with diagonal contribution lines, replacing the single-carry-badge model.
 - A new `DivisorCard`-equivalent — shows `base` / `difference` instead of
   `working` / `flag`.
@@ -86,23 +88,112 @@ Dividend/divisor input form, self-check, error banner, and unit tests
 across the full input range, now that iteration D's engine is generalized.
 See `base-method-execution-plan.md` Iteration E for the full checklist.
 
-## Iteration F — smarter base selection (future)
+## Iteration F — smarter base selection
 
-Today, any valid nearest base is fine, chosen arbitrarily on a tie. Future:
-optimize the choice, including scaling the divisor to a nearby multiple of a
-base (e.g. 5428 ÷ 35 via 35×3=105, see "Examples with steps" above) or
-substituting the `difference` for a friendlier signed-digit form (e.g.
-10030 ÷ 827's 173 → `2,−3,3`, see "Examples with steps" above) instead of
-just nearest-power-of-10, and where more than one approach is genuinely
-viable, prompt the user to pick. See `base-method-execution-plan.md`
-Iteration F.
+Goal: when the plain `difference` is awkward to multiply by, simplify it so
+every multiplier used inside a step is a small digit (0–5). Two techniques:
+
+- **Divisor scaling:** scale the divisor to a nearby multiple of a base
+  (e.g. 5428 ÷ 35 via 35×3=105, or 12657 ÷ 791 via ÷7), solve, then descale
+  the answer. Built.
+- **Substitution:** rewrite the `difference` in a signed-digit form
+  (e.g. 10030 ÷ 827's 173 → `2,−3,3`). Pending.
+
+Behaviour:
+
+- Exactly one technique is applied per solve, never combined.
+- Nothing is offered when the plain difference is already friendly.
+- Otherwise the user picks from a generic candidate list; the board and
+  steps stay hidden until a choice is made.
+
+See "Examples with steps" below, "Decisions" for the base-selection rule, and
+`base-method-execution-plan.md` Iteration F for the checklist and status.
+
+## Decisions
+
+### Heavy scaling candidates (iteration F)
+
+**Decision: (a).** It removes the confusing case without losing the scaling
+teaching examples, and substitution covers the divisors it empties. (b) was
+not taken: only 19 divisors end up with a no-op option, and they still
+follow the ordinary steps.
+
+**Context.** `findScalingCandidates` accepts a candidate purely on "every
+column part of its difference is 0-5". That is valid, but can offer a
+candidate that is clearly heavier than the plain solve. Example: 10030 ÷ 827
+(plain base 1000, difference 173) offers only ×7 (5789, base 10000,
+difference 4211): every digit is 0-5, yet it fans the product across four
+columns instead of three and looks confusing next to the plain solve.
+Substitution (`173` → `[2,−3,3]`, same width as plain, digits in `[−4,5]`)
+is the alternative.
+
+**Options.**
+
+- **(a) Drop scaling candidates whose difference has more digits than
+  plain's.** 827: 3 digits plain vs 4 for ×7, so ×7 is dropped. 35: plain
+  difference −25 (2 digits), so ×2 (30), ×3 (−5), ×4 (−40) and ÷5 (3) all
+  stay. Removes the confusing cases while keeping the teaching examples.
+  Cost: some divisors are left with no scaling option and rely on
+  substitution alone; the digit count is a heuristic (30 and −25 both
+  count as 2 digits).
+- **(b) Keep every candidate, order them.** Sort by difference digit count,
+  then scale factor, so the lightest options come first. No coverage lost
+  and the simplest rule. Cost: heavy candidates like 827's ×7 remain
+  visible next to the substituted one, so the confusion is reduced, not
+  removed.
+- **(c) Drop scaling candidates whose base is wider (`rhsWidth`) than
+  plain's.** Tested and rejected: too blunt. It also drops 35's ×2/×3/×4,
+  since scaling 35 moves the base from 10 to 100, even though ×3 gives a
+  single-digit difference (−5) and is the simplest option. It would leave
+  270 of the 606 divisors needing simplification with no scaling candidate
+  (216 more lose only some), against 112 (and 94) for (a).
+
+**Results** (`findSimplificationCandidates`, divisors 1..999; re-run the
+counts with `node --experimental-strip-types
+plans/scripts/simplification-candidate-stats.mts`, local-only). Indented
+rows are subsets of the row above.
+
+| Group | Divisors | Notes |
+|---|---|---|
+| Friendly (nothing offered) | 250 | |
+| Unfriendly | 749 | |
+| &emsp;Keep at least one scaling candidate after rule (a) | 494 | 142 of these also have a no-op substitution, harmless |
+| &emsp;**Rely on substitution alone** | **255** | 236 are a real rewrite, 19 a no-op |
+| &emsp;&emsp;Had scaling candidates, all removed by rule (a) | 112 | all real rewrites, e.g. 73, 93, 173, 184-188 |
+| &emsp;&emsp;Never had a scaling candidate (the UI offers nothing today) | 143 | |
+| &emsp;&emsp;&emsp;Real rewrite | 124 | |
+| &emsp;&emsp;&emsp;**No-op (the only option is identical to plain)** | **19** | see below |
+
+Fixtures: 10030 ÷ 827 (a drops ×7), 5428 ÷ 35 (all four stay), 12657 ÷ 791
+(÷7, difference −13, stays).
+
+No-op divisors: 53, 213, 314, 321, 403, 421, 422, 431, 442, 454, 503, 523,
+530, 533, 535, 541, 542, 543, 545. Their difference digits are already 0-5,
+so substitution changes nothing, yet the column split puts the leading
+digits together in one chunk (the left part), which is above 5. Neither
+technique helps, so they use the plain solve, a little denser than usual
+(a 2-digit chunk in one column). Examples (rest follow the same pattern,
+left parts 22-44):
+
+| Divisor | Base | Difference | Split (left, right) | Left part |
+|---|---|---|---|---|
+| 53 | 10 | −43 | 43 | 43 |
+| 213 | 100 | −113 | 11, 3 | 11 |
+| 314 | 100 | −214 | 21, 4 | 21 |
+| 421 | 100 | −321 | 32, 1 | 32 |
+| 545 | 100 | −445 | 44, 5 | 44 |
+
+**Invariant test** (unit, `baseMethodMath.test.ts`, "holds the candidate
+invariants for every divisor 1..999"): every divisor is either friendly or
+has at least one candidate in the final list (filtered scaling plus
+substituted).
 
 ## Worked examples from the source PDF (for future reference)
 
 Pulled from `base-method-division.pdf` (ch. 15 — this PDF covers Base Method
 only). Paravartya (negative-difference) cases aren't in this PDF, but real,
 manually-verified examples now exist below under "Examples with steps".
-Useful as a bank of test cases when building `computeSteps` and its unit tests.
+Useful as a bank of test cases when building `computeBaseMethodSteps` and its unit tests.
 
 | Problem | Base | Difference | LHS \| RHS | Quotient | Remainder | Notes |
 |---|---|---|---|---|---|---|
@@ -343,11 +434,11 @@ substitution algorithm on 209 (LSB-first, `9→[−1, carry 1]`,
 `0+1=1→[1]`, `2→[2]`) gives substituted digits `2, 1, −1` — all friendly,
 no scaling needed at all. So 12657 ÷ 791 is a rare case where *both*
 simplification techniques (divisor-scaling and substitution) independently
-apply to the same problem; useful as a cross-reference once the
-substitution derivation task picks a test fixture.
+apply to the same problem; a ready cross-reference
+fixture for the substitution work.
 
 ## Out of scope (not planned)
 - Quotient wider than the assumed LHS width (e.g. 9995÷9 → 1110 needs 4
   columns but the board only allocated 3), there's no box to put it in.
-  That stays a thrown, out-of-scope case — but it's now a pure
-  display-width limitation, not a math one.
+  Out of scope as a pure display-width limitation, not a math one; the
+  app shows a friendly "quotient too long for the board" message.
