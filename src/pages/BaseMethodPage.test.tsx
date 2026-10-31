@@ -341,6 +341,33 @@ describe('BaseMethodPage', () => {
       expect(screen.getByRole('button', { name: /How should this be simplified/ })).toHaveAttribute('aria-expanded', 'true')
     })
 
+    it('clears the worked-example highlight after a manual edit is solved', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('5428 ÷ 35'))
+      expect(screen.getByText('5428 ÷ 35').closest('button')).toHaveClass('selected')
+
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '5' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      document.querySelectorAll('.example-item').forEach((el) => expect(el).not.toHaveClass('selected'))
+    })
+
+    it('re-selecting a worked example after a manual edit resets the form and highlights it', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('5428 ÷ 35'))
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '5' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByText('5428 ÷ 35'))
+
+      expect(screen.getByText('5428 ÷ 35').closest('button')).toHaveClass('selected')
+      expect(screen.getByLabelText('Dividend')).toHaveValue(5428)
+      expect(screen.getByLabelText('Divisor')).toHaveValue(35)
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+    })
+
     it('a friendly divisor hides the selector', () => {
       render(<BaseMethodPage />)
 

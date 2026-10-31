@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 async function solve(page: Page, dividend: number, divisor: number) {
   await page.locator('#base-dividend-input').fill(String(dividend));
   await page.locator('#base-divisor-input').fill(String(divisor));
-  await page.getByRole('button', { name: 'Solve' }).click();
+  await page.getByRole('button', { name: 'Solve', exact: true }).click();
 }
 
 test.describe('Base Method pane (dev server)', () => {
@@ -113,6 +113,22 @@ test.describe('Base Method pane (dev server)', () => {
     // Re-expanded: the previously chosen ×3 card is still visibly selected (green).
     await expect(page.getByRole('button', { name: /^105: Scaled divisor/ })).toHaveClass(/\bselected\b/);
     await expect(page.locator('.simplification-option.selected')).toHaveCount(1);
+
+    // Worked-example highlight follows the solved inputs, typed or picked.
+    const example = page.locator('.example-item', { hasText: '5428 ÷ 35' });
+    await page.getByText('Try a worked example').click();
+    await expect(example).toHaveClass(/\bselected\b/);
+
+    await solve(page, 5428, 5);
+    await expect(page.locator('.example-item.selected')).toHaveCount(0);
+
+    await example.click();
+    await page.getByText('Try a worked example').click();
+    await expect(example).toHaveClass(/\bselected\b/);
+    await expect(page.locator('#base-dividend-input')).toHaveValue('5428');
+    await expect(page.locator('#base-divisor-input')).toHaveValue('35');
+    await expect(page.getByRole('button', { name: /^105: Scaled divisor/ })).toBeVisible();
+    await expect(page.locator('.simplification-option.selected')).toHaveCount(0);
   });
 
   test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {

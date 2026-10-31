@@ -66,7 +66,7 @@ export default function BaseMethodPage() {
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
   const [errorFriendly, setErrorFriendly] = useState<boolean>(initial.friendly)
-  const [exampleKey, setExampleKey] = useState(`${BASE_DIVIDEND}/${BASE_DIVISOR}`)
+  const [formSeed, setFormSeed] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR, seq: 0 })
   const [current, setCurrent] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR })
   const [candidate, setCandidate] = useState<ScalingCandidate | null>(null)
   const [solveSeq, setSolveSeq] = useState(0)
@@ -96,11 +96,9 @@ export default function BaseMethodPage() {
 
   const onSelectExample = (dividend: number, divisor: number) => {
     handleSolve(dividend, divisor)
-    setExampleKey(`${dividend}/${divisor}`)
+    setFormSeed((s) => ({ dividend, divisor, seq: s.seq + 1 }))
     if (exampleToggleRef.current) exampleToggleRef.current.checked = false
   }
-
-  const [initialDividend, initialDivisor] = exampleKey.split('/').map(Number)
 
   const pending = needsSimplification(current.divisor) && candidate === null
   const plainBase = nearestBase(current.divisor)
@@ -114,9 +112,9 @@ export default function BaseMethodPage() {
   return (
     <>
       <BaseMethodInputForm
-        key={exampleKey}
-        initialDividend={initialDividend}
-        initialDivisor={initialDivisor}
+        key={`seed-${formSeed.seq}`}
+        initialDividend={formSeed.dividend}
+        initialDivisor={formSeed.divisor}
         onSolve={handleSolve}
       />
 
@@ -135,7 +133,7 @@ export default function BaseMethodPage() {
               <button
                 key={`${ex.dividend}/${ex.divisor}`}
                 type="button"
-                className={`example-item${exampleKey === `${ex.dividend}/${ex.divisor}` ? ' selected' : ''}`}
+                className={`example-item${current.dividend === ex.dividend && current.divisor === ex.divisor ? ' selected' : ''}`}
                 onClick={() => onSelectExample(ex.dividend, ex.divisor)}
               >
                 <span className="ex-problem">{ex.dividend} ÷ {ex.divisor}</span>

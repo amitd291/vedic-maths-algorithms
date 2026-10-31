@@ -308,15 +308,11 @@ function to the list, not restructuring the UI.
       a multi-digit substituted array never grows; the only growth case is
       a single-digit 6–9 difference going 1→2 places (e.g. 93 → diff 7 →
       `[1,−3]`).
-- [ ] **Bug: worked-example highlight is not reset after manual edits.**
-      Pick a worked example (e.g. 5428 ÷ 35, highlighted amber), then edit
-      the dividend/divisor by hand (e.g. 5428 ÷ 5) and click Solve: the
-      example stays highlighted, and re-picking the same example afterwards
-      does nothing visible (it looks already selected), so the user can't
-      return to it. Expected: Solve with inputs that no longer match the
-      selected example clears the highlight (or the highlight is derived
-      from the current dividend/divisor, not stored), and the example can be
-      re-selected. Add a page-level test.
+- [x] **Bug: worked-example highlight not reset after manual edits.** The
+      highlight is now derived from the solved inputs (`current`), and
+      `formSeed` (with a `seq` counter as the form `key`) remounts the form
+      on every example click, so re-picking restores the example. Covered by
+      two page tests and an extension of the 5428 ÷ 35 e2e.
 - [ ] **Simplification selection UI, add substitution** (should be a small
       delta if the scaling-only UI used a generic candidate list): add the
       substitution rewrite of the plain difference as a second candidate,
