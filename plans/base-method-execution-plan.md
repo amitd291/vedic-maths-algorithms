@@ -285,7 +285,7 @@ function to the list, not restructuring the UI.
       carry-chip UI by the 10600÷87, 14189÷102, 1693÷131 e2e tests and the
       board/page component tests. The 5428÷35 e2e is the only e2e that
       picks an unfriendly-divisor candidate (multiply direction).
-- [ ] **Follow-up to "Dropped Plain + true unselected state": don't solve the
+- [x] **Follow-up to "Dropped Plain + true unselected state": don't solve the
       hidden Plain board while pending.**
       `BaseMethodPage.handleSolve` still solves Plain eagerly even when
       `needsSimplification(divisor)` is true, although that board is never
@@ -305,7 +305,32 @@ function to the list, not restructuring the UI.
       such as 10030 ÷ 827 or 12657 ÷ 791 starts pending with no alert;
       friendly divisors (9, 182) still solve immediately. Draft a TDD
       Haiku prompt for approval when this is picked up.
-- [x] **Fixed: single-digit divisors 1-5 (found on 5428 ÷ 3).**
+      **Finding (5428 ÷ 3):** the friendly-error fix only reworded the banner;
+      the spurious banner came from this eager hidden-Plain solve (Plain
+      needs 4 quotient digits, board has 3). Scaled candidates (×2, ×3) fit
+      fine. One added page test beyond the list above: 5428 ÷ 3 starts
+      pending with no alert, and picking ×2 or ×3 shows Q=1809, R=1.
+      **Decision:** option 1, this fix only. Divisors under 10 still overflow
+      the board whenever the quotient has n digits (e.g. 5428 ÷ 5, 9995 ÷ 9);
+      the accurate width error is accepted. Alternatives (not planned): widen
+      the board by one LHS column (reverses iteration D's display-width guard).
+- [ ] **Stretch (nice to have): reduce corner cases via input limits.**
+      (a) Restrict divisor to ≥10, like Dhvajanka: drops the base-10 floor,
+      the `divideScaled >= 6` guard, and the 123÷9 / 865÷9 / 9995÷9
+      fixtures, but loses the simplest teaching case. (b) Consider the
+      dividend, not just the divisor: e.g. 5 ÷ 35 offers scaling options
+      although dividend < divisor (trivially Q=0, R=5, no valid board);
+      handle such dead ends before showing the selector.
+- [ ] **Bug: worked-example highlight is not reset after manual edits.**
+      Pick a worked example (e.g. 5428 ÷ 35, highlighted amber), then edit
+      the dividend/divisor by hand (e.g. 5428 ÷ 5) and click Solve: the
+      example stays highlighted, and re-picking the same example afterwards
+      does nothing visible (it looks already selected), so the user can't
+      return to it. Expected: Solve with inputs that no longer match the
+      selected example clears the highlight (or the highlight is derived
+      from the current dividend/divisor, not stored), and the example can be
+      re-selected. Add a page-level test.
+- [x] **Fixed found: single-digit divisors 1-5 (found on 5428 ÷ 3).**
       `nearestBase` now floors at 10 (1..5 used to get base 1 and fail the
       self-check). New `describeBaseMethodError` maps the "too small" and
       "wider board" engine errors to learner-facing text, shown without the
@@ -325,6 +350,26 @@ function to the list, not restructuring the UI.
       a multi-digit substituted array never grows; the only growth case is
       a single-digit 6–9 difference going 1→2 places (e.g. 93 → diff 7 →
       `[1,−3]`).
+- [ ] **Follow-up to Substitution derivation** (temporary, remove after
+      manual testing): understand the completed task and test it manually.
+      **In simple words:** the base method multiplies each quotient digit by
+      the `difference` (base minus divisor). Digits above 5 are awkward
+      (6×, 7×, 8×, 9× tables), so `substituteDigits` rewrites the difference
+      using digits from −4 to 5 only, borrowing from the next place when a
+      digit is 6 or more. Example: divisor 827, base 1000, difference 173 →
+      `[2, −3, 3]`, i.e. 200 − 30 + 3 = 173. It is pure math only: not used
+      by the UI or board yet (that is the next two tasks).
+      **Steps to reproduce (from repo root, no UI involved):**
+      1. Run `node --experimental-strip-types -e "import('./src/lib/baseMethodMath.ts').then(m => console.log(m.substituteDigits(173)))"`
+         (expect `[ 2, -3, 3 ]`). Change `173` to try other numbers.
+      2. Check: 181 → `[2,-2,1]`, 209 → `[2,1,-1]`, 7 → `[1,-3]`,
+         449 → `[4,5,-1]`, 25 → `[2,5]` (already friendly, unchanged),
+         26 → `[3,-4]`. Verify by hand that each
+         array, read as place values, equals the input (e.g. 2·100 + 1·10 −
+         1 = 209).
+      3. Check every digit is within −4..5, and a multi-digit input never
+         gets longer (only a single digit 6–9 grows by one place, 7 → 10 − 3).
+      4. Automated equivalent: `npx vitest run src/lib/baseMethodMath.test.ts -t substituteDigits`.
 - [ ] **Simplification selection UI, add substitution** (should be a small
       delta if the scaling-only UI used a generic candidate list): add the
       substitution rewrite of the plain difference as a second candidate,
@@ -332,6 +377,13 @@ function to the list, not restructuring the UI.
       is either friendly or has at least one candidate (substituted digits
       are always in `[−4,5]`, so the "no simplification available" case
       should be unreachable).
+      **Decide first (before implementing):** heavy-but-valid scaling
+      candidates. 10030 ÷ 827 offers only ×7 (5789, base 10000, difference
+      4211): every digit is 0-5, but the 5-column board looks confusing next
+      to the plain 3-column solve. Candidates are accepted purely on "all
+      column parts 0-5". Options: rank/limit by board width or scale factor,
+      and/or let the substituted candidate (`[2,-3,3]`, same width as plain)
+      take over such cases.
 - [ ] **Wire substitution into the board** (once a substitution option is
       chosen): today `baseMethodMath.ts` computes one
       `contribution = total × difference` per LHS digit, then splits that
@@ -353,4 +405,5 @@ function to the list, not restructuring the UI.
 ---
 
 ## Out of scope (not planned)
+
 - None currently.

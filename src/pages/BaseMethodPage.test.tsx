@@ -220,11 +220,11 @@ describe('BaseMethodPage', () => {
     expect(screen.queryByText('Setup')).not.toBeInTheDocument()
   })
 
-  it('shows a friendly wider-board message instead of a raw engine error (5428 ÷ 3)', () => {
+  it('shows a friendly wider-board message for a friendly divisor (5428 ÷ 5)', () => {
     render(<BaseMethodPage />)
 
     fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
-    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '5' } })
     fireEvent.submit(document.querySelector('form')!)
 
     const alert = screen.getByRole('alert')
@@ -428,6 +428,77 @@ describe('BaseMethodPage', () => {
       }
 
       expect(document.querySelector('.digit-board-cols .descale-row')).toBeNull()
+    })
+
+    it('defers the plain-board error for 5÷35 until a candidate is picked', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('—')
+
+      fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/too few digits/)
+    })
+
+    it('defers the wider-board error for 5428÷3 and gives Q=1809 R=1 for both ×2 and ×3', () => {
+      for (const k of [2, 3]) {
+        const candidate = findScalingCandidates(3).find((c) => c.k === k && c.direction === 'multiply')!
+        const { unmount } = render(<BaseMethodPage />)
+
+        fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+        fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '3' } })
+        fireEvent.submit(document.querySelector('form')!)
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+        expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
+
+        fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${candidate.scaledDivisor}: Scaled divisor`) }))
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+        const nextButton = screen.getByLabelText('Next step')
+        for (let i = 0; i < 40; i++) {
+          if (nextButton.hasAttribute('disabled')) break
+          fireEvent.click(nextButton)
+        }
+        expect(screen.getAllByText('1809 | 1')).toHaveLength(2)
+
+        unmount()
+      }
+    })
+
+    it('choosing the 10030÷827 worked example starts pending with no alert', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('10030 ÷ 827'))
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+      expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
+      expect(document.querySelector('.digit-board')).toBeNull()
+    })
+
+    it('friendly divisors 9 and 182 solve immediately with the board and no selector', () => {
+      for (const divisor of [9, 182]) {
+        const { unmount } = render(<BaseMethodPage />)
+
+        fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '123' } })
+        fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: String(divisor) } })
+        fireEvent.submit(document.querySelector('form')!)
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+        expect(screen.getByText('Setup')).toBeInTheDocument()
+
+        unmount()
+      }
     })
   })
 })

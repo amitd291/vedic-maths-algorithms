@@ -54,8 +54,15 @@ function solve(
   }
 }
 
+// Plain solve is deferred while a simplification choice is pending, so its
+// error (e.g. the hidden board's width) isn't shown before the user picks.
+function solvePlain(dividend: number, divisor: number) {
+  if (needsSimplification(divisor)) return { problem: null, error: null, friendly: false }
+  return solve(dividend, divisor, null)
+}
+
 export default function BaseMethodPage() {
-  const initial = useMemo(() => solve(BASE_DIVIDEND, BASE_DIVISOR, null), [])
+  const initial = useMemo(() => solvePlain(BASE_DIVIDEND, BASE_DIVISOR), [])
   const [problem, setProblem] = useState<Problem | null>(initial.problem)
   const [error, setError] = useState<string | null>(initial.error)
   const [errorFriendly, setErrorFriendly] = useState<boolean>(initial.friendly)
@@ -71,7 +78,7 @@ export default function BaseMethodPage() {
     setCurrent({ dividend, divisor })
     setCandidate(null)
     setSolveSeq((n) => n + 1)
-    const result = solve(dividend, divisor, null)
+    const result = solvePlain(dividend, divisor)
     setProblem(result.problem)
     setError(result.error)
     setErrorFriendly(result.friendly)
