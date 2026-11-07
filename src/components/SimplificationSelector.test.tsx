@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import SimplificationSelector from './SimplificationSelector'
-import { findScalingCandidates } from '../lib/baseMethodMath'
+import { findScalingCandidates, findSimplificationCandidates } from '../lib/baseMethodMath'
 
 describe('SimplificationSelector', () => {
   it('renders nothing when divisor is 9', () => {
@@ -33,6 +33,57 @@ describe('SimplificationSelector', () => {
     expect(screen.queryByRole('button', { name: /^Plain/ })).toBeNull()
   })
 
+  it('renders nothing for divisor 53 (no candidate: plain difference unfriendly, substitution is a no-op, no scaling)', () => {
+    const { container } = render(<SimplificationSelector divisor={53} onSelect={vi.fn()} />)
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('renders one substituted card for divisor 827 with its derivation', () => {
+    render(<SimplificationSelector divisor={827} onSelect={vi.fn()} />)
+
+    const card = screen.getByRole('button', { name: /Substituted difference \(173\)/ })
+    expect(card).toHaveClass('substituted-option')
+    expect(card).toHaveTextContent('2, −3, 3:')
+    expect(card).toHaveTextContent('Base: 1000 | Difference: 173 = 200 − 30 + 3')
+    expect(document.querySelectorAll('.simplification-option')).toHaveLength(1)
+  })
+
+  it('calls onSelect with the substitution candidate when the substituted card is clicked for divisor 827', () => {
+    const onSelect = vi.fn()
+    render(<SimplificationSelector divisor={827} onSelect={onSelect} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Substituted difference \(173\)/ }))
+
+    expect(onSelect).toHaveBeenCalledOnce()
+    expect(onSelect.mock.calls[0][0]).toEqual({ kind: 'substitution', digits: [2, -3, 3], base: 1000, difference: 173 })
+  })
+
+  it('shows the green collapsed summary after picking the substituted card for divisor 827', () => {
+    render(<SimplificationSelector divisor={827} onSelect={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Substituted difference \(173\)/ }))
+
+    expect(screen.queryByRole('button', { name: /^2, −3, 3:/ })).toBeNull()
+    expect(screen.getByText('✓ 2, −3, 3: Substituted difference (173)')).toBeInTheDocument()
+  })
+
+  it('renders the scaling card first and the substituted card after it for divisor 791', () => {
+    render(<SimplificationSelector divisor={791} onSelect={vi.fn()} />)
+
+    const cards = Array.from(document.querySelectorAll('.simplification-option'))
+    expect(cards).toHaveLength(2)
+    expect(cards[0]).toHaveTextContent('113: Scaled divisor (791 ÷ 7)')
+    expect(cards[1]).toHaveClass('substituted-option')
+    expect(cards[1]).toHaveTextContent('2, 1, −1: Substituted difference (209)')
+    expect(cards[1]).toHaveTextContent('Base: 1000 | Difference: 209 = 200 + 10 − 1')
+  })
+
+  it('shows the negative derivation wrapped in a minus for a negative substituted difference', () => {
+    render(<SimplificationSelector divisor={146} onSelect={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: /Substituted difference \(−46\)/ })).toHaveTextContent('−46 = −(50 − 4)')
+  })
+
   it('renders nothing for divisor 11, even though it has 5 raw candidates, because its plain difference is already friendly', () => {
     // Regression guard: divisor 11's own digits ('1','1') are flat-friendly,
     // which a buggy render guard checking the divisor itself (instead of
@@ -52,8 +103,10 @@ describe('SimplificationSelector', () => {
     render(<SimplificationSelector divisor={16} onSelect={vi.fn()} />)
 
     // +1 for the expand/collapse toggle (also a `role="button"` for
-    // keyboard/screen-reader accessibility).
-    expect(screen.getAllByRole('button')).toHaveLength(candidates.length + 1)
+    // keyboard/screen-reader accessibility). Scaling cards now follow
+    // findSimplificationCandidates, which drops scaling candidates whose
+    // difference is wider than the plain one (5 raw scaling candidates, 2 shown here).
+    expect(screen.getAllByRole('button')).toHaveLength(findSimplificationCandidates(16).length + 1)
   })
 
   it('renders N candidate buttons plus the toggle visible by default for divisor 35', () => {
@@ -76,6 +129,7 @@ describe('SimplificationSelector', () => {
     expect(onSelect).toHaveBeenCalledOnce()
     const calledWith = onSelect.mock.calls[0][0]
     expect(calledWith).toEqual({
+      kind: 'scaling',
       k: 3,
       direction: 'multiply',
       scaledDivisor: 105,

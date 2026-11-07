@@ -509,6 +509,15 @@ body {
   color: var(--blue);
 }
 
+.divisor-digit-subst {
+  color: var(--blue);
+  font-size: 1.5rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 .divisor-separator {
   width: 1px;
   height: 48px;
@@ -1094,6 +1103,19 @@ body {
 
   .divisor-digit {
     font-size: 1.6rem;
+  }
+
+  .divisor-card {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .divisor-col {
+    min-width: 0;
+  }
+
+  .divisor-digit-subst {
+    font-size: 1.2rem;
   }
 
   .co,

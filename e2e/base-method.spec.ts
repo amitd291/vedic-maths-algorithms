@@ -131,6 +131,17 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(page.locator('.simplification-option.selected')).toHaveCount(0);
   });
 
+  test('substitutes digits for a divisor, shows the substituted card and verifies the answer (10000 ÷ 819)', async ({ page }) => {
+    await solve(page, 10000, 819);
+    await page.getByRole('button', { name: /^2, −2, 1: Substituted difference/ }).click();
+    await expect(page.locator('.divisor-digit-subst')).toHaveText('2, −2, 1');
+
+    while (await page.getByLabel('Next step').isEnabled()) {
+      await page.getByLabel('Next step').click();
+    }
+    await expect(page.getByText('Verify: 12 × 819 + 172 = 10000 ✓')).toBeVisible();
+  });
+
   test('shrinks the result-chip font size under the 400px mobile breakpoint', async ({ page }) => {
     await solve(page, 10600, 87);
     for (let i = 1; i < 10; i++) {

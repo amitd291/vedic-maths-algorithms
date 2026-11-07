@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, findSimplificationCandidates, isDifferenceFriendly, needsSimplification, solveScaledBaseMethod, substituteDigits, describeBaseMethodError } from './baseMethodMath'
+import { nearestBase, normalizeDigit, solveBaseMethod, findScalingCandidates, findSimplificationCandidates, isDifferenceFriendly, needsSimplification, solveScaledBaseMethod, substituteDigits, describeBaseMethodError, formatSubstitution } from './baseMethodMath'
 
 describe('nearestBase', () => {
   it('picks the nearest power of 10', () => {
@@ -279,6 +279,31 @@ describe('needsSimplification', () => {
     expect(needsSimplification(35)).toBe(true)
     expect(needsSimplification(16)).toBe(true)
     expect(needsSimplification(791)).toBe(true)
+  })
+
+  it('is true when only the substitution candidate exists (827, 819, 93)', () => {
+    expect(needsSimplification(827)).toBe(true)
+    expect(needsSimplification(819)).toBe(true)
+    expect(needsSimplification(93)).toBe(true)
+  })
+
+  it('is false when no candidate exists, even though the plain difference is unfriendly (53, 46)', () => {
+    expect(needsSimplification(53)).toBe(false)
+    expect(needsSimplification(46)).toBe(false)
+  })
+})
+
+describe('formatSubstitution', () => {
+  it('expands place values with a true minus and an unsigned first term', () => {
+    expect(formatSubstitution([2, -2, 1])).toBe('200 − 20 + 1')
+    expect(formatSubstitution([2, 1, -1])).toBe('200 + 10 − 1')
+    expect(formatSubstitution([2, -3, 3])).toBe('200 − 30 + 3')
+    expect(formatSubstitution([1, -3])).toBe('10 − 3')
+    expect(formatSubstitution([5, -4])).toBe('50 − 4')
+  })
+
+  it('skips zero digits', () => {
+    expect(formatSubstitution([2, 0, -1])).toBe('200 − 1')
   })
 })
 

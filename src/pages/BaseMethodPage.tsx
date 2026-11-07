@@ -11,7 +11,7 @@ import { computeBaseMethodSteps, computeScaledBaseMethodSteps, nearestBase } fro
 import { describeBaseMethodError, needsSimplification, solveScaledBaseMethod } from '../lib/baseMethodMath'
 import { useStepNav } from '../hooks/useStepNav'
 import type { BaseMethodStep } from '../types'
-import type { ScalingCandidate } from '../lib/baseMethodMath'
+import type { SimplificationCandidate } from '../lib/baseMethodMath'
 
 const BASE_DIVIDEND = 123
 const BASE_DIVISOR = 9
@@ -38,9 +38,13 @@ interface Problem {
 function solve(
   dividend: number,
   divisor: number,
-  candidate: ScalingCandidate | null,
+  candidate: SimplificationCandidate | null,
 ): { problem: Problem | null; error: string | null; friendly: boolean } {
   try {
+    if (candidate?.kind === 'substitution') {
+      const steps = computeBaseMethodSteps(dividend, divisor, candidate.digits)
+      return { problem: { dividend, divisor, steps, scaledAnswer: null }, error: null, friendly: false }
+    }
     if (candidate !== null) {
       const steps = computeScaledBaseMethodSteps(dividend, divisor, candidate)
       const { quotient, remainder } = solveScaledBaseMethod(dividend, divisor, candidate)
@@ -68,7 +72,7 @@ export default function BaseMethodPage() {
   const [errorFriendly, setErrorFriendly] = useState<boolean>(initial.friendly)
   const [formSeed, setFormSeed] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR, seq: 0 })
   const [current, setCurrent] = useState({ dividend: BASE_DIVIDEND, divisor: BASE_DIVISOR })
-  const [candidate, setCandidate] = useState<ScalingCandidate | null>(null)
+  const [candidate, setCandidate] = useState<SimplificationCandidate | null>(null)
   const [solveSeq, setSolveSeq] = useState(0)
   const exampleToggleRef = useRef<HTMLInputElement>(null)
   const total = problem?.steps.length ?? 0
@@ -85,7 +89,7 @@ export default function BaseMethodPage() {
     setCur(0)
   }
 
-  function handleSelectCandidate(selectedCandidate: ScalingCandidate) {
+  function handleSelectCandidate(selectedCandidate: SimplificationCandidate) {
     setCandidate(selectedCandidate)
     const result = solve(current.dividend, current.divisor, selectedCandidate)
     setProblem(result.problem)
@@ -151,7 +155,13 @@ export default function BaseMethodPage() {
         divisor={current.divisor}
         onSelect={handleSelectCandidate}
       />
-      {(pending || problem) && <BaseMethodDivisorCard base={base} difference={difference} />}
+      {(pending || problem) && (
+        <BaseMethodDivisorCard
+          base={base}
+          difference={difference}
+          substituted={candidate?.kind === 'substitution' ? candidate.digits : null}
+        />
+      )}
 
       {problem && !pending && (
         <>

@@ -1,14 +1,20 @@
 import { useState } from 'react'
-import type { ScalingCandidate } from '../lib/baseMethodMath'
+import type { SimplificationCandidate } from '../lib/baseMethodMath'
 import {
-  findScalingCandidates,
+  findSimplificationCandidates,
+  formatDigitList,
+  formatSigned,
+  formatSubstitution,
   nearestBase,
-  needsSimplification,
 } from '../lib/baseMethodMath'
 
 interface SimplificationSelectorProps {
   divisor: number
-  onSelect: (candidate: ScalingCandidate) => void
+  onSelect: (candidate: SimplificationCandidate) => void
+}
+
+function candidateKey(candidate: SimplificationCandidate): string {
+  return candidate.kind === 'substitution' ? 'substitution' : `${candidate.direction}-${candidate.k}`
 }
 
 export default function SimplificationSelector({
@@ -19,14 +25,14 @@ export default function SimplificationSelector({
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   const plainDiff = nearestBase(divisor) - divisor
-  const candidates = findScalingCandidates(divisor)
+  const candidates = findSimplificationCandidates(divisor)
 
-  if (!needsSimplification(divisor)) {
+  if (candidates.length === 0) {
     return null
   }
 
-  const handleCandidateClick = (candidate: ScalingCandidate) => {
-    setSelectedKey(`${candidate.direction}-${candidate.k}`)
+  const handleCandidateClick = (candidate: SimplificationCandidate) => {
+    setSelectedKey(candidateKey(candidate))
     onSelect(candidate)
     setExpanded(false)
   }
@@ -39,7 +45,10 @@ export default function SimplificationSelector({
     if (selectedKey === null) {
       return 'How should this be simplified?'
     }
-    const candidate = candidates.find((c) => selectedKey === `${c.direction}-${c.k}`)
+    const candidate = candidates.find((c) => selectedKey === candidateKey(c))
+    if (candidate?.kind === 'substitution') {
+      return `✓ ${formatDigitList(candidate.digits)}: Substituted difference (${formatSigned(candidate.difference)})`
+    }
     if (candidate) {
       const op = candidate.direction === 'multiply' ? '×' : '÷'
       return `✓ ${candidate.scaledDivisor}: Scaled divisor (${divisor} ${op} ${candidate.k})`
@@ -77,13 +86,37 @@ export default function SimplificationSelector({
           </div>
 
           {candidates.map((candidate) => {
+            const key = candidateKey(candidate)
+            const selected = selectedKey === key ? ' selected' : ''
+            if (candidate.kind === 'substitution') {
+              const derivation =
+                candidate.difference < 0
+                  ? `${formatSigned(candidate.difference)} = −(${formatSubstitution(candidate.digits)})`
+                  : `${candidate.difference} = ${formatSubstitution(candidate.digits)}`
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`simplification-option substituted-option${selected}`}
+                  onClick={() => handleCandidateClick(candidate)}
+                >
+                  <div className="simplification-option-head">
+                    <span className="simplification-option-name">
+                      <b className="simplification-option-result">{formatDigitList(candidate.digits)}: </b> Substituted difference ({formatSigned(candidate.difference)})
+                    </span>
+                  </div>
+                  <div className="simplification-option-line combined">
+                    Base: <b>{candidate.base}</b> | Difference: <b>{derivation}</b>
+                  </div>
+                </button>
+              )
+            }
             const op = candidate.direction === 'multiply' ? '×' : '÷'
-            const candidateKey = `${candidate.direction}-${candidate.k}`
             return (
               <button
-                key={candidateKey}
+                key={key}
                 type="button"
-                className={`simplification-option scaled-option scaled-${candidate.direction}${selectedKey === candidateKey ? ' selected' : ''}`}
+                className={`simplification-option scaled-option scaled-${candidate.direction}${selected}`}
                 onClick={() => handleCandidateClick(candidate)}
               >
                 <div className="simplification-option-head">

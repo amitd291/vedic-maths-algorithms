@@ -326,16 +326,18 @@ function to the list, not restructuring the UI.
         difference). The 19 no-op-only divisors get an empty list and fall
         back to plain; 35 now lists scaling cards only. Invariant test
         asserts the empty-list set is exactly the 19.
-  - [ ] **Selector switch**: `SimplificationSelector`/`BaseMethodPage` move
+  - [x] **Selector switch**: `SimplificationSelector`/`BaseMethodPage` move
         from `findScalingCandidates` to `findSimplificationCandidates`;
         `needsSimplification` becomes "the candidate list is non-empty". No
         other change to the pending/plain gating in `BaseMethodPage`.
-  - [ ] **Substituted card**: e.g. `Substituted: 2,−3,3`, same card style as
-        scaling (title, Base/Difference line, collapsed/selected states).
-  - [ ] **Update existing tests**: pending-state tests that assume
+  - [x] **Substituted card** (mockup `plans/mockups/iteration-f-substitution-v1.html`,
+        approved): title `2, −2, 1: Substituted difference (181)`, second
+        line `Base: 1000 | Difference: 181 = 200 − 20 + 1`; same card style
+        and collapsed/selected states as scaling.
+  - [x] **Update existing tests**: pending-state tests that assume
         10030 ÷ 827 offers ×7; any test treating 182 as friendly (it has a
         substitution option, so it now starts pending).
-  - [ ] **182 is not friendly** (base 100, diff −82, parts [8, 2]), but its
+  - [x] **182 is not friendly** (base 100, diff −82, parts [8, 2]), but its
         only substitution is too long, so after the drop item its list is
         empty and it still solves plain with no selector. Keep it in the
         "friendly divisors 9 and 182" page test (`BaseMethodPage.test.tsx:515`),
@@ -354,8 +356,9 @@ function to the list, not restructuring the UI.
         with the Result/Verify lines). Check at the visual pass: sum step
         renders negatives as `+ -3`, and the carry chip on the step before
         the RHS normalize.
-  - [ ] **Divisor card**: show the substituted base/difference when that
-        candidate is selected (same class of bug as the scaling card fix).
+  - [x] **Divisor card**: when a substituted candidate is selected, add a
+        third `substituted` column (`2, −2, 1`) after base and difference
+        (mockup option B, approved); base/difference stay the plain values.
   - [x] **Drop too-long substitutions** (build plan, "Substitution that
         doesn't fit the board"): the substituted candidate is omitted when
         `substituteDigits(|diff|).length > rhsWidth`, after the no-op filter.
@@ -366,10 +369,10 @@ function to the list, not restructuring the UI.
   - [x] **Engine tests**: 10030 ÷ 827 (clean finish) and 10000 ÷ 819
         (closing "normalize the remainder"), covered in the engine and
         narration tasks above. The growth guard test uses 182.
-  - [ ] **Page/component tests**: substituted card renders, picking it
+  - [x] **Page/component tests**: substituted card renders, picking it
         solves with `substitutedDigits`, pending state for 182 / 827, plain
         fallback for a no-op divisor (e.g. 53).
-  - [ ] **e2e (one test only)**: 10000 ÷ 819 via the form, pick the
+  - [x] **e2e (one test only)**: 10000 ÷ 819 via the form, pick the
         substituted card, step to the verified answer (Q=12, R=172).
         Chosen over 10030 ÷ 827 because it exercises the distinctive
         substitution path end to end (negative raw RHS, closing "normalize
@@ -380,8 +383,15 @@ function to the list, not restructuring the UI.
         revisit the 10030 ÷ 827 entry, whose description predates
         substitution), keeping the list ordered by complexity; update the
         picker tests and the highlight-reset coverage accordingly.
-  - [ ] **Visual check** against a mockup (new
-        `plans/mockups/iteration-f-substitution-v1.html` needed first).
+  - [x] **Visual check** against `plans/mockups/iteration-f-substitution-v1.html`
+        (desktop and 375px). Fixed: the substituted value wrapped on mobile
+        (nowrap, tighter card gap, smaller font under 400px).
+  - [ ] **Polish (optional)**: sum/normalize lines render negatives with an
+        ASCII hyphen (`0 + -2 + 4`, `2 × 10 + -3 × 10 + 2`) and the scaling
+        card shows `-5` while the substituted card uses `−`; unify on U+2212
+        and `+ (−2)` style. Also remove the extra amber "RHS total is now 172"
+        note under the last normalize step if it feels redundant (not in
+        the mockup).
 - [ ] **Stretch (nice to have): reduce corner cases via input limits.**
       (a) Restrict divisor to ≥10, like Dhvajanka: drops the base-10 floor,
       the `divideScaled >= 6` guard, and the 123÷9 / 865÷9 / 9995÷9

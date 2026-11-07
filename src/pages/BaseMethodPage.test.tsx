@@ -512,7 +512,63 @@ describe('BaseMethodPage', () => {
       expect(document.querySelector('.digit-board')).toBeNull()
     })
 
-    it('friendly divisors 9 and 182 solve immediately with the board and no selector', () => {
+    it('10030÷827 starts pending with only the substituted option, no scaled card, and dashes in the card', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('10030 ÷ 827'))
+
+      expect(document.querySelectorAll('.simplification-option')).toHaveLength(1)
+      expect(screen.getByRole('button', { name: /Substituted difference \(173\)/ })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /×7|Scaled/ })).toBeNull()
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('—')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('—')
+    })
+
+    it('picking the substituted card for 10030÷827 shows the board, the substituted setup line and the substituted divisor card', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '10030' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '827' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByRole('button', { name: /Substituted difference \(173\)/ }))
+
+      expect(screen.getByText('Setup')).toBeInTheDocument()
+      expect(screen.getByText('173 → 2, −3, 3')).toBeInTheDocument()
+      expect(screen.getByText('base').nextElementSibling).toHaveTextContent('1000')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('173')
+      expect(screen.getByText('substituted').nextElementSibling).toHaveTextContent('2, −3, 3')
+    })
+
+    it('10000÷819 picked with the substituted card verifies its final answer with no alert', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '10000' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '819' } })
+      fireEvent.submit(document.querySelector('form')!)
+      fireEvent.click(screen.getByRole('button', { name: /Substituted difference \(181\)/ }))
+
+      while (!(screen.getByLabelText('Next step') as HTMLButtonElement).disabled) {
+        fireEvent.click(screen.getByLabelText('Next step'))
+      }
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByText('Verify: 12 × 819 + 172 = 10000 ✓')).toBeInTheDocument()
+    })
+
+    it('1234÷53 (no simplification) solves immediately with no selector and no alert', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '1234' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '53' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+      expect(screen.getByText('Setup')).toBeInTheDocument()
+    })
+
+    it('divisors 9 and 182 (182 plain fallback, not a simplification) solve immediately with the board and no selector', () => {
       for (const divisor of [9, 182]) {
         const { unmount } = render(<BaseMethodPage />)
 

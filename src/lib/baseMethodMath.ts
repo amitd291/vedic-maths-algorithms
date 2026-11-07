@@ -163,11 +163,32 @@ export function findSimplificationCandidates(divisor: number): SimplificationCan
   return [...scaling, substitution]
 }
 
-/** True when the plain (nearest-base) difference is unfriendly and at least one scaling candidate exists. */
+/** True when the plain (nearest-base) difference is unfriendly and at least one simplification candidate exists. */
 export function needsSimplification(divisor: number): boolean {
-  const plainBase = nearestBase(divisor)
-  const plainDiff = plainBase - divisor
-  return !isDifferenceFriendly(plainDiff, plainBase) && findScalingCandidates(divisor).length > 0
+  return findSimplificationCandidates(divisor).length > 0
+}
+
+/** Signed integer with a true minus (U+2212) for negatives. */
+export function formatSigned(n: number): string {
+  return n < 0 ? `−${-n}` : String(n)
+}
+
+/** Comma-separated signed digits, e.g. `[2, -2, 1]` -> `'2, −2, 1'`. */
+export function formatDigitList(digits: number[]): string {
+  return digits.map(formatSigned).join(', ')
+}
+
+/** Place-value expansion of substituted digits, e.g. `[2, -2, 1]` -> `'200 − 20 + 1'`. Zero digits are skipped. */
+export function formatSubstitution(digits: number[]): string {
+  const last = digits.length - 1
+  let out = ''
+  digits.forEach((d, i) => {
+    if (d === 0) return
+    const magnitude = Math.abs(d) * 10 ** (last - i)
+    if (out === '') out = d < 0 ? `−${magnitude}` : String(magnitude)
+    else out += d < 0 ? ` − ${magnitude}` : ` + ${magnitude}`
+  })
+  return out
 }
 
 export interface BaseMethodSolution {

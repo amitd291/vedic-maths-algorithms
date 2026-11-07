@@ -18,4 +18,18 @@ describe('BaseMethodDivisorCard', () => {
     expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('1')
     expect(container.textContent).not.toContain('—')
   })
+
+  it('renders the substituted digits column when substituted is set', () => {
+    render(<BaseMethodDivisorCard base={1000} difference={181} substituted={[2, -2, 1]} />)
+
+    const label = screen.getByText('substituted')
+    expect(label.nextElementSibling).toHaveTextContent('2, −2, 1')
+    expect(label.nextElementSibling).toHaveClass('divisor-digit-subst')
+  })
+
+  it('renders no substituted column when substituted is omitted', () => {
+    render(<BaseMethodDivisorCard base={10} difference={1} />)
+
+    expect(screen.queryByText('substituted')).toBeNull()
+  })
 })

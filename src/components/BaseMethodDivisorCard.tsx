@@ -1,9 +1,12 @@
+import { formatDigitList } from '../lib/baseMethodMath'
+
 interface BaseMethodDivisorCardProps {
   base: number | null
   difference: number | null
+  substituted?: number[] | null
 }
 
-export default function BaseMethodDivisorCard({ base, difference }: BaseMethodDivisorCardProps) {
+export default function BaseMethodDivisorCard({ base, difference, substituted }: BaseMethodDivisorCardProps) {
   return (
     <div className="divisor-card">
       <div className="divisor-col">
@@ -15,6 +18,15 @@ export default function BaseMethodDivisorCard({ base, difference }: BaseMethodDi
         <span className="divisor-label">difference</span>
         <span className="divisor-digit divisor-digit-diff">{difference ?? '—'}</span>
       </div>
+      {substituted && (
+        <>
+          <div className="divisor-separator" />
+          <div className="divisor-col">
+            <span className="divisor-label">substituted</span>
+            <span className="divisor-digit divisor-digit-subst">{formatDigitList(substituted)}</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }
