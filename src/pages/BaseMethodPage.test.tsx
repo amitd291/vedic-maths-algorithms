@@ -391,6 +391,65 @@ describe('BaseMethodPage', () => {
       expect(screen.getByLabelText('Divisor')).toHaveValue(35)
     })
 
+    it('10000 ÷ 819 worked example appears directly after 10030 ÷ 827 with its desc', () => {
+      render(<BaseMethodPage />)
+
+      const items = Array.from(document.querySelectorAll('.example-item'))
+      const idx = items.findIndex((el) => el.querySelector('.ex-problem')?.textContent === '10000 ÷ 819')
+      expect(idx).toBeGreaterThan(0)
+      expect(items[idx - 1].querySelector('.ex-problem')?.textContent).toBe('10030 ÷ 827')
+      expect(items[idx].querySelector('.ex-desc')?.textContent).toBe(
+        'Digit substitution, with a borrow in the remainder at the end',
+      )
+    })
+
+    it('10030 ÷ 827 worked example shows the reworded desc', () => {
+      render(<BaseMethodPage />)
+
+      const item = Array.from(document.querySelectorAll('.example-item')).find(
+        (el) => el.querySelector('.ex-problem')?.textContent === '10030 ÷ 827',
+      )
+      expect(item?.querySelector('.ex-desc')?.textContent).toBe(
+        'Digit substitution keeps every multiplier friendly, finishes clean',
+      )
+    })
+
+    it('choosing the 10000÷819 worked example fills the form, highlights it, starts pending, and its substituted card shows the verified board', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('10000 ÷ 819'))
+
+      expect(screen.getByLabelText('Dividend')).toHaveValue(10000)
+      expect(screen.getByLabelText('Divisor')).toHaveValue(819)
+      expect(screen.getByText('10000 ÷ 819').closest('button')).toHaveClass('selected')
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+      expect(document.querySelector('.digit-board')).toBeNull()
+
+      fireEvent.click(screen.getByRole('button', { name: /Substituted difference \(181\)/ }))
+      while (!(screen.getByLabelText('Next step') as HTMLButtonElement).disabled) {
+        fireEvent.click(screen.getByLabelText('Next step'))
+      }
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByText('Verify: 12 × 819 + 172 = 10000 ✓')).toBeInTheDocument()
+    })
+
+    it('re-selecting the 10000÷819 worked example after a manual edit resets the form and highlights it', () => {
+      render(<BaseMethodPage />)
+
+      fireEvent.click(screen.getByText('10000 ÷ 819'))
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '5' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      fireEvent.click(screen.getByText('10000 ÷ 819'))
+
+      expect(screen.getByText('10000 ÷ 819').closest('button')).toHaveClass('selected')
+      expect(screen.getByLabelText('Dividend')).toHaveValue(10000)
+      expect(screen.getByLabelText('Divisor')).toHaveValue(819)
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
+    })
+
     it('divisor card shows the scaled base/difference, not the original divisor\'s, once a candidate is chosen', () => {
       render(<BaseMethodPage />)
 

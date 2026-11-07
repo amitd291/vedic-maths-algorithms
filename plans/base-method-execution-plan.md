@@ -378,11 +378,10 @@ function to the list, not restructuring the UI.
         substitution path end to end (negative raw RHS, closing "normalize
         the remainder" borrow step, no divisor compare); 827's clean finish
         is covered by the engine fixture.
-  - [ ] **Worked-example picker**: add substitution examples to `EXAMPLES`
-        in `BaseMethodPage.tsx` (at least 10000 ÷ 819, the e2e one; also
-        revisit the 10030 ÷ 827 entry, whose description predates
-        substitution), keeping the list ordered by complexity; update the
-        picker tests and the highlight-reset coverage accordingly.
+  - [x] **Worked-example picker**: added 10000 ÷ 819 after 10030 ÷ 827 in
+        `EXAMPLES` and reworded 827's description (it finishes clean via
+        substitution). Page tests cover order, descriptions, the pending-then-
+        substituted flow and re-select reset.
   - [x] **Visual check** against `plans/mockups/iteration-f-substitution-v1.html`
         (desktop and 375px). Fixed: the substituted value wrapped on mobile
         (nowrap, tighter card gap, smaller font under 400px).
