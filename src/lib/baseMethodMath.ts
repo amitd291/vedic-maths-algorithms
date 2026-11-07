@@ -132,7 +132,8 @@ export type SimplificationCandidate = (ScalingCandidate & { kind: 'scaling' }) |
 /**
  * Simplification options for a divisor whose plain difference is unfriendly:
  * scaling candidates (filtered to those whose difference is no wider than the
- * plain one), then one substitution candidate. Empty when the plain difference
+ * plain one), then one substitution candidate unless it would be a no-op (its
+ * digits equal the plain difference's digits). Empty when the plain difference
  * is already friendly.
  */
 export function findSimplificationCandidates(divisor: number): SimplificationCandidate[] {
@@ -145,9 +146,14 @@ export function findSimplificationCandidates(divisor: number): SimplificationCan
     .filter((c) => String(Math.abs(c.difference)).length <= plainDigitCount)
     .map((c) => ({ kind: 'scaling', ...c }))
 
+  const substitutedDigits = substituteDigits(Math.abs(plainDiff))
+  const plainDigits = String(Math.abs(plainDiff)).split('').map(Number)
+  const isNoOp = substitutedDigits.join(',') === plainDigits.join(',')
+  if (isNoOp) return scaling
+
   const substitution: SubstitutionCandidate = {
     kind: 'substitution',
-    digits: substituteDigits(Math.abs(plainDiff)),
+    digits: substitutedDigits,
     base: plainBase,
     difference: plainDiff,
   }

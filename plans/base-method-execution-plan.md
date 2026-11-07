@@ -321,33 +321,56 @@ function to the list, not restructuring the UI.
       `needsSimplification`: the filter would empty 827's list and flip the
       10030 ÷ 827 pending-state behaviour. Unit tests: fixtures 9, 182, 827,
       35, 791 plus a 1..999 invariant. The UI switch is the next task.
-- [ ] **Wire substitution into the selector and board.** Selector: switch
-      `SimplificationSelector`/`needsSimplification`/`BaseMethodPage` from
-      `findScalingCandidates` to `findSimplificationCandidates` (chosen rule
-      (a), see `base-method-build-plan.md` "Decisions"); `needsSimplification`
-      becomes "the candidate list is non-empty". Show the substituted
-      candidate as a card (e.g. `Substituted: 2,−3,3`, same card style as
-      scaling). Update the pending-state tests that assume 10030 ÷ 827
-      offers ×7, and any test that treats 182 as friendly (it has a
-      substitution option, so it will start pending). Decide how to present
-      the 19 no-op-only divisors (substitution identical to plain, listed in
-      the build plan). Board (once a
-      substitution option is chosen): today `baseMethodMath.ts` computes one
-      `contribution = total × difference` per LHS digit, then splits that
-      product into decimal digits to fan out across columns. Replace with:
-      for each element `d` at index `j` of the substituted-digit array,
-      compute `total × d` and lay it at a place-offset of `j` columns —
-      reusing the existing column carry-cascade/summation machinery as-is.
-      `BaseMethodSolution.difference` needs a sibling optional field (e.g.
-      `substitutedDigits?: number[]`) that switches the contribution path;
-      narration stays one step per LHS digit. Board width: per the proof
-      above, a multi-digit source never grows, so no new width mechanism is
-      needed there; a single-digit (6–9) source growing 1→2 places is the
-      one real case to verify against the board's existing column-width
-      allocation. Test fixtures: 10030 ÷ 827 (clean finish, no closing
-      step) and 10000 ÷ 819 (closing "normalize the remainder" step, not
-      "compare and correct") — both hand-verified in the build plan,
-      covering the two distinct closing-step outcomes.
+- [ ] **Wire substitution into the selector and board.** Rule (a), see
+      `base-method-build-plan.md` "Decisions". Pure math is done; remaining:
+  - [x] **Filter no-op substitutions** out of `findSimplificationCandidates`
+        (substituted digits equal the decimal digits of the plain
+        difference). The 19 no-op-only divisors get an empty list and fall
+        back to plain; 35 now lists scaling cards only. Invariant test
+        asserts the empty-list set is exactly the 19.
+  - [ ] **Selector switch**: `SimplificationSelector`/`BaseMethodPage` move
+        from `findScalingCandidates` to `findSimplificationCandidates`;
+        `needsSimplification` becomes "the candidate list is non-empty". No
+        other change to the pending/plain gating in `BaseMethodPage`.
+  - [ ] **Substituted card**: e.g. `Substituted: 2,−3,3`, same card style as
+        scaling (title, Base/Difference line, collapsed/selected states).
+  - [ ] **Update existing tests**: pending-state tests that assume
+        10030 ÷ 827 offers ×7; any test treating 182 as friendly (it has a
+        substitution option, so it now starts pending).
+  - [ ] **182 is NOT friendly** (checked: base 100, diff −82, parts [8, 2],
+        real substitution `[1,−2,2]`, so it stays pending after the switch).
+        Move 182 out of the "friendly divisors 9 and 182" page test
+        (`BaseMethodPage.test.tsx:515`) into the pending-state tests, and
+        drop it from `needsSimplification`'s "false" unit test.
+  - [ ] **Engine**: add optional `BaseMethodSolution.substitutedDigits?:
+        number[]`. When set, replace the per-LHS-digit `total × difference`
+        decimal split with: for each `d` at index `j`, `total × d` laid at a
+        place-offset of `j` columns; existing carry-cascade/summation reused
+        as-is. Narration stays one step per LHS digit.
+  - [ ] **Divisor card**: show the substituted base/difference when that
+        candidate is selected (same class of bug as the scaling card fix).
+  - [ ] **Board width (growth bound has a hole)**: the "multi-digit never
+        grows" bound above is wrong for negative differences between 0.5B
+        and B (e.g. 182: |diff| 82 → `[1,−2,2]`, 2→3 places; likewise
+        divisors ~156-199 at base 100). Growth cases are therefore not just
+        single-digit 6-9. Work out how the extra leading place is allocated
+        (columns/LHS width) with a mockup before building; add 182 and 93
+        as growth fixtures.
+  - [ ] **Engine tests (TDD, fixtures first)**: 10030 ÷ 827 (clean finish,
+        no closing step) and 10000 ÷ 819 (closing "normalize the remainder"
+        step, not "compare and correct"), both hand-verified in the build
+        plan; plus a 93-style single-digit growth case.
+  - [ ] **Page/component tests**: substituted card renders, picking it
+        solves with `substitutedDigits`, pending state for 182 / 827, plain
+        fallback for a no-op divisor (e.g. 53).
+  - [ ] **e2e (one test only)**: 10000 ÷ 819 via the form, pick the
+        substituted card, step to the verified answer (Q=12, R=172).
+        Chosen over 10030 ÷ 827 because it exercises the distinctive
+        substitution path end to end (negative raw RHS, closing "normalize
+        the remainder" borrow step, no divisor compare); 827's clean finish
+        is covered by the engine fixture.
+  - [ ] **Visual check** against a mockup (new
+        `plans/mockups/iteration-f-substitution-v1.html` needed first).
 - [ ] **Stretch (nice to have): reduce corner cases via input limits.**
       (a) Restrict divisor to ≥10, like Dhvajanka: drops the base-10 floor,
       the `divideScaled >= 6` guard, and the 123÷9 / 865÷9 / 9995÷9

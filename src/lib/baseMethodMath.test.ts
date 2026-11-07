@@ -191,16 +191,23 @@ describe('findSimplificationCandidates', () => {
     expect(candidates.some((c) => c.kind === 'scaling' && c.k === 7 && c.direction === 'multiply')).toBe(false)
   })
 
-  it('returns scaling candidates followed by one substitution candidate for 35', () => {
+  it('omits the no-op substitution for 35 (diff -25 gives digits [2,5], same as plain), leaving only the 4 scaling candidates', () => {
     const candidates = findSimplificationCandidates(35)
-    expect(candidates.slice(0, -1).map((c) => (c.kind === 'scaling' ? [c.k, c.direction] : null))).toEqual([
-      [2, 'multiply'],
-      [3, 'multiply'],
-      [4, 'multiply'],
-      [5, 'divide'],
+    expect(candidates.map((c) => (c.kind === 'scaling' ? [c.kind, c.k, c.direction] : null))).toEqual([
+      ['scaling', 2, 'multiply'],
+      ['scaling', 3, 'multiply'],
+      ['scaling', 4, 'multiply'],
+      ['scaling', 5, 'divide'],
     ])
-    expect(candidates[candidates.length - 1]).toMatchObject({ kind: 'substitution', base: 10, difference: -25 })
+    expect(candidates.some((c) => c.kind === 'substitution')).toBe(false)
   })
+
+  it.each([53, 213, 314, 321, 403, 421, 422, 431, 442, 454, 503, 523, 530, 533, 535, 541, 542, 543, 545])(
+    'returns no candidates for %i (no scaling, and substitution would be a no-op)',
+    (divisor) => {
+      expect(findSimplificationCandidates(divisor)).toEqual([])
+    },
+  )
 
   it('includes k=7 divide and a substitution candidate for 791', () => {
     const candidates = findSimplificationCandidates(791)
@@ -210,6 +217,7 @@ describe('findSimplificationCandidates', () => {
 
   it('holds the candidate invariants for every divisor 1..999', () => {
     const failures: { divisor: number; reason: string }[] = []
+    const emptyUnfriendly: number[] = []
     for (let divisor = 1; divisor <= 999; divisor++) {
       const plainBase = nearestBase(divisor)
       const plainDiff = plainBase - divisor
@@ -219,14 +227,22 @@ describe('findSimplificationCandidates', () => {
         if (candidates.length !== 0) failures.push({ divisor, reason: 'friendly difference returned candidates' })
         continue
       }
-
-      const last = candidates[candidates.length - 1]
-      if (!last || last.kind !== 'substitution') {
-        failures.push({ divisor, reason: 'last candidate is not substitution' })
+      if (candidates.length === 0) {
+        emptyUnfriendly.push(divisor)
         continue
       }
-      if (last.digits.some((d) => d < -4 || d > 5)) {
-        failures.push({ divisor, reason: 'substitution digit out of [-4, 5]' })
+
+      if (candidates.filter((c) => c.kind === 'substitution').length > 1) {
+        failures.push({ divisor, reason: 'more than one substitution candidate' })
+      }
+      const last = candidates[candidates.length - 1]
+      if (last.kind === 'substitution') {
+        if (last.digits.some((d) => d < -4 || d > 5)) {
+          failures.push({ divisor, reason: 'substitution digit out of [-4, 5]' })
+        }
+        if (last.digits.join(',') === String(Math.abs(plainDiff)).split('').map(Number).join(',')) {
+          failures.push({ divisor, reason: 'no-op substitution candidate' })
+        }
       }
       const plainDigitCount = String(Math.abs(plainDiff)).length
       for (const c of candidates) {
@@ -236,6 +252,9 @@ describe('findSimplificationCandidates', () => {
       }
     }
     expect(failures).toEqual([])
+    expect(emptyUnfriendly).toEqual([
+      53, 213, 314, 321, 403, 421, 422, 431, 442, 454, 503, 523, 530, 533, 535, 541, 542, 543, 545,
+    ])
   })
 })
 
