@@ -342,11 +342,15 @@ function to the list, not restructuring the UI.
         Move 182 out of the "friendly divisors 9 and 182" page test
         (`BaseMethodPage.test.tsx:515`) into the pending-state tests, and
         drop it from `needsSimplification`'s "false" unit test.
-  - [ ] **Engine**: add optional `BaseMethodSolution.substitutedDigits?:
-        number[]`. When set, replace the per-LHS-digit `total × difference`
-        decimal split with: for each `d` at index `j`, `total × d` laid at a
-        place-offset of `j` columns; existing carry-cascade/summation reused
-        as-is. Narration stays one step per LHS digit.
+  - [x] **Engine (math)**: `solveBaseMethod(dividend, divisor,
+        substitutedDigits?)`, digits left-padded to `rhsWidth`, each cell
+        `total × sign(difference) × d`; echoes `substitutedDigits`; throws
+        when wider than `rhsWidth` (growth, see board-width item). Verified
+        against 10030 ÷ 827, 10000 ÷ 819, 1693 ÷ 146 plus a sweep vs the
+        plain solve.
+  - [ ] **Narration**: `computeBaseMethodSteps` accepts the substituted
+        digits, one step per LHS digit, contribution lines show the
+        substituted digits.
   - [ ] **Divisor card**: show the substituted base/difference when that
         candidate is selected (same class of bug as the scaling card fix).
   - [ ] **Board width (growth bound has a hole)**: the "multi-digit never
@@ -369,6 +373,11 @@ function to the list, not restructuring the UI.
         substitution path end to end (negative raw RHS, closing "normalize
         the remainder" borrow step, no divisor compare); 827's clean finish
         is covered by the engine fixture.
+  - [ ] **Worked-example picker**: add substitution examples to `EXAMPLES`
+        in `BaseMethodPage.tsx` (at least 10000 ÷ 819, the e2e one; also
+        revisit the 10030 ÷ 827 entry, whose description predates
+        substitution), keeping the list ordered by complexity; update the
+        picker tests and the highlight-reset coverage accordingly.
   - [ ] **Visual check** against a mockup (new
         `plans/mockups/iteration-f-substitution-v1.html` needed first).
 - [ ] **Stretch (nice to have): reduce corner cases via input limits.**

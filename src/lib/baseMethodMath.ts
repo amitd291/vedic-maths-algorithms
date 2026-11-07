@@ -191,6 +191,7 @@ export interface BaseMethodSolution {
   quotient: number
   finalRhsDigits: number[]
   remainderFits: boolean
+  substitutedDigits?: number[]
 }
 
 /**
@@ -221,7 +222,7 @@ export interface BaseMethodSolution {
  * the quotient genuinely needs a wider board than the assumed LHS width —
  * this throws rather than growing the board.
  */
-export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSolution {
+export function solveBaseMethod(dividend: number, divisor: number, substitutedDigits?: number[]): BaseMethodSolution {
   if (!Number.isInteger(dividend) || dividend <= 0) {
     throw new Error('dividend must be a positive integer')
   }
@@ -241,10 +242,19 @@ export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSo
   const lhsWidth = n - rhsWidth
   const rightWidth = rhsWidth - 1
 
+  let padded: number[] | undefined
+  if (substitutedDigits !== undefined) {
+    if (substitutedDigits.length > rhsWidth) {
+      throw new Error('substituted digits are wider than the board (growth not yet supported)')
+    }
+    padded = [...Array(rhsWidth - substitutedDigits.length).fill(0), ...substitutedDigits]
+  }
+
   // A single left-to-right walk. Each LHS column's raw total is used as-is
   // (no reduction, no redo) to compute its contribution, which fans out
   // across the next rhsWidth columns: the leftmost of those absorbs
   // whatever magnitude doesn't fit in the trailing rightWidth single digits.
+  // With substituted digits, each fan-out cell is instead total × sign(difference) × digit.
   const incoming: number[] = Array(n).fill(0)
   const contributionsByCol: number[][] = Array.from({ length: n }, () => [])
   const lhsRaw: number[] = []
@@ -252,6 +262,17 @@ export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSo
   for (let i = 0; i < lhsWidth; i++) {
     const total = digits[i] + incoming[i]
     lhsRaw.push(total)
+
+    if (padded) {
+      const sign = Math.sign(difference)
+      for (let k = 0; k < rhsWidth; k++) {
+        const idx = i + 1 + k
+        const signedVal = total * sign * padded[k]
+        incoming[idx] += signedVal
+        contributionsByCol[idx][i] = signedVal
+      }
+      continue
+    }
 
     const contribution = total * difference
     const sign = Math.sign(contribution)
@@ -357,6 +378,7 @@ export function solveBaseMethod(dividend: number, divisor: number): BaseMethodSo
     quotient,
     finalRhsDigits,
     remainderFits,
+    substitutedDigits: padded,
   }
 }
 

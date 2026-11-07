@@ -142,6 +142,113 @@ describe('solveBaseMethod', () => {
   })
 })
 
+describe('solveBaseMethod with substitutedDigits', () => {
+  it('uses substituted digits in the LHS fan-out (10030 ÷ 827 with [2,-3,3])', () => {
+    const s = solveBaseMethod(10030, 827, [2, -3, 3])
+    expect(s.quotient).toBe(12)
+    expect(s.remainder).toBe(106)
+    expect(s.lhsRaw).toEqual([1, 2])
+    expect(s.rhsRaw).toEqual([1, 0, 6])
+    expect(s.rawRemainder).toBe(106)
+    expect(s.correctionApplies).toBe(false)
+    expect(s.rhsNormalizeChanged).toBe(false)
+    expect(s.lhsNormalizeChanged).toBe(false)
+    expect(s.substitutedDigits).toEqual([2, -3, 3])
+    expect(s.contributionsByCol[1][0]).toBe(2)
+    expect(s.contributionsByCol[2][0]).toBe(-3)
+    expect(s.contributionsByCol[2][1]).toBe(4)
+    expect(s.contributionsByCol[3][0]).toBe(3)
+    expect(s.contributionsByCol[3][1]).toBe(-6)
+    expect(s.contributionsByCol[4][1]).toBe(6)
+  })
+
+  it('flags an RHS self-contained normalize with substituted digits (10000 ÷ 819 with [2,-2,1])', () => {
+    const s = solveBaseMethod(10000, 819, [2, -2, 1])
+    expect(s.quotient).toBe(12)
+    expect(s.remainder).toBe(172)
+    expect(s.lhsRaw).toEqual([1, 2])
+    expect(s.rhsRaw).toEqual([2, -3, 2])
+    expect(s.rawRemainder).toBe(172)
+    expect(s.correctionApplies).toBe(false)
+    expect(s.rhsNormalizeChanged).toBe(true)
+  })
+
+  it('uses the sign of the difference for Paravartya (1693 ÷ 146 with [5,-4], difference -46)', () => {
+    const s = solveBaseMethod(1693, 146, [5, -4])
+    expect(s.quotient).toBe(11)
+    expect(s.remainder).toBe(87)
+    expect(s.lhsRaw).toEqual([1, 1])
+    expect(s.rhsRaw).toEqual([8, 7])
+    expect(s.contributionsByCol[1][0]).toBe(-5)
+    expect(s.contributionsByCol[2][0]).toBe(4)
+  })
+
+  it('left-pads substituted digits to rhsWidth (10000 ÷ 957 with [4,3] pads to [0,4,3])', () => {
+    const s = solveBaseMethod(10000, 957, [4, 3])
+    expect(s.substitutedDigits).toEqual([0, 4, 3])
+    expect(s.quotient * 957 + s.remainder).toBe(10000)
+  })
+
+  it('throws /wider than the board/ when substituted digits exceed rhsWidth (10000 ÷ 182 with [1,-2,2])', () => {
+    expect(() => solveBaseMethod(10000, 182, [1, -2, 2])).toThrow(/wider than the board/)
+  })
+
+  it('leaves substitutedDigits undefined and the result unchanged when omitted (10030 ÷ 827)', () => {
+    const s = solveBaseMethod(10030, 827)
+    expect(s.substitutedDigits).toBeUndefined()
+    expect(s.quotient).toBe(12)
+    expect(s.remainder).toBe(106)
+    expect(s.rhsNormalizeChanged).toBe(true)
+    expect(s.correctionApplies).toBe(true)
+  })
+
+  it('matches the plain solve (and holds Q×D+R===dividend) for every substitution candidate divisor 1..999', () => {
+    const dividends = [12345, 99999, 54321, 10000, 10030, 1693]
+    const knownErrors = [/too small/, /wider board/]
+    const failures: string[] = []
+    let checked = 0
+
+    for (let divisor = 1; divisor <= 999; divisor++) {
+      const rhsWidth = String(nearestBase(divisor)).length - 1
+      const substitution = findSimplificationCandidates(divisor).find((c) => c.kind === 'substitution')
+      if (!substitution || substitution.digits.length > rhsWidth) continue
+
+      for (const dividend of dividends) {
+        let sub: ReturnType<typeof solveBaseMethod>
+        try {
+          sub = solveBaseMethod(dividend, divisor, substitution.digits)
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          if (!knownErrors.some((re) => re.test(message))) {
+            failures.push(`${divisor}/${dividend}: substituted threw "${message}"`)
+          }
+          continue
+        }
+
+        if (sub.quotient * divisor + sub.remainder !== dividend) {
+          failures.push(`${divisor}/${dividend}: Q×D+R mismatch`)
+        }
+
+        let plain: ReturnType<typeof solveBaseMethod>
+        try {
+          plain = solveBaseMethod(dividend, divisor)
+        } catch {
+          continue
+        }
+        if (sub.quotient !== plain.quotient || sub.remainder !== plain.remainder) {
+          failures.push(
+            `${divisor}/${dividend}: substituted ${sub.quotient} r ${sub.remainder} vs plain ${plain.quotient} r ${plain.remainder}`,
+          )
+        }
+        checked++
+      }
+    }
+
+    expect(failures).toEqual([])
+    expect(checked).toBeGreaterThan(0)
+  })
+})
+
 describe('isDifferenceFriendly', () => {
   it('rejects a difference whose leftPart absorbs multiple digits (base 10, diff -25 → single unsplit part [25])', () => {
     // rhsWidth=1 for base 10 means rightWidth=0, so nothing is split at
