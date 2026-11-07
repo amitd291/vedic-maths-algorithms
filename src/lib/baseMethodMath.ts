@@ -133,8 +133,9 @@ export type SimplificationCandidate = (ScalingCandidate & { kind: 'scaling' }) |
  * Simplification options for a divisor whose plain difference is unfriendly:
  * scaling candidates (filtered to those whose difference is no wider than the
  * plain one), then one substitution candidate unless it would be a no-op (its
- * digits equal the plain difference's digits). Empty when the plain difference
- * is already friendly.
+ * digits equal the plain difference's digits) or wider than rhsWidth (i.e.
+ * wider than the plain base's digits minus one, so it cannot fit the board's
+ * RHS columns). Empty when the plain difference is already friendly.
  */
 export function findSimplificationCandidates(divisor: number): SimplificationCandidate[] {
   const plainBase = nearestBase(divisor)
@@ -149,7 +150,8 @@ export function findSimplificationCandidates(divisor: number): SimplificationCan
   const substitutedDigits = substituteDigits(Math.abs(plainDiff))
   const plainDigits = String(Math.abs(plainDiff)).split('').map(Number)
   const isNoOp = substitutedDigits.join(',') === plainDigits.join(',')
-  if (isNoOp) return scaling
+  const rhsWidth = String(plainBase).length - 1
+  if (isNoOp || substitutedDigits.length > rhsWidth) return scaling
 
   const substitution: SubstitutionCandidate = {
     kind: 'substitution',

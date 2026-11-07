@@ -303,11 +303,9 @@ function to the list, not restructuring the UI.
       left, `d>5` converts, range `[−4,5]`, MSB-first output). Tests:
       173→`[2,−3,3]`, 181→`[2,−2,1]`, 209→`[2,1,−1]`, 7→`[1,−3]`,
       449→`[4,5,−1]`, plus 1..2000 round-trip/range/no-growth properties.
-      **Growth bound (relied on by the board-wiring task):** a natural
-      difference's leading digit is ≤4 (cap `4.5B−1`, e.g. 44/449/4499), so
-      a multi-digit substituted array never grows; the only growth case is
-      a single-digit 6–9 difference going 1→2 places (e.g. 93 → diff 7 →
-      `[1,−3]`).
+      **Growth bound: superseded** (wrong for negative differences between
+      0.5B and B, e.g. 182). Too-long substitutions are dropped instead,
+      see the build plan "Substitution that doesn't fit the board".
 - [x] **Bug: worked-example highlight not reset after manual edits.** The
       highlight is now derived from the solved inputs (`current`), and
       `formSeed` (with a `seq` counter as the form `key`) remounts the form
@@ -337,11 +335,11 @@ function to the list, not restructuring the UI.
   - [ ] **Update existing tests**: pending-state tests that assume
         10030 ÷ 827 offers ×7; any test treating 182 as friendly (it has a
         substitution option, so it now starts pending).
-  - [ ] **182 is NOT friendly** (checked: base 100, diff −82, parts [8, 2],
-        real substitution `[1,−2,2]`, so it stays pending after the switch).
-        Move 182 out of the "friendly divisors 9 and 182" page test
-        (`BaseMethodPage.test.tsx:515`) into the pending-state tests, and
-        drop it from `needsSimplification`'s "false" unit test.
+  - [ ] **182 is not friendly** (base 100, diff −82, parts [8, 2]), but its
+        only substitution is too long, so after the drop item its list is
+        empty and it still solves plain with no selector. Keep it in the
+        "friendly divisors 9 and 182" page test (`BaseMethodPage.test.tsx:515`),
+        but reword the test name (it is a plain fallback, not friendly).
   - [x] **Engine (math)**: `solveBaseMethod(dividend, divisor,
         substitutedDigits?)`, digits left-padded to `rhsWidth`, each cell
         `total × sign(difference) × d`; echoes `substitutedDigits`; throws
@@ -358,17 +356,16 @@ function to the list, not restructuring the UI.
         the RHS normalize.
   - [ ] **Divisor card**: show the substituted base/difference when that
         candidate is selected (same class of bug as the scaling card fix).
-  - [ ] **Board width (growth bound has a hole)**: the "multi-digit never
-        grows" bound above is wrong for negative differences between 0.5B
-        and B (e.g. 182: |diff| 82 → `[1,−2,2]`, 2→3 places; likewise
-        divisors ~156-199 at base 100). Growth cases are therefore not just
-        single-digit 6-9. Work out how the extra leading place is allocated
-        (columns/LHS width) with a mockup before building; add 182 and 93
-        as growth fixtures.
-  - [ ] **Engine tests (TDD, fixtures first)**: 10030 ÷ 827 (clean finish,
-        no closing step) and 10000 ÷ 819 (closing "normalize the remainder"
-        step, not "compare and correct"), both hand-verified in the build
-        plan; plus a 93-style single-digit growth case.
+  - [x] **Drop too-long substitutions** (build plan, "Substitution that
+        doesn't fit the board"): the substituted candidate is omitted when
+        `substituteDigits(|diff|).length > rhsWidth`, after the no-op filter.
+        276 divisors affected (220 keep scaling cards, 56 fall back to
+        plain; 75 plain fallbacks with the no-op ones). Invariant test:
+        unfriendly with an empty list == the 75. The "growth" bound above is
+        superseded by this item.
+  - [x] **Engine tests**: 10030 ÷ 827 (clean finish) and 10000 ÷ 819
+        (closing "normalize the remainder"), covered in the engine and
+        narration tasks above. The growth guard test uses 182.
   - [ ] **Page/component tests**: substituted card renders, picking it
         solves with `substitutedDigits`, pending state for 182 / 827, plain
         fallback for a no-op divisor (e.g. 53).

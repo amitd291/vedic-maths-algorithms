@@ -209,9 +209,8 @@ describe('solveBaseMethod with substitutedDigits', () => {
     let checked = 0
 
     for (let divisor = 1; divisor <= 999; divisor++) {
-      const rhsWidth = String(nearestBase(divisor)).length - 1
       const substitution = findSimplificationCandidates(divisor).find((c) => c.kind === 'substitution')
-      if (!substitution || substitution.digits.length > rhsWidth) continue
+      if (!substitution) continue
 
       for (const dividend of dividends) {
         let sub: ReturnType<typeof solveBaseMethod>
@@ -288,14 +287,38 @@ describe('findSimplificationCandidates', () => {
     expect(findSimplificationCandidates(9)).toEqual([])
   })
 
-  it('returns only the substitution candidate for 182 (plain difference -82 is unfriendly, no scaling)', () => {
-    expect(findSimplificationCandidates(182)).toEqual([{ kind: 'substitution', digits: [1, -2, 2], base: 100, difference: -82 }])
+  it('omits the substitution for 182 (diff -82 → [1,-2,2] is 3 digits, too wide for rhsWidth 2), no scaling either', () => {
+    expect(findSimplificationCandidates(182)).toEqual([])
+  })
+
+  it('omits the substitution for 46 (base 10, diff -36 → [4,-4] is 2 digits, too wide for rhsWidth 1)', () => {
+    expect(findSimplificationCandidates(46)).toEqual([])
+  })
+
+  it('keeps the substitution for 93 (base 100, diff 7 → [1,-3] fits rhsWidth 2) as the last element', () => {
+    const candidates = findSimplificationCandidates(93)
+    expect(candidates[candidates.length - 1]).toEqual({ kind: 'substitution', digits: [1, -3], base: 100, difference: 7 })
   })
 
   it('returns only the substitution candidate for 827 (no k=7 multiply scaling)', () => {
     const candidates = findSimplificationCandidates(827)
     expect(candidates).toEqual([{ kind: 'substitution', digits: [2, -3, 3], base: 1000, difference: 173 }])
     expect(candidates.some((c) => c.kind === 'scaling' && c.k === 7 && c.direction === 'multiply')).toBe(false)
+  })
+
+  it('returns only the substitution candidate for 819 (diff 181 → [2,-2,1] fits rhsWidth 3)', () => {
+    expect(findSimplificationCandidates(819)).toEqual([{ kind: 'substitution', digits: [2, -2, 1], base: 1000, difference: 181 }])
+  })
+
+  it.each([157, 173, 186])('returns no candidates for %i (no scaling, and substitution too wide for rhsWidth)', (divisor) => {
+    expect(findSimplificationCandidates(divisor)).toEqual([])
+  })
+
+  it.each([3, 4])('keeps scaling candidates for %i, with no substitution last (its [1,-k] digits are too wide for rhsWidth 1)', (divisor) => {
+    const candidates = findSimplificationCandidates(divisor)
+    expect(candidates.length).toBeGreaterThan(0)
+    expect(candidates[candidates.length - 1].kind).toBe('scaling')
+    expect(candidates.some((c) => c.kind === 'substitution')).toBe(false)
   })
 
   it('omits the no-op substitution for 35 (diff -25 gives digits [2,5], same as plain), leaving only the 4 scaling candidates', () => {
@@ -347,6 +370,9 @@ describe('findSimplificationCandidates', () => {
         if (last.digits.some((d) => d < -4 || d > 5)) {
           failures.push({ divisor, reason: 'substitution digit out of [-4, 5]' })
         }
+        if (last.digits.length > String(plainBase).length - 1) {
+          failures.push({ divisor, reason: 'substitution wider than rhsWidth' })
+        }
         if (last.digits.join(',') === String(Math.abs(plainDiff)).split('').map(Number).join(',')) {
           failures.push({ divisor, reason: 'no-op substitution candidate' })
         }
@@ -360,7 +386,10 @@ describe('findSimplificationCandidates', () => {
     }
     expect(failures).toEqual([])
     expect(emptyUnfriendly).toEqual([
-      53, 213, 314, 321, 403, 421, 422, 431, 442, 454, 503, 523, 530, 533, 535, 541, 542, 543, 545,
+      46, 53, 157, 159, 162, 164, 173, 179, 181, 182, 183, 184, 185, 186, 187, 188, 213, 218, 238, 273, 274, 277, 314, 317,
+      318, 321, 327, 346, 357, 359, 362, 364, 365, 382, 387, 391, 397, 403, 409, 419, 421, 422, 427, 431, 436, 442, 446, 454,
+      457, 458, 461, 463, 466, 482, 486, 487, 491, 497, 503, 509, 519, 523, 529, 530, 533, 535, 537, 538, 541, 542, 543, 545,
+      547, 548, 549,
     ])
   })
 })

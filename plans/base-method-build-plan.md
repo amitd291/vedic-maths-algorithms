@@ -188,6 +188,66 @@ invariants for every divisor 1..999"): every divisor is either friendly or
 has at least one candidate in the final list (filtered scaling plus
 substituted).
 
+### Substitution that doesn't fit the board (iteration F)
+
+**Decision: drop the substituted candidate when `substituteDigits(|difference|)`
+has more digits than `rhsWidth`.** Applied after the no-op filter. Those
+divisors keep their scaling cards, or fall back to the plain solve when they
+have none.
+
+**Why.** A multiply fans out into `rhsWidth` slots, right-aligned: slot
+`k` is column `i+1+k` (`i` is the multiplied column). A substituted array of
+`rhsWidth + 1` digits puts its leading digit at the weight of column `i`
+itself, i.e. the column whose total is being multiplied, so it would change
+its own input. There is no valid place for it, and a wider board doesn't
+help. (Earlier assumption "a multi-digit source never grows" was wrong: it
+fails for negative differences between 0.5B and B, e.g. 182.)
+
+| Field | 182 | 46 | 93 | 827 |
+|---|---|---|---|---|
+| Base | 100 | 10 | 100 | 1000 |
+| Difference | −82 | −36 | 7 | 173 |
+| `rhsWidth` (slots) | 2 | 1 | 2 | 3 |
+| Plain split `[left, ...right]` | `[8, 2]` | `[36]` | `[0, 7]` | `[1, 7, 3]` |
+| `substituteDigits(\|diff\|)` | `[1, −2, 2]` | `[4, −4]` | `[1, −3]` | `[2, −3, 3]` |
+| Digits vs slots | 3 > 2 | 2 > 1 | 2 = 2 | 3 = 3 |
+| Fits | no | no | yes | yes |
+| Scaling candidates (raw) | none | none | ×6 → 558 (base 1000, diff 442) | ×7 → 5789 (base 10000, diff 4211) |
+| Kept after rule (a) | none | none | none (442 is wider than 7) | none (4211 is wider than 173) |
+| **Final card list** | none, plain solve | none, plain solve | substituted only | substituted only |
+
+182: 82 = 1×100 − 2×10 + 2, the `1` lands on column `i`. 93 fits because 7
+is padded to `[0, 7]` and `[1, −3]` (10 − 3) uses the same 2 slots. Overflow
+needs `|diff|` to fill every slot with a leading digit of 6-9 (or carry into
+a new place).
+
+**Results** (divisors 1..999, after the no-op filter; script as above).
+
+| Group | Divisors | Outcome |
+|---|---|---|
+| Substitution too long | 276 | |
+| &emsp;Also has scaling candidates | 220 | scaling cards only |
+| &emsp;**Substitution was the only option** | **56** | plain solve (46, 157, 159, 162, 164, 173, 179, 181-188, 218, 238, 273, 274, 277, 317, 318, 327, 346, 357, 359, 362, 364, 365, 382, 387, 391, 397, 409, 419, 427, 436, 446, 457, 458, 461, 463, 466, 482, 486, 487, 491, 497, 509, 519, 529, 537, 538, 547-549) |
+
+Plain-solve fallbacks are now **75** divisors: the 19 no-op ones above plus
+these 56 (disjoint: the 56 were counted after the no-op filter). Their plain
+difference stays unfriendly (digits above 5 in a column), same as the 19.
+The "every divisor is friendly or has a candidate" invariant becomes:
+friendly, or non-empty list, or one of these 75.
+
+**Cumulative outcome** for the 749 unfriendly divisors (rule (a) unchanged;
+a heuristic comparing digit counts, e.g. 827's ×7 gives 4211, 4 digits
+against 173's 3, so it is dropped):
+
+| Outcome | Divisors |
+|---|---|
+| Scaling card(s), with or without a substituted card | 494 |
+| Substituted card only | 180 |
+| **Plain solve (no cards)** | **75** (19 no-op + 56 too-long) |
+
+Fixtures kept: 10030 ÷ 827, 10000 ÷ 819, 12657 ÷ 791 (all fit). Engine
+tests use 182 as the too-long case (the engine still throws for it).
+
 ## Worked examples from the source PDF (for future reference)
 
 Pulled from `base-method-division.pdf` (ch. 15 — this PDF covers Base Method
