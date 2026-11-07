@@ -10,8 +10,12 @@ export { nearestBase } from './baseMethodMath'
  * `baseMethodNarration.ts` (the step-by-step narration built from it) for
  * how it works.
  */
-export function computeBaseMethodSteps(dividend: number, divisor: number): BaseMethodStep[] {
-  const solution = solveBaseMethod(dividend, divisor)
+export function computeBaseMethodSteps(
+  dividend: number,
+  divisor: number,
+  substitutedDigits?: number[],
+): BaseMethodStep[] {
+  const solution = solveBaseMethod(dividend, divisor, substitutedDigits)
   return buildBaseMethodSteps(dividend, divisor, solution)
 }
 

@@ -12,6 +12,11 @@ function subscript(n: number): string {
 
 const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
+/** Renders a signed number with a true minus sign (U+2212), e.g. −3. */
+function signedText(n: number): string {
+  return n < 0 ? `−${-n}` : String(n)
+}
+
 function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
   return cols.map((c) => ({ ...c, contributions: [...c.contributions] }))
 }
@@ -111,14 +116,18 @@ function buildClosingSteps(
   }
 
   const steps: BaseMethodStep[] = []
-  const needsClosingSteps = correctionApplies || lhsNormalizeChanged
+  // With substituted digits, the RHS carry-normalize always runs (it's the
+  // only thing left to settle the raw RHS total), even when no correction is needed.
+  const substituted = solution.substitutedDigits !== undefined
+  const showRhsNormalize = rhsNormalizeChanged && (correctionApplies || substituted)
+  const needsClosingSteps = correctionApplies || lhsNormalizeChanged || showRhsNormalize
 
   // Carry chips: shown on the step right before the one that actually
   // applies the corresponding normalize pass, while those columns are
   // still in their interim/raw state (the normalize step itself ends up
   // all-green, with nothing left to flag).
   const lhsCarries = lhsNormalizeChanged ? carryPairs(lastLhsChunks, 0) : []
-  const rhsCarries = correctionApplies && rhsNormalizeChanged ? carryPairs(rhsRaw, lhsWidth) : []
+  const rhsCarries = showRhsNormalize ? carryPairs(rhsRaw, lhsWidth) : []
 
   if (!needsClosingSteps) {
     // Trivial case: the raw RHS total was already in range, and every raw
@@ -138,7 +147,7 @@ function buildClosingSteps(
     return steps
   }
 
-  if (!correctionApplies) {
+  if (!correctionApplies && !showRhsNormalize) {
     // No correction needed, but an LHS chunk still needs carry-normalizing
     // (e.g. Q's own raw column landed ≥10 with nothing to redistribute it
     // into a valid remainder check) — settle the RHS here directly.
@@ -168,7 +177,7 @@ function buildClosingSteps(
   // baseMethodMath) and there's a following compare-and-correct step to
   // show it before — without one, the RHS finalizes straight to its
   // correctly-formatted digits with nothing to demonstrate.
-  if (correctionApplies && rhsNormalizeChanged) {
+  if (showRhsNormalize) {
     counter.n += 1
 
     const remainderNormalizeLines: CalcLine[] = []
@@ -194,6 +203,19 @@ function buildClosingSteps(
       tone: 'warn',
       text: `RHS total is now ${rawRemainder}, after being re-expressed as valid digits.`,
     })
+
+    // Without a compare-and-correct or LHS normalize step to follow, this is
+    // the final step, so it settles the board and closes the verification.
+    if (!correctionApplies && !lhsNormalizeChanged) {
+      for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
+      for (let i = 0; i < lhsWidth; i++) cols[i].colState = 'done'
+      remainderNormalizeLines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} | ${remainder}` })
+      remainderNormalizeLines.push({
+        kind: 'note',
+        tone: 'success',
+        text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓`,
+      })
+    }
 
     steps.push({
       title: `Step ${counter.n} — normalize the remainder`,
@@ -337,6 +359,15 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
       { kind: 'calc', label: 'Divisor', value: String(divisor) },
       { kind: 'calc', label: 'Base (nearest power of 10)', value: String(base) },
       { kind: 'calc', label: 'Difference', value: `${base} − ${divisor} = ${difference}` },
+      ...(solution.substitutedDigits
+        ? [
+            {
+              kind: 'calc' as const,
+              label: 'Substituted',
+              value: `${Math.abs(difference)} → ${solution.substitutedDigits.map(signedText).join(', ')}`,
+            },
+          ]
+        : []),
       {
         kind: 'note',
         tone: 'warn',
@@ -374,6 +405,36 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
       connectors: noConnectors,
       lines: finalizeLines,
     })
+
+    if (solution.substitutedDigits) {
+      // Substituted digits: one digit per column, so each cell is the solver's
+      // signed contribution as-is (total × sign(difference) × digit).
+      const cells = Array.from({ length: rhsWidth }, (_, k) => solution.contributionsByCol[i + 1 + k][i])
+      for (let k = 0; k < rhsWidth; k++) cols[i + 1 + k].contributions[i] = cells[k]
+
+      const substitutedConnectors = Array(n - 1).fill(false)
+      for (let k = 0; k < rhsWidth; k++) substitutedConnectors[i + k] = true
+      counter.n += 1
+
+      steps.push({
+        title: `Step ${counter.n} — multiply ${quotientLabel} by the difference`,
+        cols: cloneCols(cols),
+        connectors: substitutedConnectors,
+        lines: [
+          {
+            kind: 'calc',
+            label: 'Multiply',
+            value: `${quotientLabel} × difference = ${total} × (${solution.substitutedDigits.map(signedText).join(', ')}) = (${cells.map(signedText).join(', ')})`,
+          },
+          {
+            kind: 'note',
+            tone: 'warn',
+            text: `One digit per column: ${cells.map((v, k) => `${signedText(v)} under column ${i + 2 + k}`).join(', ')}.`,
+          },
+        ],
+      })
+      continue
+    }
 
     const contribution = total * difference
     const sign = Math.sign(contribution)

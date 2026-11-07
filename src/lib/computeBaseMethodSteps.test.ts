@@ -221,6 +221,86 @@ describe('computeBaseMethodSteps', () => {
   })
 })
 
+describe('computeBaseMethodSteps with substituted digits', () => {
+  const hasLabel = (lines: CalcLine[], label: string) => lines.some((l) => 'label' in l && l.label === label)
+
+  it('shows substituted digits in Setup, one digit per column in multiply steps (10030 ÷ 827, [2,-3,3])', () => {
+    const steps = computeBaseMethodSteps(10030, 827, [2, -3, 3])
+
+    expect(steps[0].lines).toContainEqual({ kind: 'calc', label: 'Substituted', value: '173 → 2, −3, 3' })
+
+    const multiplyQ1 = steps.find((s) => s.title.includes('multiply Q₁'))!
+    expect(multiplyQ1.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Multiply',
+      value: 'Q₁ × difference = 1 × (2, −3, 3) = (2, −3, 3)',
+    })
+    expect(multiplyQ1.lines).toContainEqual({
+      kind: 'note',
+      tone: 'warn',
+      text: 'One digit per column: 2 under column 2, −3 under column 3, 3 under column 4.',
+    })
+    expect(multiplyQ1.cols[1].contributions).toEqual([2])
+    expect(multiplyQ1.cols[2].contributions[0]).toBe(-3)
+    expect(multiplyQ1.cols[3].contributions[0]).toBe(3)
+
+    const multiplyQ2 = steps.find((s) => s.title.includes('multiply Q₂'))!
+    expect(multiplyQ2.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Multiply',
+      value: 'Q₂ × difference = 2 × (2, −3, 3) = (4, −6, 6)',
+    })
+
+    expect(steps.some((s) => s.title.includes('compare and correct'))).toBe(false)
+    expect(steps.some((s) => s.title.includes('normalize the remainder'))).toBe(false)
+
+    expect(steps.at(-1)!.lines).toContainEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 12 × 827 + 106 = 10030 ✓',
+    })
+  })
+
+  it('normalizes the remainder as the final step when substituted RHS needs a borrow (10000 ÷ 819, [2,-2,1])', () => {
+    const steps = computeBaseMethodSteps(10000, 819, [2, -2, 1])
+
+    expect(steps.some((s) => s.title.includes('compare and correct'))).toBe(false)
+    const normalizeStep = steps.find((s) => s.title.includes('normalize the remainder'))!
+    expect(normalizeStep.title).toBe(`Step ${steps.length - 1} — normalize the remainder`)
+    expect(steps.at(-1)).toBe(normalizeStep)
+
+    expect(steps.at(-1)!.lines.at(-1)).toEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 12 × 819 + 172 = 10000 ✓',
+    })
+  })
+
+  it('uses the sign of the difference for a Paravartya substitution (1693 ÷ 146, [5,-4])', () => {
+    const steps = computeBaseMethodSteps(1693, 146, [5, -4])
+
+    expect(steps[0].lines).toContainEqual({ kind: 'calc', label: 'Substituted', value: '46 → 5, −4' })
+
+    const multiplyQ1 = steps.find((s) => s.title.includes('multiply Q₁'))!
+    expect(multiplyQ1.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Multiply',
+      value: 'Q₁ × difference = 1 × (5, −4) = (−5, 4)',
+    })
+
+    expect(steps.at(-1)!.lines.at(-1)).toEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 11 × 146 + 87 = 1693 ✓',
+    })
+  })
+
+  it('omits the Substituted setup line when no digits are given (10030 ÷ 827)', () => {
+    const steps = computeBaseMethodSteps(10030, 827)
+    expect(hasLabel(steps[0].lines, 'Substituted')).toBe(false)
+  })
+})
+
 describe('computeScaledBaseMethodSteps', () => {
   it('computes 5428 ÷ 35 via multiply candidate k=3 (scaledDivisor=105)', () => {
     const dividend = 5428

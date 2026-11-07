@@ -348,9 +348,14 @@ function to the list, not restructuring the UI.
         when wider than `rhsWidth` (growth, see board-width item). Verified
         against 10030 ÷ 827, 10000 ÷ 819, 1693 ÷ 146 plus a sweep vs the
         plain solve.
-  - [ ] **Narration**: `computeBaseMethodSteps` accepts the substituted
-        digits, one step per LHS digit, contribution lines show the
-        substituted digits.
+  - [x] **Narration**: `computeBaseMethodSteps(dividend, divisor,
+        substitutedDigits?)`; Setup gets a `Substituted` line, one multiply
+        step per LHS digit (`Q₁ × difference = 1 × (2, −3, 3) = (2, −3, 3)`).
+        Under substitution the RHS "normalize the remainder" step now also
+        runs without a compare-and-correct step (it becomes the final step,
+        with the Result/Verify lines). Check at the visual pass: sum step
+        renders negatives as `+ -3`, and the carry chip on the step before
+        the RHS normalize.
   - [ ] **Divisor card**: show the substituted base/difference when that
         candidate is selected (same class of bug as the scaling card fix).
   - [ ] **Board width (growth bound has a hole)**: the "multi-digit never
