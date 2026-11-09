@@ -80,6 +80,19 @@ describe('computeBaseMethodSteps', () => {
     expect(normalizeStep.carries).toBeUndefined()
   })
 
+  // Reachable in the app: 87 needs no simplification, so the plain board shows.
+  it('keeps the RHS-total note on a normalize-the-remainder step that a compare-and-correct step follows (612 ÷ 87)', () => {
+    const steps = computeBaseMethodSteps(612, 87)
+    const normalizeIdx = steps.findIndex((s) => s.title.includes('normalize the remainder'))
+    expect(normalizeIdx).toBeGreaterThan(-1)
+    expect(steps[normalizeIdx].lines).toContainEqual({
+      kind: 'note',
+      tone: 'warn',
+      text: 'RHS total is now 90, after being re-expressed as valid digits.',
+    })
+    expect(steps[normalizeIdx + 1].title).toContain('compare and correct')
+  })
+
   it('flips sign for a negative (Paravartya) difference and normalizes a negative remainder (1693 ÷ 131)', () => {
     const steps = computeBaseMethodSteps(1693, 131)
     const last = steps[steps.length - 1]
@@ -270,6 +283,20 @@ describe('computeBaseMethodSteps with substituted digits', () => {
     expect(steps.at(-1)).toBe(normalizeStep)
 
     expect(steps.at(-1)!.lines.at(-1)).toEqual({
+      kind: 'note',
+      tone: 'success',
+      text: 'Verify: 12 × 819 + 172 = 10000 ✓',
+    })
+  })
+
+  it('omits the redundant RHS-total note on a final normalize-the-remainder step (10000 ÷ 819, [2,-2,1])', () => {
+    const steps = computeBaseMethodSteps(10000, 819, [2, -2, 1])
+    const normalizeStep = steps.find((s) => s.title.includes('normalize the remainder'))!
+
+    expect(normalizeStep.lines.some((l) => l.kind === 'note' && l.tone === 'warn' && /RHS total is now/.test(l.text))).toBe(false)
+    expect(steps.at(-1)).toBe(normalizeStep)
+    expect(normalizeStep.lines.some((l) => l.kind === 'result' && l.value === '12 | 172')).toBe(true)
+    expect(normalizeStep.lines.at(-1)).toEqual({
       kind: 'note',
       tone: 'success',
       text: 'Verify: 12 × 819 + 172 = 10000 ✓',

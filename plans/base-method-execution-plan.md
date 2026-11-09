@@ -388,13 +388,14 @@ function to the list, not restructuring the UI.
   - [ ] **Polish (optional)**: sum/normalize lines render negatives with an
         ASCII hyphen (`0 + -2 + 4`, `2 × 10 + -3 × 10 + 2`) and the scaling
         card shows `-5` while the substituted card uses `−`; unify on U+2212
-        and `+ (−2)` style. Also remove the extra amber "RHS total is now 172"
-        note under the last normalize step if it feels redundant (not in
-        the mockup).
+        and `+ (−2)` style (also board total row, divisor card, selector
+        intro; e2e `-31`/`-5` assertions).
+    - [x] Amber "RHS total is now N" note hidden on a final normalize step,
+          kept before a compare-and-correct step. Kept path is unit-tested
+          via 612 ÷ 87 (reachable in the app; plain 827 is not).
+    - [ ] Sign changes (U+2212), see above.
 - [x] **Dividend < divisor dead end.** Selector skipped, friendly "too few
       digits" banner shown (mockup `plans/mockups/iteration-f-follow-up-dividend-below-divisor-v1.html`).
-      Divisor ≥10 limit rejected and 35 ÷ 35 limitation accepted, see build
-      plan "Input limits".
 
 ---
 

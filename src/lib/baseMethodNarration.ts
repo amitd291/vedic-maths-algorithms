@@ -198,15 +198,17 @@ function buildClosingSteps(
       cols[colIdx].total = d
       rhsCarry = c
     }
-    remainderNormalizeLines.push({
-      kind: 'note',
-      tone: 'warn',
-      text: `RHS total is now ${rawRemainder}, after being re-expressed as valid digits.`,
-    })
-
-    // Without a compare-and-correct or LHS normalize step to follow, this is
-    // the final step, so it settles the board and closes the verification.
-    if (!correctionApplies && !lhsNormalizeChanged) {
+    // Not the final step when a compare-and-correct or LHS normalize step
+    // follows: surface the normalized RHS total that step will use.
+    if (correctionApplies || lhsNormalizeChanged) {
+      remainderNormalizeLines.push({
+        kind: 'note',
+        tone: 'warn',
+        text: `RHS total is now ${rawRemainder}, after being re-expressed as valid digits.`,
+      })
+    } else {
+      // Final step: settle the board and close the verification. Result/Verify
+      // already state the total, so no note.
       for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
       for (let i = 0; i < lhsWidth; i++) cols[i].colState = 'done'
       remainderNormalizeLines.push({ kind: 'result', label: 'Quotient · Remainder', value: `${quotient} | ${remainder}` })
