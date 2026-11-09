@@ -20,6 +20,17 @@ function makeStep(carries: BaseMethodStep['carries']): BaseMethodStep {
 
 const noop = vi.fn()
 
+describe('BaseMethodDigitBoard total row', () => {
+  it('renders a negative column total with a true minus (U+2212)', () => {
+    const step = makeStep(undefined)
+    const { container } = render(<BaseMethodDigitBoard step={step} onBack={noop} onNext={noop} isFirst isLast={false} />)
+
+    const totals = Array.from(container.querySelectorAll('.total-slot')).map((t) => t.textContent)
+    expect(totals).toContain('−1')
+    expect(totals.join(' ')).not.toMatch(/-\d/)
+  })
+})
+
 describe('BaseMethodDigitBoard carry chip', () => {
   it('renders a positive carry as a decrease on the sender, increase on the receiver, arrow pointing left', () => {
     const step = makeStep([{ fromCol: 2, toCol: 1, amount: 1 }])

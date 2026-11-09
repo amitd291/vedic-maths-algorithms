@@ -102,6 +102,12 @@ describe('computeBaseMethodSteps', () => {
     // column), so no interim normalize-the-remainder step either —
     // compare-and-correct is the final step.
     expect(last.title).toBe('Step 6 — compare and correct')
+    expect(last.lines).toContainEqual({ kind: 'calc', label: 'Compare', value: 'RHS total −10 is negative' })
+    expect(last.lines).toContainEqual({
+      kind: 'calc',
+      label: 'Correct',
+      value: '(−10) + 131 = 121, and Q₂ = 3 − 1 = 2',
+    })
     expect(last.lines).toContainEqual({ kind: 'result', label: 'Quotient · Remainder', value: '12 | 121' })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
@@ -129,7 +135,7 @@ describe('computeBaseMethodSteps', () => {
     expect(last.lines).toContainEqual({
       kind: 'calc',
       label: 'Normalize',
-      value: 'Q₃ = 10 + (-1) = 9; Q₂ = 4 − 1 = 3',
+      value: 'Q₃ = 10 + (−1) = 9; Q₂ = 4 − 1 = 3',
     })
     expect(last.lines.at(-1)).toEqual({
       kind: 'note',
@@ -427,5 +433,48 @@ describe('computeScaledBaseMethodSteps', () => {
     expect(steps.length).toBe(innerSteps.length + 1)
     expect(steps[0].cols.length).toBe(innerSteps[0].cols.length)
     expect(steps.at(-1)!.cols.length).toBe(innerSteps.at(-1)!.cols.length)
+  })
+})
+
+describe('learner-facing negatives use U+2212', () => {
+  const valuesOf = (steps: { lines: CalcLine[] }[]) =>
+    steps.flatMap((s) => s.lines.flatMap((l) => ('value' in l ? [l.value] : [])))
+  const allText = (steps: { title: string; lines: CalcLine[] }[]) =>
+    steps.flatMap((s) => [
+      s.title,
+      ...s.lines.flatMap((l) => ('value' in l ? [l.value] : ('text' in l ? [l.text] : []))),
+    ])
+
+  it('parenthesises negative sum terms and signs results in the substituted 10000 ÷ 819 sum lines', () => {
+    const steps = computeBaseMethodSteps(10000, 819, [2, -2, 1])
+    const values = valuesOf(steps)
+
+    expect(values).toContain('0 + (−2) + 4 = 2')
+    expect(values).toContain('0 + 1 + (−4) = −3')
+    expect(values).toContain('0 + 2 = 2')
+    expect(values).toContain('2 × 10 + (−3) × 10 + 2 = 172')
+  })
+
+  it('parenthesises a negative multiplicand and signs a negative product (1693 ÷ 131)', () => {
+    const steps = computeBaseMethodSteps(1693, 131)
+    const multiplyQ1 = steps.find((s) => s.title.includes('multiply Q₁'))!
+
+    expect(valuesOf([multiplyQ1]).some((v) => v.includes('1 × (−31) = −31'))).toBe(true)
+  })
+
+  it('signs the Setup difference (100 − 131 = −31)', () => {
+    const steps = computeBaseMethodSteps(1693, 131)
+    expect(steps[0].lines).toContainEqual({ kind: 'calc', label: 'Difference', value: '100 − 131 = −31' })
+  })
+
+  it.each([
+    ['10000 ÷ 819 (substituted)', () => computeBaseMethodSteps(10000, 819, [2, -2, 1])],
+    ['10030 ÷ 827 (substituted)', () => computeBaseMethodSteps(10030, 827, [2, -3, 3])],
+    ['1693 ÷ 131', () => computeBaseMethodSteps(1693, 131)],
+    ['14189 ÷ 102', () => computeBaseMethodSteps(14189, 102)],
+    ['5428 ÷ 35 ×3 candidate', () => computeScaledBaseMethodSteps(5428, 35, findScalingCandidates(35).find((c) => c.k === 3 && c.direction === 'multiply')!)],
+  ])('has no ASCII-hyphen negatives in any title, value or text: %s', (_name, build) => {
+    const text = allText(build())
+    for (const t of text) expect(t).not.toMatch(/-\d/)
   })
 })

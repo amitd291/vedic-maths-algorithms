@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import type { BaseMethodStep } from '../types'
 import { useArrowKeyNav } from '../hooks/useArrowKeyNav'
+import { formatSigned } from '../lib/baseMethodMath'
 
 function signed(delta: number): string {
   return delta < 0 ? `− ${-delta}` : `+ ${delta}`
@@ -78,7 +79,7 @@ export default function BaseMethodDigitBoard({ step, onBack, onNext, isFirst, is
                   </div>
                   <hr className={`col-divider${col.total !== null ? ' show' : ''}`} />
                   <div className={`total-slot${col.total !== null ? ` show ${col.colState === 'done' ? 'done' : col.kind}` : ''}`}>
-                    {col.total !== null ? col.total : ''}
+                    {col.total !== null ? formatSigned(col.total) : ''}
                   </div>
                   <div className={`carry-chip${carry ? ' show' : ''}`}>
                     {carry ? signed(carry.fromCol === i ? -10 * carry.amount : carry.amount) : ''}

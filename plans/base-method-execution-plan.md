@@ -201,201 +201,69 @@ Spec: build plan Iteration E.
 
 ---
 
-## Iteration F — smarter base selection (in progress) ⬜
+## Iteration F — smarter base selection ✅
 
-Spec: build plan Iteration F. Scaling is built; substitution is pending.
+Spec: build plan Iteration F ("Decisions" holds candidate rules and input limits).
 
-**Central goal:** every digit actually multiplied by *inside a step* should
-be **0–5 inclusive** (times tables nobody has to think about; the
-divisor-scaling factor `k` is exempt, kept at 2–9). Friendliness is checked
-against the real column split (`isDifferenceFriendly`/`splitMagnitude`), not
-flat decimal digits of `difference` — a flat-digit check misses cases like
-divisor 35, base 10 (`rhsWidth=1`, no split at all).
+**Central goal:** every digit multiplied by *inside a step* is 0–5 (the
+divisor-scaling factor `k` is exempt, 2–9). Friendliness is checked against
+the real column split (`isDifferenceFriendly`/`splitMagnitude`), not flat
+digits of `difference` (e.g. divisor 35, base 10 has no split at all).
 
-**Exactly one simplification technique active per solve** — divisor-scaling
-and substitution are never combined. When the plain (nearest-power-of-10)
-difference is already all 0–5, no simplification is offered at all; the
-selection screen below only appears when actually needed.
-
-**Generic candidate list from the start**: the selection UI renders from a
-generic candidate list, not a hardcoded plain-vs-scaled pair, so adding
-substitution as a second candidate source later is just adding another
-function to the list, not restructuring the UI.
-
-- [x] Exposed the example picker to end users (no longer dev-gated); default
-      is now the simplest example (123÷9), list ordered by complexity.
-      Mockup: `plans/mockups/iteration-f-example-picker-v1.html`
-- [x] Fixed a pre-existing `Step`/`BaseMethodStep` type bug in
-      `BaseMethodPage.tsx`; added `npm run typecheck` (`tsc -b`) since bare
-      `tsc --noEmit` was a silent no-op
-- [x] **Scale-factor search**: `findScalingCandidates(divisor)` in
-      `baseMethodMath.ts`, `k = 2..9` both directions, filtered by
-      `isDifferenceFriendly` + resulting base ≥10.
-- [x] **Simplification selection UI, scaling-only**: standalone
-      `SimplificationSelector.tsx` (not yet wired into `BaseMethodPage`).
-- [x] Sparse-sampled the exhaustive sweep tests in `baseMethodMath.test.ts`/`computeSteps.test.ts` (CI flagged them amber): `k` range 1..10→1..5, `dividend` step 37→379
-- [x] **Descale pure math**: `solveScaledBaseMethod(dividend, divisor, candidate)`
-      in `baseMethodMath.ts` — runs `solveBaseMethod(dividend, candidate.scaledDivisor)`,
-      then descales via direction-specific mirror-image formulas (multiply:
-      `Q=Q′×k+floor(R′/D)`, `R=R′ mod D`; divide: `Q=floor(Q′/k)`,
-      `R=R′+(Q′ mod k)×D′`). Verified against 5428÷35 (both ×2 and ×3
-      candidates, Q=155/R=3) and 12657÷791 (÷7 candidate, Q=16/R=1).
-- [x] **Wire divisor-scaling into the board**: `buildScaledBaseMethodSteps`
-      (`baseMethodNarration.ts`) wraps the unchanged inner
-      `buildBaseMethodSteps` board with an intro (scale) and closing
-      (descale) step; `computeScaledBaseMethodSteps` orchestrator.
-- [x] Wired `computeScaledBaseMethodSteps` into `BaseMethodPage` via
-      `SimplificationSelector`; added 5428÷35, 12657÷791 to the worked
-      example picker. Visual check caught a bug unit tests missed:
-      `BaseMethodDivisorCard` showed the original divisor's base/difference
-      even after a scaled candidate was chosen — fixed to use
-      `candidate.base`/`.difference` when one is selected; covered by a
-      component regression test plus a new e2e test.
-- [x] **Style the scaling UI to match its mockup**:
-      `plans/mockups/iteration-f-divisor-scaling-v1.html`. `SimplificationSelector`
-      restructured into option-cards; new `ScaledAnswerBanner.tsx` wired
-      into `BaseMethodPage`; quotient/remainder separator switched `·` → `|`.
-      Verified via unit suite + typecheck + full `npx playwright test` run,
-      then committed (`c3358e1`).
-- [x] **Refresh the scaling UI per v2 mockup feedback**:
-      `plans/mockups/iteration-f-divisor-scaling-v2.html`. Dropped the
-      redundant "Setup — scale the divisor" intro step (scaled
-      divisor/provenance folded into the ordinary Setup step's first line);
-      `SimplificationSelector` titles lead with a bold scaled-divisor
-      number then the scale expression, Base/Difference combined onto one
-      line; selected option green in both expanded and new collapsed-state
-      summary; hover-pill affordance standardized across both disclosure
-      toggles; `ScaledAnswerBanner` reworked into a `.descale-row` embedded
-      in the digit-board (no separate boxed card), fed via a `finalAnswer`
-      prop computed once in `solve()` rather than recomputed on render.
-      Verified via unit suite + typecheck + `npx playwright test` + a
-      Playwright screenshot pass compared against the mockup.
-- [x] **Dropped "Plain" + true unselected state** (mockup:
-      `plans/mockups/iteration-f-unselected-state-v1.html`, Option A).
-      Plain card removed; its contrast moved into a `select-intro` line.
-      `needsSimplification` gates the selector; while pending (`needsSimplification
-      && candidate === null`) the divisor card shows `—` and the board, nav
-      dots and step panel are hidden. Selector keyed by a per-solve counter.
-      Consequence: an unfriendly divisor's Plain board is unreachable in the
-      UI, so the 10030 ÷ 827 e2e was deleted (its steps stay covered by unit
-      tests); 5428÷35 is the only e2e picking an unfriendly-divisor candidate.
-- [x] **Follow-up: don't solve the hidden Plain board while pending.**
-      `handleSolve`/initial state skip the Plain solve when
-      `needsSimplification(divisor)` (`solvePlain`); solving happens only on
-      candidate pick, so any error belongs to the chosen board. Fixed the
-      spurious banners on 5 ÷ 35 and 5428 ÷ 3 (Plain needed 4 quotient digits,
-      board has 3; scaled ×2/×3 fit). Decision: divisors under 10 still
-      overflow the board when the quotient has n digits (e.g. 5428 ÷ 5,
-      9995 ÷ 9); the accurate width error is accepted. Widening the board
-      by one LHS column is not planned.
-- [x] **Bug: single-digit divisors 1-5 (found on 5428 ÷ 3).**
-      `nearestBase` now floors at 10 (1..5 used to get base 1 and fail the
-      self-check). New `describeBaseMethodError` maps the "too small" and
-      "wider board" engine errors to learner-facing text, shown without the
-      "Something went wrong" prefix (`ErrorBanner` `showPrefix`); unknown
-      errors keep it. Small divisors on large dividends (e.g. 5428 ÷ 3)
-      still hit the display-width guard, now with the friendly message.
-      The `findScalingCandidates` divide guard became `divideScaled >= 6`
-      (preserves the old boundary under the floor). The 1..999 sweep no
-      longer allows `self-check failed` as a known error.
-- [x] **Substitution derivation**: `substituteDigits(n)` in
-      `baseMethodMath.ts`, balanced-digit conversion (LSD first, carry
-      left, `d>5` converts, range `[−4,5]`, MSB-first output). Tests:
-      173→`[2,−3,3]`, 181→`[2,−2,1]`, 209→`[2,1,−1]`, 7→`[1,−3]`,
-      449→`[4,5,−1]`, plus 1..2000 round-trip/range/no-growth properties.
-      **Growth bound: superseded** (wrong for negative differences between
-      0.5B and B, e.g. 182). Too-long substitutions are dropped instead,
-      see the build plan "Substitution that doesn't fit the board".
-- [x] **Bug: worked-example highlight not reset after manual edits.** The
-      highlight is now derived from the solved inputs (`current`), and
-      `formSeed` (with a `seq` counter as the form `key`) remounts the form
-      on every example click, so re-picking restores the example. Covered by
-      two page tests and an extension of the 5428 ÷ 35 e2e.
-- [x] **Substitution candidate (pure math, no UI)**: added
-      `findSimplificationCandidates(divisor)` in `baseMethodMath.ts`: `[]`
-      when plain is friendly, else filtered scaling candidates (rule (a), see
-      `base-method-build-plan.md` "Decisions") followed by one substituted
-      candidate. Deliberately NOT wired into `findScalingCandidates` /
-      `needsSimplification`: the filter would empty 827's list and flip the
-      10030 ÷ 827 pending-state behaviour. Unit tests: fixtures 9, 182, 827,
-      35, 791 plus a 1..999 invariant. The UI switch is the next task.
-- [ ] **Wire substitution into the selector and board.** Rule (a), see
-      `base-method-build-plan.md` "Decisions". Pure math is done; remaining:
-  - [x] **Filter no-op substitutions** out of `findSimplificationCandidates`
-        (substituted digits equal the decimal digits of the plain
-        difference). The 19 no-op-only divisors get an empty list and fall
-        back to plain; 35 now lists scaling cards only. Invariant test
-        asserts the empty-list set is exactly the 19.
-  - [x] **Selector switch**: `SimplificationSelector`/`BaseMethodPage` move
-        from `findScalingCandidates` to `findSimplificationCandidates`;
-        `needsSimplification` becomes "the candidate list is non-empty". No
-        other change to the pending/plain gating in `BaseMethodPage`.
-  - [x] **Substituted card** (mockup `plans/mockups/iteration-f-follow-up-substitution-v1.html`,
-        approved): title `2, −2, 1: Substituted difference (181)`, second
-        line `Base: 1000 | Difference: 181 = 200 − 20 + 1`; same card style
-        and collapsed/selected states as scaling.
-  - [x] **Update existing tests**: pending-state tests that assume
-        10030 ÷ 827 offers ×7; any test treating 182 as friendly (it has a
-        substitution option, so it now starts pending).
-  - [x] **182 is not friendly** (base 100, diff −82, parts [8, 2]), but its
-        only substitution is too long, so after the drop item its list is
-        empty and it still solves plain with no selector. Keep it in the
-        "friendly divisors 9 and 182" page test (`BaseMethodPage.test.tsx:515`),
-        but reword the test name (it is a plain fallback, not friendly).
-  - [x] **Engine (math)**: `solveBaseMethod(dividend, divisor,
-        substitutedDigits?)`, digits left-padded to `rhsWidth`, each cell
-        `total × sign(difference) × d`; echoes `substitutedDigits`; throws
-        when wider than `rhsWidth` (growth, see board-width item). Verified
-        against 10030 ÷ 827, 10000 ÷ 819, 1693 ÷ 146 plus a sweep vs the
-        plain solve.
-  - [x] **Narration**: `computeBaseMethodSteps(dividend, divisor,
-        substitutedDigits?)`; Setup gets a `Substituted` line, one multiply
-        step per LHS digit (`Q₁ × difference = 1 × (2, −3, 3) = (2, −3, 3)`).
-        Under substitution the RHS "normalize the remainder" step now also
-        runs without a compare-and-correct step (it becomes the final step,
-        with the Result/Verify lines). Check at the visual pass: sum step
-        renders negatives as `+ -3`, and the carry chip on the step before
-        the RHS normalize.
-  - [x] **Divisor card**: when a substituted candidate is selected, add a
-        third `substituted` column (`2, −2, 1`) after base and difference
-        (mockup option B, approved); base/difference stay the plain values.
-  - [x] **Drop too-long substitutions** (build plan, "Substitution that
-        doesn't fit the board"): the substituted candidate is omitted when
-        `substituteDigits(|diff|).length > rhsWidth`, after the no-op filter.
-        276 divisors affected (220 keep scaling cards, 56 fall back to
-        plain; 75 plain fallbacks with the no-op ones). Invariant test:
-        unfriendly with an empty list == the 75. The "growth" bound above is
-        superseded by this item.
-  - [x] **Engine tests**: 10030 ÷ 827 (clean finish) and 10000 ÷ 819
-        (closing "normalize the remainder"), covered in the engine and
-        narration tasks above. The growth guard test uses 182.
-  - [x] **Page/component tests**: substituted card renders, picking it
-        solves with `substitutedDigits`, pending state for 182 / 827, plain
-        fallback for a no-op divisor (e.g. 53).
-  - [x] **e2e (one test only)**: 10000 ÷ 819 via the form, pick the
-        substituted card, step to the verified answer (Q=12, R=172).
-        Chosen over 10030 ÷ 827 because it exercises the distinctive
-        substitution path end to end (negative raw RHS, closing "normalize
-        the remainder" borrow step, no divisor compare); 827's clean finish
-        is covered by the engine fixture.
-  - [x] **Worked-example picker**: added 10000 ÷ 819 after 10030 ÷ 827 in
-        `EXAMPLES` and reworded 827's description (it finishes clean via
-        substitution). Page tests cover order, descriptions, the pending-then-
-        substituted flow and re-select reset.
-  - [x] **Visual check** against `plans/mockups/iteration-f-follow-up-substitution-v1.html`
-        (desktop and 375px). Fixed: the substituted value wrapped on mobile
-        (nowrap, tighter card gap, smaller font under 400px).
-  - [ ] **Polish (optional)**: sum/normalize lines render negatives with an
-        ASCII hyphen (`0 + -2 + 4`, `2 × 10 + -3 × 10 + 2`) and the scaling
-        card shows `-5` while the substituted card uses `−`; unify on U+2212
-        and `+ (−2)` style (also board total row, divisor card, selector
-        intro; e2e `-31`/`-5` assertions).
-    - [x] Amber "RHS total is now N" note hidden on a final normalize step,
-          kept before a compare-and-correct step. Kept path is unit-tested
-          via 612 ÷ 87 (reachable in the app; plain 827 is not).
-    - [ ] Sign changes (U+2212), see above.
-- [x] **Dividend < divisor dead end.** Selector skipped, friendly "too few
-      digits" banner shown (mockup `plans/mockups/iteration-f-follow-up-dividend-below-divisor-v1.html`).
+- [x] Example picker exposed to end users (default 123÷9, ordered by
+      complexity). Mockup `plans/mockups/iteration-f-example-picker-v1.html`
+- [x] Fixed a `Step`/`BaseMethodStep` type bug; added `npm run typecheck`
+      (`tsc -b`), since bare `tsc --noEmit` was a silent no-op
+- [x] **Divisor scaling**: `findScalingCandidates` (`k = 2..9`, both
+      directions, friendly and base ≥10), `solveScaledBaseMethod` (descale),
+      `computeScaledBaseMethodSteps` wrapping the unchanged inner board,
+      wired into `BaseMethodPage`; 5428÷35 and 12657÷791 in the picker. A
+      visual check caught the divisor card showing the original
+      base/difference after a scaled pick (fixed, component and e2e tests)
+- [x] **Scaling UI** per mockups `iteration-f-divisor-scaling-v1.html` and
+      `-v2.html`: option cards, `.descale-row` embedded in the board (fed by
+      `finalAnswer`, computed once in `solve()`), no separate intro step,
+      quotient/remainder separator `|`
+- [x] **Unselected state** (mockup `iteration-f-unselected-state-v1.html`): no
+      Plain card; while pending the divisor card shows `—` and the board, nav
+      and step panel are hidden. The hidden plain board is not solved while
+      pending (`solvePlain`), so errors belong to the chosen board.
+      Consequence: an unfriendly divisor's plain board is unreachable in the
+      UI, so the 10030 ÷ 827 e2e was deleted (unit tests keep its steps); e2e
+      candidate picks are 5428÷35 and 10000÷819
+- [x] **Small divisors**: `nearestBase` floors at 10 (1..5 failed the
+      self-check) and the `divideScaled >= 6` guard keeps the old boundary.
+      `describeBaseMethodError` maps "too small"/"wider board" to learner text
+      without the "Something went wrong" prefix. Divisors under 10 still
+      overflow the board for n-digit quotients (e.g. 5428 ÷ 5, 9995 ÷ 9); the
+      accurate width error is accepted, widening the board is not planned
+- [x] **Substitution**: `substituteDigits` (balanced digits, range [−4,5]);
+      `findSimplificationCandidates` returns scaling cards (rule (a), build
+      plan "Decisions") plus one substituted card, and `needsSimplification`
+      is "list non-empty". `findScalingCandidates` stays scaling-only (the
+      filter would empty 827's list). No-op substitutions are filtered (19
+      divisors) and too-long ones dropped (build plan "Substitution that
+      doesn't fit the board"; 75 plain fallbacks in total, e.g. 182 is a plain
+      fallback, not friendly). Engine `solveBaseMethod(..., substitutedDigits?)`;
+      narration adds a `Substituted` Setup line and per-digit multiply steps,
+      and the RHS normalize step can be final. Substituted card (mockup
+      `iteration-f-follow-up-substitution-v1.html`) plus a third `substituted`
+      column on the divisor card. Tests: unit and component, one e2e
+      (10000 ÷ 819, Q=12 R=172); picker gained 10000 ÷ 819
+- [x] **Worked-example highlight** derived from the solved inputs (`current`);
+      `formSeed.seq` remounts the form on each example click
+- [x] **Visual check** of the substituted card at desktop and 375px (nowrap,
+      tighter gap, smaller font under 400px)
+- [x] **Sign polish**: negatives use U+2212 via `formatSigned`/`operand()`
+      across cards, board totals and narration (no-ASCII-hyphen catch-all test
+      over 5 fixtures; e2e `−31`/`−5`). The amber "RHS total is now N" note is
+      hidden on a final normalize step and kept before compare-and-correct;
+      the kept path is unit-tested via 612 ÷ 87 (reachable in the app, plain
+      827 is not)
+- [x] **Dividend < divisor**: selector skipped, friendly "too few digits"
+      banner (mockup `iteration-f-follow-up-dividend-below-divisor-v1.html`).
+      Divisor ≥10 limit rejected and 35 ÷ 35 limitation accepted (build plan
+      "Input limits")
 
 ---
 

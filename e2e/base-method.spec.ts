@@ -61,7 +61,7 @@ test.describe('Base Method pane (dev server)', () => {
 
   test('flips sign for a negative (Paravartya) difference and merges an over-width remainder (1693 ÷ 131)', async ({ page }) => {
     await solve(page, 1693, 131);
-    await expect(page.locator('.divisor-digit-diff')).toHaveText('-31');
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('−31');
     await expect(page.locator('.step-counter')).toHaveText('1 / 7');
 
     for (let i = 1; i < 7; i++) {
@@ -86,7 +86,7 @@ test.describe('Base Method pane (dev server)', () => {
     await expect(page.locator('.simplification-option.selected')).toHaveCount(0);
 
     await page.getByRole('button', { name: /^105: Scaled divisor/ }).click();
-    await expect(page.locator('.divisor-digit-diff')).toHaveText('-5');
+    await expect(page.locator('.divisor-digit-diff')).toHaveText('−5');
     await expect(page.getByText('Setup')).toBeVisible();
 
     while (await page.getByLabel('Next step').isEnabled()) {

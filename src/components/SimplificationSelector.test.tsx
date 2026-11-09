@@ -23,7 +23,7 @@ describe('SimplificationSelector', () => {
     expect(document.querySelectorAll('.simplification-option.selected')).toHaveLength(0)
 
     const intro = document.querySelector('.select-intro')
-    expect(intro).toHaveTextContent("The plain difference (-25) isn't simple to calculate with. Pick how to simplify.")
+    expect(intro).toHaveTextContent("The plain difference (−25) isn't simple to calculate with. Pick how to simplify.")
     expect(intro).toHaveTextContent('Note that only one option is ever applied.')
   })
 
@@ -173,7 +173,8 @@ describe('SimplificationSelector', () => {
     expect(cardContent).toContain('Base')
     expect(cardContent).toContain('100')
     expect(cardContent).toContain('Difference')
-    expect(cardContent).toContain('-5')
+    expect(cardContent).toContain('−5')
+    expect(cardContent).not.toMatch(/-\d/)
   })
 
   it('displays green summary when ×3 candidate (105) is selected for divisor 35', () => {

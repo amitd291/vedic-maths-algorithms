@@ -97,7 +97,7 @@ every multiplier used inside a step is a small digit (0–5). Two techniques:
   (e.g. 5428 ÷ 35 via 35×3=105, or 12657 ÷ 791 via ÷7), solve, then descale
   the answer. Built.
 - **Substitution:** rewrite the `difference` in a signed-digit form
-  (e.g. 10030 ÷ 827's 173 → `2,−3,3`). Pending.
+  (e.g. 10030 ÷ 827's 173 → `2,−3,3`). Built.
 
 Behaviour:
 

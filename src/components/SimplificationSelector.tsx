@@ -80,7 +80,7 @@ export default function SimplificationSelector({
       {expanded && (
         <div className="simplification-options">
           <div className="select-intro">
-            The plain difference (<b>{plainDiff}</b>) isn't simple to calculate with. Pick how to simplify.
+            The plain difference (<b>{formatSigned(plainDiff)}</b>) isn't simple to calculate with. Pick how to simplify.
             <br />
             Note that only one option is ever applied.
           </div>
@@ -125,7 +125,7 @@ export default function SimplificationSelector({
                   </span>
                 </div>
                 <div className="simplification-option-line combined">
-                  Base: <b>{candidate.base}</b> | Difference: <b>{candidate.difference}</b>
+                  Base: <b>{candidate.base}</b> | Difference: <b>{formatSigned(candidate.difference)}</b>
                 </div>
               </button>
             )

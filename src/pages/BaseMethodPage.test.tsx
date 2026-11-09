@@ -331,7 +331,7 @@ describe('BaseMethodPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
 
       expect(screen.getByText('base').nextElementSibling?.textContent).toBe(String(candidate.base))
-      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe(String(candidate.difference))
+      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('−5')
       const scaledSteps = computeScaledBaseMethodSteps(5428, 35, candidate)
       expect(screen.getByText(`1 / ${scaledSteps.length}`)).toBeInTheDocument()
     })
@@ -495,7 +495,7 @@ describe('BaseMethodPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
 
       expect(screen.getByText('base').nextElementSibling).toHaveTextContent('100')
-      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('-5')
+      expect(screen.getByText('difference').nextElementSibling).toHaveTextContent('−5')
     })
 
     it('shows descale-row on final step after selecting ×3 for 5428÷35', () => {

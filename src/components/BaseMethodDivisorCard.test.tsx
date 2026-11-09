@@ -19,6 +19,12 @@ describe('BaseMethodDivisorCard', () => {
     expect(container.textContent).not.toContain('—')
   })
 
+  it('renders a negative difference with a true minus (U+2212)', () => {
+    render(<BaseMethodDivisorCard base={100} difference={-31} />)
+
+    expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('−31')
+  })
+
   it('renders the substituted digits column when substituted is set', () => {
     render(<BaseMethodDivisorCard base={1000} difference={181} substituted={[2, -2, 1]} />)
 

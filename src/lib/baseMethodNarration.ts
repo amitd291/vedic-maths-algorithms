@@ -17,6 +17,11 @@ function signedText(n: number): string {
   return n < 0 ? `−${-n}` : String(n)
 }
 
+/** Operand inside an arithmetic expression: a negative is parenthesised, e.g. (−3). */
+function operand(n: number): string {
+  return n < 0 ? `(${signedText(n)})` : String(n)
+}
+
 function cloneCols(cols: BaseMethodColumn[]): BaseMethodColumn[] {
   return cols.map((c) => ({ ...c, contributions: [...c.contributions] }))
 }
@@ -35,11 +40,14 @@ function carryMessage(
   next?: { label: string; before: number },
 ): string {
   const n = Math.abs(carry)
-  const applied = carry < 0 ? `${10 * n} + (${before}) = ${digit}` : `${before} − ${10 * n} = ${digit}`
+  const applied =
+    carry < 0
+      ? `${10 * n} + (${signedText(before)}) = ${signedText(digit)}`
+      : `${signedText(before)} − ${10 * n} = ${signedText(digit)}`
   if (!next) return `${label} = ${applied}`
   const nextAfter = next.before + carry
   const sign = carry < 0 ? '−' : '+'
-  return `${label} = ${applied}; ${next.label} = ${next.before} ${sign} ${n} = ${nextAfter}`
+  return `${label} = ${applied}; ${next.label} = ${signedText(next.before)} ${sign} ${n} = ${signedText(nextAfter)}`
 }
 
 /**
@@ -134,7 +142,7 @@ function buildClosingSteps(
     // LHS chunk was already a single 0–9 digit — finish everything here.
     for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
     for (let i = 0; i < lhsWidth; i++) cols[i].colState = 'done'
-    sumLines.push({ kind: 'result', label: 'Remainder', value: String(remainder) })
+    sumLines.push({ kind: 'result', label: 'Remainder', value: signedText(remainder) })
     sumLines.push({ kind: 'note', tone: 'success', text: `Verify: ${quotient} × ${divisor} + ${remainder} = ${dividend} ✓` })
 
     steps.push({
@@ -153,9 +161,9 @@ function buildClosingSteps(
     // into a valid remainder check) — settle the RHS here directly.
     for (let k = 0; k < rhsWidth; k++) cols[lhsWidth + k].colState = 'done'
     applyFinalRhsTotals()
-    sumLines.push({ kind: 'result', label: 'Remainder', value: String(remainder) })
+    sumLines.push({ kind: 'result', label: 'Remainder', value: signedText(remainder) })
   } else {
-    sumLines.push({ kind: 'result', label: 'RHS total', value: String(rawRemainder) })
+    sumLines.push({ kind: 'result', label: 'RHS total', value: signedText(rawRemainder) })
   }
 
   // This step is the immediate predecessor of whichever normalize step
@@ -204,7 +212,7 @@ function buildClosingSteps(
       remainderNormalizeLines.push({
         kind: 'note',
         tone: 'warn',
-        text: `RHS total is now ${rawRemainder}, after being re-expressed as valid digits.`,
+        text: `RHS total is now ${signedText(rawRemainder)}, after being re-expressed as valid digits.`,
       })
     } else {
       // Final step: settle the board and close the verification. Result/Verify
@@ -244,25 +252,25 @@ function buildClosingSteps(
             label: 'Compare',
             value:
               times === 1
-                ? `RHS total ${rawRemainder} ≥ divisor ${divisor}`
-                : `RHS total ${rawRemainder} ÷ ${divisor} needs ${times} subtractions, not one`,
+                ? `RHS total ${signedText(rawRemainder)} ≥ divisor ${divisor}`
+                : `RHS total ${signedText(rawRemainder)} ÷ ${divisor} needs ${times} subtractions, not one`,
           }
         : {
             kind: 'calc',
             label: 'Compare',
-            value: `RHS total ${rawRemainder} is negative`,
+            value: `RHS total ${signedText(rawRemainder)} is negative`,
           }
     const correctLine: CalcLine =
       correctionCount > 0
         ? {
             kind: 'calc',
             label: 'Correct',
-            value: `${rawRemainder} − ${times > 1 ? `${times} × ` : ''}${divisor} = ${remainder}, and ${lastLhsLabel} = ${oldLastChunk} + ${times} = ${newLastChunk}`,
+            value: `${operand(rawRemainder)} − ${times > 1 ? `${times} × ` : ''}${divisor} = ${remainder}, and ${lastLhsLabel} = ${operand(oldLastChunk)} + ${times} = ${signedText(newLastChunk)}`,
           }
         : {
             kind: 'calc',
             label: 'Correct',
-            value: `${rawRemainder} + ${times > 1 ? `${times} × ` : ''}${divisor} = ${remainder}, and ${lastLhsLabel} = ${oldLastChunk} − ${times} = ${newLastChunk}`,
+            value: `${operand(rawRemainder)} + ${times > 1 ? `${times} × ` : ''}${divisor} = ${remainder}, and ${lastLhsLabel} = ${operand(oldLastChunk)} − ${times} = ${signedText(newLastChunk)}`,
           }
 
     cols[lhsWidth - 1].total = newLastChunk
@@ -276,7 +284,7 @@ function buildClosingSteps(
       lines.push({
         kind: 'note',
         tone: 'warn',
-        text: `${lastLhsLabel} is ${newLastChunk} — still not a single digit. One more step normalizes the quotient.`,
+        text: `${lastLhsLabel} is ${signedText(newLastChunk)} — still not a single digit. One more step normalizes the quotient.`,
       })
     }
 
@@ -360,7 +368,7 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
     lines: [
       { kind: 'calc', label: 'Divisor', value: String(divisor) },
       { kind: 'calc', label: 'Base (nearest power of 10)', value: String(base) },
-      { kind: 'calc', label: 'Difference', value: `${base} − ${divisor} = ${difference}` },
+      { kind: 'calc', label: 'Difference', value: `${base} − ${divisor} = ${signedText(difference)}` },
       ...(solution.substitutedDigits
         ? [
             {
@@ -391,13 +399,13 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
     const finalizeLines: CalcLine[] =
       i === 0
         ? [{ kind: 'calc', label: 'Bring down', value: `first LHS digit, ${digits[0]}, as it is` }]
-        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${digits[i]} + ${incoming[i]} = ${total}` }]
-    finalizeLines.push({ kind: 'result', label: quotientLabel, value: String(total) })
+        : [{ kind: 'calc', label: `Sum column ${i + 1}`, value: `${operand(digits[i])} + ${operand(incoming[i])} = ${signedText(total)}` }]
+    finalizeLines.push({ kind: 'result', label: quotientLabel, value: signedText(total) })
     if (total < 0 || total > 9) {
       finalizeLines.push({
         kind: 'note',
         tone: 'warn',
-        text: `${quotientLabel} is ${total}, not a single digit — used as-is for its own multiply below. Carries and borrows are resolved once, at the end.`,
+        text: `${quotientLabel} is ${signedText(total)}, not a single digit — used as-is for its own multiply below. Carries and borrows are resolved once, at the end.`,
       })
     }
 
@@ -426,7 +434,7 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
           {
             kind: 'calc',
             label: 'Multiply',
-            value: `${quotientLabel} × difference = ${total} × (${solution.substitutedDigits.map(signedText).join(', ')}) = (${cells.map(signedText).join(', ')})`,
+            value: `${quotientLabel} × difference = ${operand(total)} × (${solution.substitutedDigits.map(signedText).join(', ')}) = (${cells.map(signedText).join(', ')})`,
           },
           {
             kind: 'note',
@@ -458,11 +466,11 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
 
     const multiplyNote =
       rhsWidth === 1
-        ? { kind: 'note' as const, tone: 'warn' as const, text: `Write ${contribution} diagonally under column ${i + 2}.` }
+        ? { kind: 'note' as const, tone: 'warn' as const, text: `Write ${signedText(contribution)} diagonally under column ${i + 2}.` }
         : {
             kind: 'note' as const,
             tone: 'warn' as const,
-            text: `Difference spans ${rhsWidth} columns: the leftmost slot takes whatever remains (${sign * leftPart}) under column ${i + 2}, the rest (${rightDigits.map((d) => (sign < 0 ? -d : d)).join(' · ')}) go one digit each under the next columns.`,
+            text: `Difference spans ${rhsWidth} columns: the leftmost slot takes whatever remains (${signedText(sign * leftPart)}) under column ${i + 2}, the rest (${rightDigits.map((d) => signedText(sign < 0 ? -d : d)).join(' · ')}) go one digit each under the next columns.`,
           }
 
     steps.push({
@@ -473,7 +481,7 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
         {
           kind: 'calc',
           label: 'Multiply',
-          value: `${quotientLabel} × difference = ${total} × ${difference} = ${contribution}`,
+          value: `${quotientLabel} × difference = ${operand(total)} × ${operand(difference)} = ${signedText(contribution)}`,
         },
         multiplyNote,
       ],
@@ -495,13 +503,13 @@ export function buildBaseMethodSteps(dividend: number, divisor: number, solution
     sumLines.push({
       kind: 'calc',
       label: `Sum column ${colIdx + 1}`,
-      value: contribs.length ? `${terms.join(' + ')} = ${rhsRaw[k]}` : String(rhsRaw[k]),
+      value: contribs.length ? `${terms.map(operand).join(' + ')} = ${signedText(rhsRaw[k])}` : signedText(rhsRaw[k]),
     })
   }
   if (rhsWidth > 1) {
-    let expr = String(rhsRaw[0])
-    for (let k = 1; k < rhsWidth; k++) expr = `${expr} × 10 + ${rhsRaw[k]}`
-    sumLines.push({ kind: 'calc', label: 'Combine columns', value: `${expr} = ${rawRemainder}` })
+    let expr = operand(rhsRaw[0])
+    for (let k = 1; k < rhsWidth; k++) expr = `${expr} × 10 + ${operand(rhsRaw[k])}`
+    sumLines.push({ kind: 'calc', label: 'Combine columns', value: `${expr} = ${signedText(rawRemainder)}` })
   }
 
   steps.push(...buildClosingSteps(dividend, divisor, solution, cols, counter, sumLines, noConnectors))
