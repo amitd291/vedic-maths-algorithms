@@ -62,7 +62,7 @@ function solve(
 // Plain solve is deferred while a simplification choice is pending, so its
 // error (e.g. the hidden board's width) isn't shown before the user picks.
 function solvePlain(dividend: number, divisor: number) {
-  if (needsSimplification(divisor)) return { problem: null, error: null, friendly: false }
+  if (dividend >= divisor && needsSimplification(divisor)) return { problem: null, error: null, friendly: false }
   return solve(dividend, divisor, null)
 }
 
@@ -105,7 +105,8 @@ export default function BaseMethodPage() {
     if (exampleToggleRef.current) exampleToggleRef.current.checked = false
   }
 
-  const pending = needsSimplification(current.divisor) && candidate === null
+  const fitsDividend = current.dividend >= current.divisor
+  const pending = fitsDividend && needsSimplification(current.divisor) && candidate === null
   const plainBase = nearestBase(current.divisor)
   const base = pending ? null : candidate ? candidate.base : plainBase
   const difference = pending ? null : candidate ? candidate.difference : plainBase - current.divisor
@@ -151,11 +152,13 @@ export default function BaseMethodPage() {
 
       {error && <ErrorBanner message={error} showPrefix={!errorFriendly} />}
 
-      <SimplificationSelector
-        key={solveSeq}
-        divisor={current.divisor}
-        onSelect={handleSelectCandidate}
-      />
+      {fitsDividend && (
+        <SimplificationSelector
+          key={solveSeq}
+          divisor={current.divisor}
+          onSelect={handleSelectCandidate}
+        />
+      )}
       {(pending || problem) && (
         <BaseMethodDivisorCard
           base={base}

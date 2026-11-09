@@ -220,6 +220,38 @@ describe('BaseMethodPage', () => {
     expect(screen.queryByText('Setup')).not.toBeInTheDocument()
   })
 
+  it('shows the too-few-digits banner with no selector for 5 ÷ 35 (dividend < divisor)', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('This dividend has too few digits for this divisor. Try a larger dividend.')
+    expect(alert).not.toHaveTextContent('Something went wrong')
+    expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+    expect(document.querySelector('.divisor-card')).toBeNull()
+    expect(document.querySelector('.digit-board')).toBeNull()
+  })
+
+  it('shows the too-few-digits banner with no selector for 5 ÷ 827 (dividend < divisor)', () => {
+    render(<BaseMethodPage />)
+
+    fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '827' } })
+    fireEvent.submit(document.querySelector('form')!)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('This dividend has too few digits for this divisor. Try a larger dividend.')
+    expect(alert).not.toHaveTextContent('Something went wrong')
+    expect(screen.queryByRole('button', { name: /How should this be simplified/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('Setup')).not.toBeInTheDocument()
+    expect(document.querySelector('.divisor-card')).toBeNull()
+    expect(document.querySelector('.digit-board')).toBeNull()
+  })
+
   it('shows a friendly wider-board message for a friendly divisor (5428 ÷ 5)', () => {
     render(<BaseMethodPage />)
 
@@ -516,21 +548,32 @@ describe('BaseMethodPage', () => {
       expect(document.querySelector('.digit-board-cols .descale-row')).toBeNull()
     })
 
-    it('defers the plain-board error for 5÷35 until a candidate is picked', () => {
+    it('switching from 5 ÷ 35 to 5428 ÷ 35 clears the banner and starts pending with the selector', () => {
       render(<BaseMethodPage />)
 
       fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5' } })
       fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
       fireEvent.submit(document.querySelector('form')!)
+      expect(screen.getByRole('alert')).toHaveTextContent(/too few digits/)
+
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '5428' } })
+      fireEvent.submit(document.querySelector('form')!)
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
       expect(screen.getByText('base').nextElementSibling?.textContent).toBe('—')
-      expect(screen.getByText('difference').nextElementSibling?.textContent).toBe('—')
+      expect(document.querySelector('.digit-board')).toBeNull()
+      expect(screen.queryByLabelText('Next step')).not.toBeInTheDocument()
+    })
 
-      fireEvent.click(screen.getByRole('button', { name: /^105: Scaled divisor/ }))
+    it('keeps the selector for dividend == divisor (35 ÷ 35)', () => {
+      render(<BaseMethodPage />)
 
-      expect(screen.getByRole('alert')).toHaveTextContent(/too few digits/)
+      fireEvent.change(screen.getByLabelText('Dividend'), { target: { value: '35' } })
+      fireEvent.change(screen.getByLabelText('Divisor'), { target: { value: '35' } })
+      fireEvent.submit(document.querySelector('form')!)
+
+      expect(screen.getByRole('button', { name: /How should this be simplified/ })).toBeInTheDocument()
     })
 
     it('defers the wider-board error for 5428÷3 and gives Q=1809 R=1 for both ×2 and ×3', () => {

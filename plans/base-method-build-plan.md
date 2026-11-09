@@ -248,6 +248,17 @@ against 173's 3, so it is dropped):
 Fixtures kept: 10030 ÷ 827, 10000 ÷ 819, 12657 ÷ 791 (all fit). Engine
 tests use 182 as the too-long case (the engine still throws for it).
 
+### Input limits (iteration F)
+
+- **Divisor stays 1..999**, no ≥10 restriction like Dhvajanka. Single-digit
+  divisors cost a base-10 floor, a `divideScaled >= 6` guard and a few
+  fixtures, but keep the simplest teaching case, 123 ÷ 9.
+- **Dividend < divisor** skips the selector and shows the "too few digits"
+  banner (trivial Q=0, R=dividend, no valid board).
+- **Known limitation:** dividend == divisor (e.g. 35 ÷ 35) still offers the
+  selector, and a candidate whose scaled divisor exceeds the dividend (×2 = 70)
+  then shows the same banner. Accepted, not a realistic learner problem.
+
 ## Worked examples from the source PDF (for future reference)
 
 Pulled from `base-method-division.pdf` (ch. 15 — this PDF covers Base Method

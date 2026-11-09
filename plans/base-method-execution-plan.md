@@ -330,7 +330,7 @@ function to the list, not restructuring the UI.
         from `findScalingCandidates` to `findSimplificationCandidates`;
         `needsSimplification` becomes "the candidate list is non-empty". No
         other change to the pending/plain gating in `BaseMethodPage`.
-  - [x] **Substituted card** (mockup `plans/mockups/iteration-f-substitution-v1.html`,
+  - [x] **Substituted card** (mockup `plans/mockups/iteration-f-follow-up-substitution-v1.html`,
         approved): title `2, −2, 1: Substituted difference (181)`, second
         line `Base: 1000 | Difference: 181 = 200 − 20 + 1`; same card style
         and collapsed/selected states as scaling.
@@ -382,7 +382,7 @@ function to the list, not restructuring the UI.
         `EXAMPLES` and reworded 827's description (it finishes clean via
         substitution). Page tests cover order, descriptions, the pending-then-
         substituted flow and re-select reset.
-  - [x] **Visual check** against `plans/mockups/iteration-f-substitution-v1.html`
+  - [x] **Visual check** against `plans/mockups/iteration-f-follow-up-substitution-v1.html`
         (desktop and 375px). Fixed: the substituted value wrapped on mobile
         (nowrap, tighter card gap, smaller font under 400px).
   - [ ] **Polish (optional)**: sum/normalize lines render negatives with an
@@ -391,13 +391,10 @@ function to the list, not restructuring the UI.
         and `+ (−2)` style. Also remove the extra amber "RHS total is now 172"
         note under the last normalize step if it feels redundant (not in
         the mockup).
-- [ ] **Stretch (nice to have): reduce corner cases via input limits.**
-      (a) Restrict divisor to ≥10, like Dhvajanka: drops the base-10 floor,
-      the `divideScaled >= 6` guard, and the 123÷9 / 865÷9 / 9995÷9
-      fixtures, but loses the simplest teaching case. (b) Consider the
-      dividend, not just the divisor: e.g. 5 ÷ 35 offers scaling options
-      although dividend < divisor (trivially Q=0, R=5, no valid board);
-      handle such dead ends before showing the selector.
+- [x] **Dividend < divisor dead end.** Selector skipped, friendly "too few
+      digits" banner shown (mockup `plans/mockups/iteration-f-follow-up-dividend-below-divisor-v1.html`).
+      Divisor ≥10 limit rejected and 35 ÷ 35 limitation accepted, see build
+      plan "Input limits".
 
 ---
 
